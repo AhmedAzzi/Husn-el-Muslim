@@ -9,6 +9,7 @@ class AzkarInfo {
   final String audio;
   final String filename;
   final List<AzkarArrayInfo> array;
+  final List<String> footnote; // Added footnote field
 
   AzkarInfo({
     required this.id,
@@ -16,6 +17,7 @@ class AzkarInfo {
     required this.audio,
     required this.filename,
     required this.array,
+    required this.footnote, // Added constructor parameter
   });
 
   factory AzkarInfo.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class AzkarInfo {
       array: (json['array'] as List)
           .map((arrayItem) => AzkarArrayInfo.fromJson(arrayItem))
           .toList(),
+      footnote: List<String>.from(json['footnote']), // Added footnote parsing
     );
   }
 }

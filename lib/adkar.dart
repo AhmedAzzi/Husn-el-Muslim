@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -52,8 +51,8 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Center(
-                                      child:
-                                          Text('تم نسخ الذكر إلى الحافظة'))));
+                                      child: AutoSizeText(
+                                          'تم نسخ الذكر إلى الحافظة'))));
                         });
 
                         break;
@@ -84,7 +83,8 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                   itemBuilder: (BuildContext itemBuilder) => {'نسخ', 'مشاركة'}
                       .map((value) => PopupMenuItem(
                             value: value,
-                            child: Text(value),
+                            child: AutoSizeText(value,
+                                textDirection: TextDirection.rtl),
                           ))
                       .toList())
             ],
@@ -102,30 +102,24 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                 Icons.arrow_back,
               ),
             ),
-            title: Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: Text(
-                widget.azkarInfo.category,
-                style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontSize: double.parse(fontSize22),
-                    color: bgLight),
-              ),
+            title: AutoSizeText(
+              widget.azkarInfo.category,
+              minFontSize: double.parse(fontSize18),
+              maxFontSize: double.parse(fontSize22),
+              style: TextStyle(fontFamily: fontFamily, color: bgLight),
             ),
           ),
           body: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 40),
                 child: Row(
                   children: [
                     Expanded(
-                      flex: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _progessBar(),
-                      ),
+                      flex: 6,
+                      child: _progessBar(),
                     ),
+                    const SizedBox(width: 10),
                     Expanded(
                       flex: 1,
                       child: _playbackControlButton(),
@@ -133,6 +127,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
               _dikrPage(),
               Stack(
                 children: [
@@ -145,40 +140,52 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                         fit: BoxFit.fill,
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            (marrat == 100
-                                ? '$marrat مرة'
-                                : (marrat > 1 ? '$marrat مرات' : 'مرة واحدة')),
-                            style: TextStyle(color: bgLight),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 15, right: 15),
-                            child: Text(
-                              '${widget.azkarInfo.array[currentPageIndex].count}',
-                              textAlign: TextAlign.center,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: AutoSizeText(
+                              (marrat == 100
+                                  ? '$marrat مرة'
+                                  : (marrat > 1
+                                      ? '$marrat مرات'
+                                      : 'مرة واحدة')),
+                              minFontSize: double.parse(fontSize18),
+                              maxFontSize: double.parse(fontSize22),
                               style: TextStyle(
-                                fontFamily: fontFamily,
-                                fontSize: double.parse(fontSize22),
+                                  color: bgLight, fontFamily: fontFamily),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 0, right: 15),
+                              child: AutoSizeText(
+                                '${widget.azkarInfo.array[currentPageIndex].count}',
+                                minFontSize: double.parse(fontSize18),
+                                maxFontSize: double.parse(fontSize22),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontFamily: fontFamily,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'الذكر ${currentPageIndex + 1} من ${widget.azkarInfo.array.length}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: bgLight),
+                          Expanded(
+                            child: AutoSizeText(
+                              'الذكر ${currentPageIndex + 1} من ${widget.azkarInfo.array.length}',
+                              textAlign: TextAlign.center,
+                              minFontSize: double.parse(fontSize18),
+                              maxFontSize: double.parse(fontSize22),
+                              style: TextStyle(
+                                  color: bgLight, fontFamily: fontFamily),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -209,8 +216,6 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
     );
   }
 
-// 37030709
-// @Rachidbk2001#
   void toggleTheme() {
     setState(() {
       Get.changeTheme(Get.isDarkMode ? ThemeData.light() : ThemeData.dark());
@@ -251,54 +256,76 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                 Screenshot(
                   key: screenshotKeys[index],
                   controller: screenshotControllers[index],
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 15),
-                    padding: const EdgeInsets.only(top: 5, bottom: 10),
-                    decoration: widget.azkarInfo.array[index].text
-                                .contains('سورة الملك') ||
-                            widget.azkarInfo.array[index].text
-                                .contains('سورة السجدة')
-                        ? (!Get.isDarkMode
-                            ? BoxDecoration(
-                                border: Border.all(color: bgDark, width: 3),
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(30)))
-                            : BoxDecoration(
-                                border: Border.all(color: bgLight, width: 3),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 5, top: 0),
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 15),
+                          padding: const EdgeInsets.only(top: 5, bottom: 10),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey, width: 2),
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.grey, width: 0.5),
                                 borderRadius: const BorderRadius.all(
-                                    Radius.circular(30))))
-                        : BoxDecoration(
-                            image: DecorationImage(
-                            alignment: Alignment.center,
-                            image: (!Get.isDarkMode
-                                ? const AssetImage("assets/page.png")
-                                : const AssetImage("assets/page_white.png")),
-                            fit: BoxFit.fill,
-                          )),
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 7, top: 0),
-                      child: ListTile(
-                        title: Text(
-                          widget.azkarInfo.array[index].text,
-                          style: TextStyle(
-                            fontFamily: fontFamily,
-                            fontSize: double.parse(fontSize22),
+                                  Radius.circular(10),
+                                ),
+                              ),
+                              child: ListTile(
+                                title: Text(
+                                  widget.azkarInfo.array[index].text,
+                                  style: TextStyle(
+                                    fontFamily: fontFamily,
+                                    fontSize: double.parse(fontSize24),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width - 60,
+                          child: Row(
+                            children: List.generate(
+                                550 ~/ 10,
+                                (index) => Expanded(
+                                      flex: 5,
+                                      child: Container(
+                                        color: index % 2 == 0
+                                            ? Colors.transparent
+                                            : Colors.grey,
+                                        height: 1,
+                                      ),
+                                    )),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        ListTile(
+                          title: Text(
+                            widget.azkarInfo.footnote[index],
+                            // '',
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      ],
                     ),
                   ),
                 ),
-                !Get.isDarkMode
-                    ? Image.asset(
-                        separator,
-                        height: 50,
-                      )
-                    : Image.asset(
-                        whiteSeparator,
-                        height: 50,
-                      ),
               ],
             ),
           );
@@ -306,35 +333,6 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
       ),
     );
   }
-
-  // saveImage(BuildContext context, Uint8List imageBytes) async {
-  //   try {
-  //     // Get the temporary directory using path_provider
-  //     Directory tempDir = await getTemporaryDirectory();
-
-  //     // Generate a unique filename using current timestamp
-  //     String fileName =
-  //         'capturedImage_${DateTime.now().millisecondsSinceEpoch}.png';
-
-  //     // Create the file with the generated filename
-  //     File imageFile = File('${tempDir.path}/$fileName');
-
-  //     // Write the image bytes to the file
-  //     await imageFile.writeAsBytes(imageBytes);
-
-  //     // Save the image using GallerySaver
-  //     await GallerySaver.saveImage(imageFile.path);
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Image saved to gallery')),
-  //     );
-  //   } catch (e) {
-  //     print('Error saving image: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Failed to save image')),
-  //     );
-  //   }
-  // }
 
   Widget _playbackControlButton() {
     return StreamBuilder<PlayerState>(
@@ -344,26 +342,25 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
           final playing = snapshot.data?.playing;
           if (processingState == ProcessingState.loading ||
               processingState == ProcessingState.buffering) {
-            return Container(
-              margin: const EdgeInsets.all(8.0),
-              child: const CircularProgressIndicator(),
+            return const CircularProgressIndicator(
+              strokeWidth: 1,
             );
           } else if (playing != true) {
             return IconButton(
               icon: const Icon(Icons.play_arrow),
-              iconSize: 50,
+              iconSize: 30,
               onPressed: _player.play,
             );
           } else if (processingState != ProcessingState.completed) {
             return IconButton(
               icon: const Icon(Icons.pause),
-              iconSize: 50,
+              iconSize: 30,
               onPressed: _player.pause,
             );
           } else {
             return IconButton(
                 icon: const Icon(Icons.replay),
-                iconSize: 50,
+                iconSize: 30,
                 onPressed: () => _player.seek(Duration.zero));
           }
         });
@@ -374,8 +371,11 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
       stream: _player.positionStream,
       builder: (context, snapshot) {
         return Padding(
-          padding: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.only(top: 15),
           child: ProgressBar(
+            thumbRadius: 7,
+            timeLabelTextStyle: const TextStyle(fontSize: 14),
+            barHeight: 2,
             progress: snapshot.data ?? Duration.zero,
             buffered: _player.bufferedPosition,
             total: _player.duration ?? Duration.zero,

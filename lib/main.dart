@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,263 +46,345 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size screenSize = MediaQuery.of(context).size;
     return GetMaterialApp(
-      themeMode: ThemeMode.light,
-      debugShowCheckedModeBanner: false,
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              title: SizedBox(
-                height: 50,
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontSize: double.parse(fontSize24),
-                    color: bgLight,
-                  ),
-                ),
-              ),
-              iconTheme: IconThemeData(color: bgLight),
-              actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
-              flexibleSpace: SizedBox(
-                height: 60,
-                child: Image.asset(appBarBG, fit: BoxFit.cover),
-              ),
-            ),
-            drawer: Drawer(
-              width: 250,
-              child: ListView(
-                children: [
-                  DrawerHeader(
-                    child: Center(child: Image(image: AssetImage(icLauncher))),
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: ListTile(
-                      leading: const Icon(Icons.list_rounded),
-                      title: Text(
-                        adkar,
-                        style: TextStyle(
-                          fontFamily: fontFamily,
-                          fontSize: double.parse(fontSize22),
-                        ),
-                        textAlign: TextAlign.justify,
+        themeMode: ThemeMode.light,
+        debugShowCheckedModeBanner: false,
+        home: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: SafeArea(
+              child: Scaffold(
+                appBar: AppBar(
+                  title: SizedBox(
+                    height: 30,
+                    child: AutoSizeText(
+                      title,
+                      minFontSize: double.parse(fontSize22),
+                      maxFontSize: double.parse(fontSize24),
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        color: bgLight,
                       ),
                     ),
                   ),
-                  const Divider(thickness: 0.3),
-                  ListTile(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Theme(
-                              data: Get.isDarkMode
-                                  ? ThemeData.dark()
-                                  : ThemeData.light(),
-                              child: AlertDialog(
-                                backgroundColor:
-                                    Get.isDarkMode ? bgDark : bgLight,
-                                title: Text(
-                                  about,
-                                  style: TextStyle(
-                                    fontFamily: fontFamily,
-                                    color: Get.isDarkMode ? bgLight : bgDark,
-                                  ),
-                                ),
-                                content: SizedBox(
-                                  height: 450,
-                                  child: Column(
-                                    children: [
-                                      ListTile(
-                                        leading: Image.asset(
-                                          icLauncher,
-                                          scale: 3,
-                                        ),
-                                        title: Text(aboutVersion),
-                                        subtitle: Text(aboutOpenSource),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        title: Text(
-                                          do3aa,
-                                          style: TextStyle(
-                                              fontFamily: fontFamily,
-                                              fontSize:
-                                                  double.parse(fontSize24)),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(Icons.person_pin),
-                                        title: Text(developer),
-                                        subtitle: Text(
-                                          developerName,
-                                          style: TextStyle(
-                                            fontFamily: fontFamily,
-                                          ),
-                                        ),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(SimpleIcons.google),
-                                        title: Text(offielWebSite),
-                                        subtitle: Text(
-                                          offielWebSiteIbnWahf,
-                                          style: TextStyle(
-                                            fontFamily: fontFamily,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          openURL(oficialWebSiteLink);
-                                          // launchUrl(Uri.base);
-                                        },
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(SimpleIcons.github),
-                                        title: Text(sourceCode),
-                                        onTap: () async {
-                                          await openURL(
-                                            githubLink,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      leave,
+                  iconTheme: IconThemeData(color: bgLight),
+                  actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
+                  flexibleSpace: SizedBox(
+                    height: 60,
+                    child: Image.asset(appBarBG, fit: BoxFit.cover),
+                  ),
+                ),
+                drawer: Drawer(
+                  width: screenSize.width - 100,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      DrawerHeader(
+                        child:
+                            Center(child: Image(image: AssetImage(icLauncher))),
+                      ),
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: ListTile(
+                          leading: const Icon(Icons.list_rounded),
+                          title: AutoSizeText(
+                            adkar,
+                            minFontSize: double.parse(fontSize18),
+                            maxFontSize: double.parse(fontSize22),
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                            ),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: Theme(
+                                  data: Get.isDarkMode
+                                      ? ThemeData.dark()
+                                      : ThemeData.light(),
+                                  child: AlertDialog(
+                                    backgroundColor:
+                                        Get.isDarkMode ? bgDark : bgLight,
+                                    title: Text(
+                                      about,
+                                      // minFontSize: double.parse(fontSize18),
+                                      // maxFontSize: double.parse(fontSize22),
                                       style: TextStyle(
                                         fontFamily: fontFamily,
                                         color:
                                             Get.isDarkMode ? bgLight : bgDark,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    leading: const Icon(Icons.info_rounded),
-                    title: Text(
-                      about,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: double.parse(fontSize22),
-                      ),
-                      textAlign: TextAlign.justify,
-                    ),
-                  ),
-                  const Divider(thickness: 0.3),
-                ],
-              ),
-            ),
-            body: ListView.builder(
-              itemCount: azkarList.length,
-              itemBuilder: (context, index) {
-                final bool isMatch =
-                    azkarList[index].category.contains(searchQuery);
-                if (isMatch) {
-                  return Column(
-                    children: [
-                      ListTile(
-                        trailing: IconButton(
-                          icon: const Icon(Icons.headset_mic_sharp),
-                          onPressed: () {
-                            setState(() {
-                              setupAudioPlayer(_player, azkarList[index].audio);
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return Directionality(
-                                    textDirection: TextDirection.rtl,
-                                    child: AlertDialog(
-                                      title: Text(
-                                        azkarList[index].category,
-                                        style: TextStyle(
-                                          fontFamily: fontFamily,
-                                        ),
-                                      ),
-                                      content: Row(
+                                    content: SizedBox(
+                                      width: screenSize.width - 100,
+                                      height: screenSize.height - 350,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.max,
                                         children: [
                                           Expanded(
-                                            flex: 4,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 20),
-                                              child: _progessBar(),
+                                            flex: 2,
+                                            child: ListTile(
+                                              leading: Image.asset(
+                                                icLauncher,
+                                                scale: 3,
+                                              ),
+                                              title: Text(
+                                                aboutVersion,
+                                                // minFontSize:
+                                                //     double.parse(fontSize18),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize22),
+                                              ),
+                                              subtitle:
+                                                  AutoSizeText(aboutOpenSource),
                                             ),
                                           ),
+                                          const Divider(),
                                           Expanded(
-                                            flex: 1,
-                                            child: _playbackControlButton(),
+                                            child: ListTile(
+                                              title: Text(
+                                                do3aa,
+                                                // minFontSize:
+                                                //     double.parse(fontSize22),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize24),
+                                                style: TextStyle(
+                                                    fontFamily: fontFamily),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                          const Divider(),
+                                          Expanded(
+                                            child: ListTile(
+                                              leading:
+                                                  const Icon(Icons.person_pin),
+                                              title: Text(
+                                                developer,
+                                                // minFontSize:
+                                                //     double.parse(fontSize18),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize22),
+                                              ),
+                                              subtitle: AutoSizeText(
+                                                developerName,
+                                                minFontSize:
+                                                    double.parse(fontSize18),
+                                                maxFontSize:
+                                                    double.parse(fontSize22),
+                                                style: TextStyle(
+                                                  fontFamily: fontFamily,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const Divider(),
+                                          Expanded(
+                                            child: ListTile(
+                                              leading: const Icon(
+                                                  SimpleIcons.google),
+                                              title: Text(
+                                                offielWebSite,
+                                                // minFontSize:
+                                                //     double.parse(fontSize18),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize22),
+                                              ),
+                                              subtitle: Text(
+                                                offielWebSiteIbnWahf,
+                                                // minFontSize:
+                                                //     double.parse(fontSize18),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize22),
+                                                style: TextStyle(
+                                                  fontFamily: fontFamily,
+                                                ),
+                                              ),
+                                              onTap: () {
+                                                openURL(oficialWebSiteLink);
+                                                // launchUrl(Uri.base);
+                                              },
+                                            ),
+                                          ),
+                                          const Divider(),
+                                          Expanded(
+                                            child: ListTile(
+                                              leading: const Icon(
+                                                  SimpleIcons.github),
+                                              title: Text(
+                                                sourceCode,
+                                                // minFontSize:
+                                                //     double.parse(fontSize18),
+                                                // maxFontSize:
+                                                //     double.parse(fontSize22),
+                                              ),
+                                              onTap: () async {
+                                                await openURL(
+                                                  githubLink,
+                                                );
+                                              },
+                                            ),
                                           ),
                                         ],
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            _player.stop();
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(leave),
-                                        ),
-                                      ],
                                     ),
-                                  );
-                                },
-                              ).then((value) => _player.stop());
-                            });
-                          },
-                        ),
-                        leading: const Icon(Icons.ac_unit_sharp),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          leave,
+                                          // minFontSize: double.parse(fontSize18),
+                                          // maxFontSize: double.parse(fontSize22),
+                                          style: TextStyle(
+                                            fontFamily: fontFamily,
+                                            color: Get.isDarkMode
+                                                ? bgLight
+                                                : bgDark,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        leading: const Icon(Icons.info_rounded),
                         title: Text(
-                          azkarList[index].category,
+                          about,
+                          // minFontSize: double.parse(fontSize18),
+                          // maxFontSize: double.parse(fontSize22),
                           style: TextStyle(
                             fontFamily: fontFamily,
                           ),
+                          textAlign: TextAlign.justify,
                         ),
-                        onTap: () async {
-                          await Get.to(
-                            () =>
-                                AzkarDetailsScreen(azkarInfo: azkarList[index]),
-                          );
-                          setState(() {
-                            loadAzkarData(); // Removed unnecessary initState call
-                          });
-                        },
                       ),
-                      const Divider(
-                        height: 1,
-                        thickness: 0.3,
-                      )
+                      const Divider(thickness: 0.3),
                     ],
-                  );
-                } else {
-                  return Container(); // Return an empty container for non-matching items
-                }
-              },
+                  ),
+                ),
+                body: ListView.builder(
+                  itemCount: azkarList.length,
+                  itemBuilder: (context, index) {
+                    final bool isMatch =
+                        azkarList[index].category.contains(searchQuery);
+                    if (isMatch) {
+                      return Column(
+                        children: [
+                          ListTile(
+                            trailing: IconButton(
+                              icon: const Icon(Icons.headset_mic_sharp),
+                              onPressed: () {
+                                setState(() {
+                                  setupAudioPlayer(
+                                      _player, azkarList[index].audio);
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: AlertDialog(
+                                          title: AutoSizeText(
+                                            azkarList[index].category,
+                                            minFontSize:
+                                                double.parse(fontSize24),
+                                            maxFontSize:
+                                                double.parse(fontSize24),
+                                            style: TextStyle(
+                                              fontFamily: fontFamily,
+                                            ),
+                                          ),
+                                          content: Row(
+                                            children: [
+                                              Expanded(
+                                                flex: 4,
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 20),
+                                                  child: _progessBar(),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: _playbackControlButton(),
+                                              ),
+                                            ],
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                _player.stop();
+                                                Navigator.pop(context);
+                                              },
+                                              child: AutoSizeText(
+                                                leave,
+                                                minFontSize:
+                                                    double.parse(fontSize18),
+                                                maxFontSize:
+                                                    double.parse(fontSize22),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ).then((value) => _player.stop());
+                                });
+                              },
+                            ),
+                            leading: const Icon(Icons.ac_unit_sharp),
+                            title: AutoSizeText(
+                              azkarList[index].category,
+                              minFontSize: double.parse(fontSize18),
+                              maxFontSize: double.parse(fontSize22),
+                              style: TextStyle(
+                                fontFamily: fontFamily,
+                              ),
+                            ),
+                            onTap: () async {
+                              await Get.to(
+                                () => AzkarDetailsScreen(
+                                    azkarInfo: azkarList[index]),
+                              );
+                              setState(() {
+                                loadAzkarData(); // Removed unnecessary initState call
+                              });
+                            },
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 0.3,
+                          )
+                        ],
+                      );
+                    } else {
+                      return Container(); // Return an empty container for non-matching items
+                    }
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-    );
+          );
+        }));
   }
 
   @override
