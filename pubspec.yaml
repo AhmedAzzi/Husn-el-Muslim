@@ -1,13 +1,14 @@
 name: small_husn_muslim
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ">=3.2.3 <4.0.0"
 
 dependencies:
   audio_video_progress_bar: ^2.0.1
+  auto_size_text: ^3.0.0
   flutter:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
@@ -15,13 +16,13 @@ dependencies:
   get: ^4.6.6
   just_audio: ^0.9.36
   path_provider: ^2.1.2
-  screenshot: ^2.1.0
-  share_plus: ^7.2.2
+  screenshot: ^2.5.0
+  share_plus: ^9.0.0
   simple_icons: ^10.1.3
   url_launcher: ^6.2.4
 
 dev_dependencies:
-  flutter_lints: ^3.0.1
+  flutter_lints: ^4.0.0
   flutter_test:
     sdk: flutter
 
@@ -31,15 +32,15 @@ flutter:
   assets:
     - assets/hisnmuslim.json
     - assets/sabha.png
-    - assets/page.png
-    - assets/page_white.png
     - assets/counterBG.png
     - assets/appBarBG.jpg
     - assets/ic_launcher.png
-    - assets/separator.png
-    - assets/white_separator.png
 
   fonts:
     - family: AmiriQuran
       fonts:
         - asset: fonts/AmiriQuran-Regular.ttf
+
+    - family: Amiri
+      fonts:
+        - asset: fonts/Amiri-Regular.ttf

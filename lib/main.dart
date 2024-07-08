@@ -11,20 +11,8 @@ import 'package:small_husn_muslim/azkar_class.dart';
 import 'package:small_husn_muslim/constant/colors.dart';
 import 'package:small_husn_muslim/constant/strings.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: MyHomePageScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+void main() async {
+  runApp(const MyHomePageScreen());
 }
 
 class MyHomePageScreen extends StatefulWidget {
@@ -40,268 +28,276 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
   bool toggle = true;
-
   var iconColor = Icons.light_mode;
 
   @override
   Widget build(BuildContext context) {
+    Size screenSize = MediaQuery.of(context).size;
     return GetMaterialApp(
-      themeMode: ThemeMode.light,
-      debugShowCheckedModeBanner: false,
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              title: SizedBox(
-                height: 50,
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontSize: double.parse(fontSize24),
-                    color: bgLight,
-                  ),
-                ),
-              ),
-              iconTheme: IconThemeData(color: bgLight),
-              actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
-              flexibleSpace: SizedBox(
-                height: 60,
-                child: Image.asset(appBarBG, fit: BoxFit.cover),
-              ),
-            ),
-            drawer: Drawer(
-              width: 250,
-              child: ListView(
-                children: [
-                  DrawerHeader(
-                    child: Center(child: Image(image: AssetImage(icLauncher))),
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: ListTile(
-                      leading: const Icon(Icons.list_rounded),
-                      title: Text(
-                        adkar,
-                        style: TextStyle(
-                          fontFamily: fontFamily,
-                          fontSize: double.parse(fontSize22),
-                        ),
-                        textAlign: TextAlign.justify,
+        themeMode: ThemeMode.light,
+        debugShowCheckedModeBanner: false,
+        home: Builder(builder: (context) {
+          return SafeArea(
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: SizedBox(
+                    height: 30,
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: double.parse(fontSize22),
+                        fontFamily: fontFamily,
+                        color: bgLight,
                       ),
                     ),
                   ),
-                  const Divider(thickness: 0.3),
-                  ListTile(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return Directionality(
-                            textDirection: TextDirection.rtl,
-                            child: Theme(
-                              data: Get.isDarkMode
-                                  ? ThemeData.dark()
-                                  : ThemeData.light(),
-                              child: AlertDialog(
-                                backgroundColor:
-                                    Get.isDarkMode ? bgDark : bgLight,
-                                title: Text(
-                                  about,
-                                  style: TextStyle(
-                                    fontFamily: fontFamily,
-                                    color: Get.isDarkMode ? bgLight : bgDark,
-                                  ),
-                                ),
-                                content: SizedBox(
-                                  height: 450,
-                                  child: Column(
-                                    children: [
-                                      ListTile(
-                                        leading: Image.asset(
-                                          icLauncher,
-                                          scale: 3,
-                                        ),
-                                        title: Text(aboutVersion),
-                                        subtitle: Text(aboutOpenSource),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        title: Text(
-                                          do3aa,
-                                          style: TextStyle(
-                                              fontFamily: fontFamily,
-                                              fontSize:
-                                                  double.parse(fontSize24)),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(Icons.person_pin),
-                                        title: Text(developer),
-                                        subtitle: Text(
-                                          developerName,
-                                          style: TextStyle(
-                                            fontFamily: fontFamily,
-                                          ),
-                                        ),
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(SimpleIcons.google),
-                                        title: Text(offielWebSite),
-                                        subtitle: Text(
-                                          offielWebSiteIbnWahf,
-                                          style: TextStyle(
-                                            fontFamily: fontFamily,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          openURL(oficialWebSiteLink);
-                                          // launchUrl(Uri.base);
-                                        },
-                                      ),
-                                      const Divider(),
-                                      ListTile(
-                                        leading: const Icon(SimpleIcons.github),
-                                        title: Text(sourceCode),
-                                        onTap: () async {
-                                          await openURL(
-                                            githubLink,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      leave,
+                  iconTheme: IconThemeData(color: bgLight),
+                  actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
+                  flexibleSpace: SizedBox(
+                    height: 60,
+                    child: Image.asset(appBarBG, fit: BoxFit.cover),
+                  ),
+                ),
+                drawer: Drawer(
+                  width: screenSize.width - 100,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      DrawerHeader(
+                        child:
+                            Center(child: Image(image: AssetImage(icLauncher))),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.list_rounded),
+                        title: Text(
+                          adkar,
+                          style: TextStyle(
+                            fontSize: double.parse(fontSize18),
+                            fontFamily: fontFamily,
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                        onTap: () => Get.back(),
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: Theme(
+                                  data: Get.isDarkMode
+                                      ? ThemeData.dark()
+                                      : ThemeData.light(),
+                                  child: AlertDialog(
+                                    backgroundColor:
+                                        Get.isDarkMode ? bgDark : bgLight,
+                                    title: Text(
+                                      about,
                                       style: TextStyle(
                                         fontFamily: fontFamily,
                                         color:
                                             Get.isDarkMode ? bgLight : bgDark,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    leading: const Icon(Icons.info_rounded),
-                    title: Text(
-                      about,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: double.parse(fontSize22),
-                      ),
-                      textAlign: TextAlign.justify,
-                    ),
-                  ),
-                  const Divider(thickness: 0.3),
-                ],
-              ),
-            ),
-            body: ListView.builder(
-              itemCount: azkarList.length,
-              itemBuilder: (context, index) {
-                final bool isMatch =
-                    azkarList[index].category.contains(searchQuery);
-                if (isMatch) {
-                  return Column(
-                    children: [
-                      ListTile(
-                        trailing: IconButton(
-                          icon: const Icon(Icons.headset_mic_sharp),
-                          onPressed: () {
-                            setState(() {
-                              setupAudioPlayer(_player, azkarList[index].audio);
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return Directionality(
-                                    textDirection: TextDirection.rtl,
-                                    child: AlertDialog(
-                                      title: Text(
-                                        azkarList[index].category,
-                                        style: TextStyle(
-                                          fontFamily: fontFamily,
-                                        ),
-                                      ),
-                                      content: Row(
+                                    content: SizedBox(
+                                      height: 450,
+                                      child: Column(
                                         children: [
-                                          Expanded(
-                                            flex: 4,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 20),
-                                              child: _progessBar(),
+                                          ListTile(
+                                            leading: Image.asset(
+                                              icLauncher,
+                                              scale: 3,
+                                            ),
+                                            title: Text(aboutVersion),
+                                            subtitle: Text(aboutOpenSource),
+                                          ),
+                                          const Divider(),
+                                          ListTile(
+                                            title: Text(
+                                              do3aa,
+                                              style: TextStyle(
+                                                  fontFamily: fontFamily,
+                                                  fontSize:
+                                                      double.parse(fontSize24)),
+                                              textAlign: TextAlign.center,
                                             ),
                                           ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: _playbackControlButton(),
+                                          const Divider(),
+                                          ListTile(
+                                            leading:
+                                                const Icon(Icons.person_pin),
+                                            title: Text(developer),
+                                            subtitle: Text(
+                                              developerName,
+                                              style: TextStyle(
+                                                fontFamily: fontFamily,
+                                              ),
+                                            ),
+                                          ),
+                                          const Divider(),
+                                          ListTile(
+                                            leading:
+                                                const Icon(SimpleIcons.google),
+                                            title: Text(offielWebSite),
+                                            subtitle: Text(
+                                              offielWebSiteIbnWahf,
+                                              style: TextStyle(
+                                                fontFamily: fontFamily,
+                                              ),
+                                            ),
+                                            onTap: () {
+                                              openURL(oficialWebSiteLink);
+                                              // launchUrl(Uri.base);
+                                            },
+                                          ),
+                                          const Divider(),
+                                          ListTile(
+                                            leading:
+                                                const Icon(SimpleIcons.github),
+                                            title: Text(sourceCode),
+                                            onTap: () async {
+                                              await openURL(
+                                                githubLink,
+                                              );
+                                            },
                                           ),
                                         ],
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            _player.stop();
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(leave),
-                                        ),
-                                      ],
                                     ),
-                                  );
-                                },
-                              ).then((value) => _player.stop());
-                            });
-                          },
-                        ),
-                        leading: const Icon(Icons.ac_unit_sharp),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          leave,
+                                          style: TextStyle(
+                                            fontFamily: fontFamily,
+                                            color: Get.isDarkMode
+                                                ? bgLight
+                                                : bgDark,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        leading: const Icon(Icons.info_rounded),
                         title: Text(
-                          azkarList[index].category,
+                          about,
                           style: TextStyle(
                             fontFamily: fontFamily,
                           ),
+                          textAlign: TextAlign.justify,
                         ),
-                        onTap: () async {
-                          await Get.to(
-                            () =>
-                                AzkarDetailsScreen(azkarInfo: azkarList[index]),
-                          );
-                          setState(() {
-                            loadAzkarData(); // Removed unnecessary initState call
-                          });
-                        },
                       ),
-                      const Divider(
-                        height: 1,
-                        thickness: 0.3,
-                      )
+                      const Divider(thickness: 0.3),
                     ],
-                  );
-                } else {
-                  return Container(); // Return an empty container for non-matching items
-                }
-              },
+                  ),
+                ),
+                body: ListView.builder(
+                  itemCount: azkarList.length,
+                  itemBuilder: (context, index) {
+                    if (azkarList[index].category.contains(searchQuery)) {
+                      return Column(
+                        children: [
+                          ListTile(
+                            trailing: IconButton(
+                              icon: const Icon(Icons.headset_mic_sharp),
+                              onPressed: () {
+                                setState(() {
+                                  setupAudioPlayer(
+                                      _player, azkarList[index].audio);
+
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: AlertDialog(
+                                          title: Text(
+                                            azkarList[index].category,
+                                            style: TextStyle(
+                                              fontFamily: fontFamily,
+                                              fontSize:
+                                                  double.parse(fontSize24),
+                                            ),
+                                          ),
+                                          content: Row(
+                                            children: [
+                                              Expanded(
+                                                flex: 4,
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 20),
+                                                  child: _progessBar(),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: _playbackControlButton(),
+                                              ),
+                                            ],
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                _player.stop();
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                leave,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      double.parse(fontSize18),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ).then((value) => _player.stop());
+                                });
+                              },
+                            ),
+                            leading: const Icon(Icons.ac_unit_sharp),
+                            title: Text(
+                              azkarList[index].category,
+                              style: TextStyle(
+                                fontSize: double.parse(fontSize18),
+                                fontFamily: fontFamily,
+                              ),
+                            ),
+                            onTap: () async {
+                              await Get.to(
+                                () => AzkarDetailsScreen(
+                                    azkarInfo: azkarList[index]),
+                              )?.then((value) => loadAzkarData());
+                            },
+                          ),
+                          const Divider(height: 1, thickness: 0.3)
+                        ],
+                      );
+                    } else {
+                      return Container(); // Return an empty container for non-matching items
+                    }
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-    );
+          );
+        }));
   }
 
   @override
