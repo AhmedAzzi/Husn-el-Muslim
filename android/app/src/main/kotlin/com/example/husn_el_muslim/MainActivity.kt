@@ -1,4 +1,4 @@
-package com.example.small_husn_muslim
+package com.example.husn_el_muslim
 
 import io.flutter.embedding.android.FlutterActivity
 

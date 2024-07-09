@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Husn-el-Muslim.iml" filepath="$PROJECT_DIR$/.idea/Husn-el-Muslim.iml" />
+      <module fileurl="file://$PROJECT_DIR$/husn_el_muslim.iml" filepath="$PROJECT_DIR$/husn_el_muslim.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/husn_el_muslim_android.iml" filepath="$PROJECT_DIR$/android/husn_el_muslim_android.iml" />
     </modules>
   </component>
 </project>
