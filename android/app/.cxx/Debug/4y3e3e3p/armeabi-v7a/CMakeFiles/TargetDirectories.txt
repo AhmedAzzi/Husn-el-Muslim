@@ -1,0 +1,2 @@
+/home/ahmed/Desktop/Husn-el-Muslim/android/app/.cxx/Debug/4y3e3e3p/armeabi-v7a/CMakeFiles/edit_cache.dir
+/home/ahmed/Desktop/Husn-el-Muslim/android/app/.cxx/Debug/4y3e3e3p/armeabi-v7a/CMakeFiles/rebuild_cache.dir
