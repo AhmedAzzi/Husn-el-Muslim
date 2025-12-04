@@ -9,6 +9,7 @@ import '../constants/strings.dart';
 import '../utils.dart';
 import 'azkar_details_screen.dart';
 import 'custom_dikr_screen.dart';
+import 'settings_screen.dart';
 
 class MyHomePageScreen extends StatefulWidget {
   const MyHomePageScreen({super.key});
@@ -76,6 +77,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                         ),
                         onTap: () => Get.back(),
                       ),
+                      const Divider(thickness: 0.3),
                       ListTile(
                         leading: const Icon(Icons.bubble_chart),
                         title:
@@ -83,6 +85,16 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                         onTap: () {
                           Navigator.pop(context);
                           Get.to(() => CustomDikrScreen());
+                        },
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        leading: const Icon(Icons.settings),
+                        title: const Text('الإعدادات',
+                            style: TextStyle(fontSize: 18)),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Get.to(() => const SettingsScreen());
                         },
                       ),
                       const Divider(thickness: 0.3),

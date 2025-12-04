@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import '../models/custom_dikr.dart';
 import '../constants/strings.dart';
 
@@ -17,8 +19,10 @@ class CustomDikrScreen extends StatefulWidget {
 
 class _CustomDikrScreenState extends State<CustomDikrScreen> {
   List<CustomDikr> dikrList = [];
+  bool showScores = true;
 
   static const String customDikrKey = 'custom_dikr_list';
+  static const String showScoresKey = 'show_scores';
 
   Future<void> saveDikrList() async {
     final prefs = await SharedPreferences.getInstance();
@@ -43,6 +47,22 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
   void initState() {
     super.initState();
     loadDikrList();
+    loadShowScoresSetting();
+  }
+
+  Future<void> loadShowScoresSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showScores = prefs.getBool(showScoresKey) ?? true;
+    });
+  }
+
+  Future<void> toggleShowScores() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showScores = !showScores;
+    });
+    await prefs.setBool(showScoresKey, showScores);
   }
 
   Future<void> loadDefaultDikr() async {
@@ -303,20 +323,21 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                 style: TextStyle(fontFamily: 'Amiri', color: Colors.white)),
             // centerTitle: true,
             actions: [
-              Row(
-                children: [
-                  Text(
-                    '$totalScore',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
-                  const SizedBox(width: 5),
-                  const Icon(Icons.diamond, color: Colors.white, size: 20),
-                  const SizedBox(width: 10),
-                ],
-              ),
+              if (showScores)
+                Row(
+                  children: [
+                    Text(
+                      '$totalScore',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
+                    ),
+                    const SizedBox(width: 5),
+                    const Icon(Icons.diamond, color: Colors.white, size: 20),
+                    const SizedBox(width: 10),
+                  ],
+                ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Colors.white),
                 onSelected: (value) {
@@ -324,10 +345,24 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                     exportData();
                   } else if (value == 'import') {
                     importData();
+                  } else if (value == 'toggle_scores') {
+                    toggleShowScores();
                   }
                 },
                 itemBuilder: (BuildContext context) {
                   return [
+                    PopupMenuItem(
+                      value: 'toggle_scores',
+                      child: Row(
+                        children: [
+                          Icon(showScores
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          const SizedBox(width: 8),
+                          Text(showScores ? 'إخفاء النقاط' : 'إظهار النقاط'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'export',
                       child: Text('تصدير البيانات'),
@@ -393,22 +428,25 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                     ),
                     textAlign: TextAlign.right,
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${dikr.maxScore}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.diamond,
-                          color: Color(0xFFD64463), size: 20), // Pink diamond
-                    ],
-                  ),
+                  trailing: showScores
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${dikr.maxScore}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.diamond,
+                                color: Color(0xFFD64463),
+                                size: 20), // Pink diamond
+                          ],
+                        )
+                      : null,
                   onTap: () => showCounterModal(dikr, index - 1),
                   onLongPress: () => showDikrOptions(context, index - 1),
                 ),
@@ -554,23 +592,61 @@ class DikrCounterScreen extends StatefulWidget {
 class _DikrCounterScreenState extends State<DikrCounterScreen> {
   int count = 0;
   late int startingMaxScore;
+  late int sessionMaxCount; // Track the highest count reached this session
+  int sessionTotalDelta = 0; // Track total count changes this session
   late int limit;
   Timer? _timer;
   bool isAutoPlaying = false;
   int autoIncrementInterval = 1000; // milliseconds
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _clickSoundEnabled = true;
+  bool _vibrationEnabled = true;
 
   @override
   void initState() {
     super.initState();
     count = 0;
     startingMaxScore = widget.dikr.maxScore;
+    sessionMaxCount = 0; // Initialize session max
+    sessionTotalDelta = 0; // Initialize session delta
     limit = widget.initialCount;
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _clickSoundEnabled = prefs.getBool('click_sound_enabled') ?? true;
+      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> playClickSound() async {
+    if (!_clickSoundEnabled) return;
+    try {
+      await _audioPlayer.play(AssetSource('click.wav'));
+    } catch (e) {
+      // Silently fail if sound cannot be played
+    }
+  }
+
+  Future<void> vibrateDevice() async {
+    if (!_vibrationEnabled) return;
+    try {
+      bool? hasVibrator = await Vibration.hasVibrator();
+      if (hasVibrator == true) {
+        Vibration.vibrate(duration: 50);
+      }
+    } catch (e) {
+      // Silently fail if vibration is not supported
+    }
   }
 
   void toggleAutoPlay() {
@@ -666,30 +742,64 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
   }
 
   void resetCount() {
+    // Undo all the total count changes from this session
+    if (sessionTotalDelta != 0) {
+      // Reset maxScore to starting value and undo total delta
+      widget.onUpdate(startingMaxScore, -sessionTotalDelta);
+    } else if (sessionMaxCount > startingMaxScore) {
+      // Even if no net total change, revert maxScore if it was beaten
+      widget.onUpdate(startingMaxScore, 0);
+    }
+
     setState(() {
       count = 0;
+      sessionMaxCount = 0; // Reset session max
+      sessionTotalDelta = 0; // Reset the delta
       isAutoPlaying = false;
       _timer?.cancel();
     });
   }
 
   void increment() {
+    playClickSound();
+    vibrateDevice();
     setState(() {
       if (limit == 0 || count < limit) {
         count++;
-        int currentMaxScore =
-            count > startingMaxScore ? count : startingMaxScore;
-        widget.onUpdate(currentMaxScore, 1);
+        sessionTotalDelta++; // Track the change
+
+        // Update session max if current count exceeds it
+        if (count > sessionMaxCount) {
+          sessionMaxCount = count;
+
+          // Only update the actual maxScore if we've beaten the starting max
+          int newMaxScore = sessionMaxCount > startingMaxScore
+              ? sessionMaxCount
+              : startingMaxScore;
+          widget.onUpdate(newMaxScore, 1);
+        } else {
+          // Just update total count, not max score
+          widget.onUpdate(
+              startingMaxScore > sessionMaxCount
+                  ? startingMaxScore
+                  : sessionMaxCount,
+              1);
+        }
       }
     });
   }
 
   void decrement() {
+    playClickSound();
+    vibrateDevice();
     setState(() {
       if (count > 0) {
         count--;
-        int currentMaxScore =
-            count > startingMaxScore ? count : startingMaxScore;
+        sessionTotalDelta--; // Track the change
+        // Don't update maxScore on decrement, only update totalCount
+        int currentMaxScore = sessionMaxCount > startingMaxScore
+            ? sessionMaxCount
+            : startingMaxScore;
         widget.onUpdate(currentMaxScore, -1);
       }
     });

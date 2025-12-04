@@ -11,6 +11,10 @@ import '../constants/strings.dart';
 import 'package:path_provider/path_provider.dart';
 import '../utils.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart' as ap;
+import 'package:vibration/vibration.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AzkarDetailsScreen extends StatefulWidget {
   final AzkarInfo azkarInfo;
@@ -30,10 +34,17 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
   late List<ScreenshotController> screenshotControllers;
   late List<Key> screenshotKeys;
 
+  Timer? _timer;
+  bool isAutoPlaying = false;
+  final ap.AudioPlayer _clickPlayer = ap.AudioPlayer();
+  bool _clickSoundEnabled = true;
+  bool _vibrationEnabled = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized();
+    marrat = widget.azkarInfo.array[currentPageIndex].fix; // Initialize marrat
     setupAudioPlayer(_player, widget.azkarInfo.array[currentPageIndex].audio);
     screenshotControllers = List.generate(
       widget.azkarInfo.array.length,
@@ -41,8 +52,92 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
     );
     screenshotKeys = List.generate(
       widget.azkarInfo.array.length,
-      (index) => GlobalKey(debugLabel: 'screenshot_key_$index'),
+      (index) => GlobalKey(debugLabel: 'screenshot_key_$index'),
     );
+    _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _player.dispose();
+    _clickPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _clickSoundEnabled = prefs.getBool('click_sound_enabled') ?? true;
+      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+    });
+  }
+
+  Future<void> playClickSound() async {
+    if (!_clickSoundEnabled) return;
+    try {
+      await _clickPlayer.play(ap.AssetSource('click.wav'));
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  Future<void> vibrateDevice() async {
+    if (!_vibrationEnabled) return;
+    try {
+      bool? hasVibrator = await Vibration.hasVibrator();
+      if (hasVibrator == true) {
+        Vibration.vibrate(duration: 50);
+      }
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  void toggleAutoPlay() {
+    if (isAutoPlaying) {
+      _timer?.cancel();
+      setState(() {
+        isAutoPlaying = false;
+      });
+    } else {
+      setState(() {
+        isAutoPlaying = true;
+      });
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        decrement();
+      });
+    }
+  }
+
+  void resetCount() {
+    setState(() {
+      widget.azkarInfo.array[currentPageIndex].count =
+          widget.azkarInfo.array[currentPageIndex].fix;
+      isAutoPlaying = false;
+      _timer?.cancel();
+    });
+  }
+
+  void decrement() {
+    if (widget.azkarInfo.array[currentPageIndex].count > 0) {
+      playClickSound();
+      vibrateDevice();
+      setState(() {
+        widget.azkarInfo.array[currentPageIndex].count--;
+        if (widget.azkarInfo.array[currentPageIndex].count == 0) {
+          isAutoPlaying = false;
+          _timer?.cancel();
+          pageController.nextPage(
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.linear,
+          );
+        }
+      });
+    } else {
+      isAutoPlaying = false;
+      _timer?.cancel();
+    }
   }
 
   @override
@@ -146,6 +241,76 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
               ),
               const SizedBox(height: 20),
               _dikrPage(),
+              if (marrat >= 10)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: toggleAutoPlay,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isAutoPlaying ? Icons.pause : Icons.play_arrow,
+                                size: 28,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text('تلقائي',
+                              style:
+                                  TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                        ],
+                      ),
+                      const SizedBox(width: 40),
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: resetCount,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.refresh,
+                                size: 28,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text('تصفير',
+                              style:
+                                  TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               Stack(
                 children: [
                   Container(
@@ -223,25 +388,16 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
           setState(() {
             currentPageIndex = index;
             marrat = widget.azkarInfo.array[currentPageIndex].fix;
+            // Stop auto play when page changes
+            isAutoPlaying = false;
+            _timer?.cancel();
             setupAudioPlayer(
                 _player, widget.azkarInfo.array[currentPageIndex].audio);
           });
         },
         itemBuilder: (context, index) {
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                if (widget.azkarInfo.array[index].count > 0) {
-                  widget.azkarInfo.array[index].count--;
-                  if (widget.azkarInfo.array[index].count == 0) {
-                    pageController.nextPage(
-                      duration: const Duration(milliseconds: 600),
-                      curve: Curves.linear,
-                    );
-                  }
-                }
-              });
-            },
+            onTap: decrement,
             child: ListView(
               children: [
                 Screenshot(
