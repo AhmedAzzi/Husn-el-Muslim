@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class AzkarInfo {
   final int id;
   final String category;

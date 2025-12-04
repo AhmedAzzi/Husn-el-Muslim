@@ -20,6 +20,7 @@ dependencies:
   simple_icons: ^14.6.1
   url_launcher: ^6.2.4
   shared_preferences: ^2.2.2
+  file_picker: ^10.3.7
 
 dev_dependencies:
   flutter_lints: ^5.0.0

@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/custom_dikr.dart';
 import '../constants/strings.dart';
-import '../constants/colors.dart';
 
 class CustomDikrScreen extends StatefulWidget {
-  const CustomDikrScreen({Key? key}) : super(key: key);
+  const CustomDikrScreen({super.key});
 
   @override
   State<CustomDikrScreen> createState() => _CustomDikrScreenState();
@@ -52,6 +54,61 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
     });
   }
 
+  Future<void> exportData() async {
+    try {
+      final jsonList = dikrList.map((e) => e.toJson()).toList();
+      final jsonString = json.encode(jsonList);
+
+      // Let user choose directory to save the file
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'اختر مجلد الحفظ',
+      );
+
+      if (selectedDirectory != null) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = 'dikr_backup_$timestamp.json';
+        final file = File('$selectedDirectory/$fileName');
+        await file.writeAsString(jsonString);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم حفظ النسخة الاحتياطية: $fileName'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل التصدير: $e')),
+      );
+    }
+  }
+
+  Future<void> importData() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null) {
+        File file = File(result.files.single.path!);
+        String jsonString = await file.readAsString();
+        List<dynamic> jsonList = json.decode(jsonString);
+        setState(() {
+          dikrList = jsonList.map((e) => CustomDikr.fromJson(e)).toList();
+        });
+        saveDikrList();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم استيراد البيانات بنجاح')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل الاستيراد: $e')),
+      );
+    }
+  }
+
   void addCustomDikr(CustomDikr dikr) {
     setState(() {
       dikrList.add(dikr);
@@ -61,7 +118,8 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       SnackBar(
         content: const Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تمت إضافة الذكر بنجاح!', style: TextStyle(fontFamily: 'Amiri')),
+          child: Text('تمت إضافة الذكر بنجاح!',
+              style: TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
@@ -79,7 +137,8 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       SnackBar(
         content: const Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تم تعديل الذكر بنجاح!', style: TextStyle(fontFamily: 'Amiri')),
+          child: Text('تم تعديل الذكر بنجاح!',
+              style: TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
@@ -97,7 +156,8 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       SnackBar(
         content: const Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تم حذف الذكر بنجاح!', style: TextStyle(fontFamily: 'Amiri')),
+          child: Text('تم حذف الذكر بنجاح!',
+              style: TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
@@ -142,7 +202,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
   }
 
   void showCounterModal(CustomDikr dikr, int index) {
-    int count = 33;
+    int count = 0;
     showDialog(
       context: context,
       builder: (context) {
@@ -152,10 +212,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
             title: const Text('اختر عدد التسبيحات'),
             content: TextField(
               keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(hintText: 'عدد التسبيحات (افتراضي 33)'),
+              decoration: const InputDecoration(
+                  hintText: 'عدد التسبيحات (افتراضي مفتوح)'),
               onChanged: (val) {
-                count = int.tryParse(val) ?? 33;
+                count = int.tryParse(val) ?? 0;
               },
               textDirection: TextDirection.rtl,
             ),
@@ -169,15 +229,15 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                       builder: (_) => DikrCounterScreen(
                         dikr: dikr,
                         initialCount: count,
-                        onMaxScore: (score) {
+                        onUpdate: (newMaxScore, totalDelta) {
                           setState(() {
-                            if (score > dikr.maxScore)
-                              dikrList[index].maxScore = score;
+                            dikrList[index].maxScore = newMaxScore;
+                            dikrList[index].totalCount += totalDelta;
                           });
                         },
                       ),
                     ),
-                  );
+                  ).then((_) => saveDikrList()); // Save when closing
                 },
                 child: const Text('ابدأ'),
               ),
@@ -229,69 +289,128 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int totalScore = dikrList.fold(0, (sum, item) => sum + item.totalCount);
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
+          backgroundColor: const Color(0xFF1A1A24), // Dark background
           appBar: AppBar(
-            title: const Text('مسبحة', style: TextStyle(fontFamily: 'Amiri')),
-            flexibleSpace: SizedBox(
-              height: 60,
-              child: Image.asset(
-                appBarBG,
-                fit: BoxFit.cover,
+            backgroundColor: const Color(0xFF693B42), // Dark Red/Purple
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: const Text('مسبحة',
+                style: TextStyle(fontFamily: 'Amiri', color: Colors.white)),
+            // centerTitle: true,
+            actions: [
+              Row(
+                children: [
+                  Text(
+                    '$totalScore',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  ),
+                  const SizedBox(width: 5),
+                  const Icon(Icons.diamond, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                ],
               ),
-            ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onSelected: (value) {
+                  if (value == 'export') {
+                    exportData();
+                  } else if (value == 'import') {
+                    importData();
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return [
+                    const PopupMenuItem(
+                      value: 'export',
+                      child: Text('تصدير البيانات'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'import',
+                      child: Text('استيراد البيانات'),
+                    ),
+                  ];
+                },
+              ),
+            ],
           ),
           body: ListView.builder(
             itemCount: dikrList.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
-                // Add new dikr card
-                return Card(
-                  color: Colors.green[50],
+                // Add new dikr button
+                return Container(
                   margin:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: ListTile(
-                    leading:
-                        const Icon(Icons.add, color: Colors.green, size: 32),
-                    title: const Text(
-                      'إضافة ذكر جديد',
-                      style: TextStyle(
-                          fontFamily: 'Amiri',
-                          fontSize: 20,
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.add, color: Color(0xFF8B3D4D), size: 28),
+                        SizedBox(width: 8),
+                        Text(
+                          'إضافة ذكر جديد',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            fontSize: 20,
+                            color: Color(0xFF8B3D4D),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                     onTap: showAddDikrDialog,
                   ),
                 );
               }
               final dikr = dikrList[index - 1];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C2C35), // Dark card color
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: ListTile(
-                  // contentPadding: EdgeInsets.zero,
-                  title: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      dikr.arabic,
-                      style: const TextStyle(fontSize: 20, fontFamily: 'Amiri'),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  title: Text(
+                    dikr.arabic,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontFamily: 'Amiri',
+                      color: Colors.white,
                     ),
+                    textAlign: TextAlign.right,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${dikr.maxScore}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.diamond,
+                          color: Color(0xFFD64463), size: 20), // Pink diamond
+                    ],
                   ),
                   onTap: () => showCounterModal(dikr, index - 1),
                   onLongPress: () => showDikrOptions(context, index - 1),
-                  trailing: dikr.maxScore > 0
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('الأعلى'),
-                            Text('${dikr.maxScore}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                          ],
-                        )
-                      : null,
                 ),
               );
             },
@@ -305,8 +424,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
 class AddEditDikrSheet extends StatefulWidget {
   final CustomDikr? dikr;
   final void Function(CustomDikr) onSave;
-  const AddEditDikrSheet({Key? key, this.dikr, required this.onSave})
-      : super(key: key);
+  const AddEditDikrSheet({super.key, this.dikr, required this.onSave});
 
   @override
   State<AddEditDikrSheet> createState() => _AddEditDikrSheetState();
@@ -422,13 +540,12 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
 class DikrCounterScreen extends StatefulWidget {
   final CustomDikr dikr;
   final int initialCount;
-  final void Function(int maxScore) onMaxScore;
+  final void Function(int maxScore, int totalDelta) onUpdate;
   const DikrCounterScreen(
-      {Key? key,
+      {super.key,
       required this.dikr,
       required this.initialCount,
-      required this.onMaxScore})
-      : super(key: key);
+      required this.onUpdate});
 
   @override
   State<DikrCounterScreen> createState() => _DikrCounterScreenState();
@@ -436,32 +553,145 @@ class DikrCounterScreen extends StatefulWidget {
 
 class _DikrCounterScreenState extends State<DikrCounterScreen> {
   int count = 0;
-  int maxScore = 0;
+  late int startingMaxScore;
   late int limit;
+  Timer? _timer;
+  bool isAutoPlaying = false;
+  int autoIncrementInterval = 1000; // milliseconds
 
   @override
   void initState() {
     super.initState();
     count = 0;
-    maxScore = widget.dikr.maxScore;
+    startingMaxScore = widget.dikr.maxScore;
     limit = widget.initialCount;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void toggleAutoPlay() {
+    if (isAutoPlaying) {
+      _timer?.cancel();
+      setState(() {
+        isAutoPlaying = false;
+      });
+    } else {
+      setState(() {
+        isAutoPlaying = true;
+      });
+      _timer = Timer.periodic(Duration(milliseconds: autoIncrementInterval),
+          (timer) {
+        increment();
+      });
+    }
+  }
+
+  void showIntervalDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        int tempInterval = autoIncrementInterval;
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: const Text('سرعة العداد التلقائي',
+                    style: TextStyle(fontFamily: 'Amiri')),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('الوقت بالثانية'),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () {
+                            setState(() {
+                              tempInterval += 100;
+                            });
+                          },
+                        ),
+                        Text((tempInterval / 1000).toStringAsFixed(1),
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () {
+                            setState(() {
+                              if (tempInterval > 100) tempInterval -= 100;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('إلغاء'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      this.setState(() {
+                        autoIncrementInterval = tempInterval;
+                        if (isAutoPlaying) {
+                          // Restart timer with new interval
+                          _timer?.cancel();
+                          _timer = Timer.periodic(
+                              Duration(milliseconds: autoIncrementInterval),
+                              (timer) {
+                            increment();
+                          });
+                        }
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text('حفظ'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void resetCount() {
+    setState(() {
+      count = 0;
+      isAutoPlaying = false;
+      _timer?.cancel();
+    });
   }
 
   void increment() {
     setState(() {
-      if (count < limit) {
+      if (limit == 0 || count < limit) {
         count++;
-        if (count == limit && count > maxScore) {
-          maxScore = count;
-          widget.onMaxScore(maxScore);
-        }
+        int currentMaxScore =
+            count > startingMaxScore ? count : startingMaxScore;
+        widget.onUpdate(currentMaxScore, 1);
       }
     });
   }
 
   void decrement() {
     setState(() {
-      if (count > 0) count--;
+      if (count > 0) {
+        count--;
+        int currentMaxScore =
+            count > startingMaxScore ? count : startingMaxScore;
+        widget.onUpdate(currentMaxScore, -1);
+      }
     });
   }
 
@@ -501,35 +731,32 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                   child: ListView(
                     children: [
                       Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 15),
-                        padding: const EdgeInsets.only(top: 5, bottom: 10),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey, width: 2),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10)),
+                        ),
                         child: Container(
-                          padding: const EdgeInsets.all(5),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 2),
+                            border: Border.all(color: Colors.grey, width: 0.5),
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(10)),
                           ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            decoration: BoxDecoration(
-                              border:
-                                  Border.all(color: Colors.grey, width: 0.5),
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                            ),
-                            child: ListTile(
-                              title: Text(
-                                widget.dikr.arabic,
-                                style: const TextStyle(
-                                    fontFamily: 'Amiri', fontSize: 28),
-                                textAlign: TextAlign.center,
-                              ),
+                          child: ListTile(
+                            title: Text(
+                              widget.dikr.arabic,
+                              style: const TextStyle(
+                                  fontFamily: 'Amiri', fontSize: 24),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
                       SizedBox(
                         width: MediaQuery.of(context).size.width - 60,
                         child: Row(
@@ -550,19 +777,21 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                       const SizedBox(height: 5),
                       if (widget.dikr.benefit != null)
                         ListTile(
+                          dense: true,
                           title: Text(
                             'الفضل: ${widget.dikr.benefit!}',
                             style: const TextStyle(
-                                fontFamily: 'Amiri', fontSize: 16),
+                                fontFamily: 'Amiri', fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       if (widget.dikr.reference != null)
                         ListTile(
+                          dense: true,
                           title: Text(
                             'المصدر: ${widget.dikr.reference!}',
                             style: const TextStyle(
-                                fontFamily: 'Amiri', fontSize: 16),
+                                fontFamily: 'Amiri', fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -570,81 +799,147 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                   ),
                 ),
               ),
-              Stack(
-                children: [
-                  Container(
-                    height: 60.0,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(counterBG),
-                        fit: BoxFit.fill,
-                      ),
+              // Auto Play and Reset Buttons
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      children: [
+                        GestureDetector(
+                          onTap: toggleAutoPlay,
+                          onLongPress: showIntervalDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              isAutoPlaying ? Icons.pause : Icons.play_arrow,
+                              size: 28,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text('تلقائي',
+                            style:
+                                TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                      ],
                     ),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 5),
+                    const SizedBox(width: 40),
+                    Column(
+                      children: [
+                        GestureDetector(
+                          onTap: resetCount,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.refresh,
+                              size: 28,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text('تصفير',
+                            style:
+                                TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Bottom Counter Bar
+              Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(counterBG),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // Target Limit (Right)
+                    Expanded(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              '$limit مرة',
-                              style: TextStyle(
-                                fontSize: double.parse(fontSize18),
-                                color: bgLight,
-                                fontFamily: 'Amiri',
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 0, right: 15),
-                              child: Text(
-                                '$count',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: double.parse(fontSize22),
-                                    fontFamily: 'Amiri',
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'الأعلى: $maxScore',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: double.parse(fontSize18),
-                                  color: bgLight,
-                                  fontFamily: 'Amiri'),
+                          Text(
+                            limit == 0 ? 'مفتوح' : '$limit مرة',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontFamily: 'Amiri',
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 70,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove, size: 32),
-                          onPressed: decrement,
-                        ),
-                        const SizedBox(width: 24),
-                        IconButton(
-                          icon: const Icon(Icons.add, size: 32),
-                          onPressed: increment,
-                        ),
-                      ],
+                    // Center Rosary (Misbaha)
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Image.asset('assets/sabha.png', height: 60),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Text(
+                              '$count',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Amiri',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    // Max Score (Left)
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.diamond,
+                              color: Colors.white, size: 20),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${count > startingMaxScore ? count : startingMaxScore}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
