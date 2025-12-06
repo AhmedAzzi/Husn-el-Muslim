@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:layoutDirection="rtl">
+
+    <!-- Top Row: Icon + Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- App Icon -->
+        <ImageView
+            android:id="@+id/app_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@mipmap/ic_launcher"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="App Icon" />
+
+        <!-- Content Container -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <!-- Hijri Date -->
+            <TextView
+                android:id="@+id/hijri_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textDirection="rtl"
+                android:gravity="end"
+                android:includeFontPadding="false" />
+
+            <!-- Prayer Info (Name + Time) -->
+            <TextView
+                android:id="@+id/prayer_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFEEEEEE"
+                android:textSize="10sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textDirection="rtl"
+                android:gravity="end"
+                android:includeFontPadding="false" />
+
+            <!-- Remaining Time -->
+            <TextView
+                android:id="@+id/remaining_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFD700"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layoutDirection="ltr"
+                android:textDirection="ltr"
+                android:gravity="start"
+                android:includeFontPadding="false" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Horizontal Button Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="4dp">
+
+        <!-- Open App Button -->
+        <TextView
+            android:id="@+id/open_app_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="فتح"
+            android:textColor="#FFFFFFFF"
+            android:textSize="10sp"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="6dp"
+            android:layout_marginEnd="2dp"
+            android:gravity="center"
+            android:textStyle="bold" />
+
+        <!-- Refresh GPS Button -->
+        <TextView
+            android:id="@+id/refresh_gps_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="تحديث"
+            android:textColor="#FFFFFFFF"
+            android:textSize="10sp"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="6dp"
+            android:layout_marginStart="2dp"
+            android:gravity="center"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</LinearLayout>

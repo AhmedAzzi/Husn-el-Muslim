@@ -7,12 +7,23 @@ import '../models/azkar_info.dart';
 import '../constants/colors.dart';
 import '../constants/strings.dart';
 import '../utils.dart';
+import '../main.dart' show lightTheme, darkTheme;
 import 'azkar_details_screen.dart';
 import 'custom_dikr_screen.dart';
+import 'prayer_times_screen.dart';
 import 'settings_screen.dart';
 
 class MyHomePageScreen extends StatefulWidget {
-  const MyHomePageScreen({super.key});
+  final bool isRoot;
+  final bool isHomeScreen;
+  final bool isDarkMode;
+
+  const MyHomePageScreen({
+    super.key,
+    this.isRoot = true,
+    this.isHomeScreen = true,
+    this.isDarkMode = true,
+  });
 
   @override
   MyHomePageScreenState createState() => MyHomePageScreenState();
@@ -24,39 +35,43 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
   bool toggle = true;
-  var iconColor = Icons.light_mode;
 
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
-    return GetMaterialApp(
-        themeMode: ThemeMode.light,
-        debugShowCheckedModeBanner: false,
-        home: Builder(builder: (context) {
-          return SafeArea(
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: SizedBox(
-                    height: 30,
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: double.parse(fontSize22),
-                        fontFamily: fontFamily,
-                        color: bgLight,
-                      ),
-                    ),
+
+    // Build the main scaffold content
+    Widget scaffoldContent = SafeArea(
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          appBar: AppBar(
+            leading: widget.isHomeScreen
+                ? null // Let drawer icon show automatically
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Get.back(),
                   ),
-                  iconTheme: IconThemeData(color: bgLight),
-                  actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
-                  flexibleSpace: SizedBox(
-                    height: 60,
-                    child: Image.asset(appBarBG, fit: BoxFit.cover),
-                  ),
+            title: SizedBox(
+              height: 30,
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: double.parse(fontSize22),
+                  fontFamily: fontFamily,
+                  color: bgLight,
                 ),
-                drawer: Drawer(
+              ),
+            ),
+            iconTheme: IconThemeData(color: bgLight),
+            actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
+            flexibleSpace: SizedBox(
+              height: 60,
+              child: Image.asset(appBarBG, fit: BoxFit.cover),
+            ),
+          ),
+          drawer: widget.isHomeScreen
+              ? Drawer(
                   width: screenSize.width - 100,
                   child: ListView(
                     shrinkWrap: true,
@@ -83,8 +98,18 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                         title:
                             const Text('مسبحة', style: TextStyle(fontSize: 18)),
                         onTap: () {
-                          Navigator.pop(context);
+                          Get.back(); // Close drawer
                           Get.to(() => CustomDikrScreen());
+                        },
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        leading: const Icon(Icons.access_time_filled_rounded),
+                        title: const Text('مواقيت الصلاة',
+                            style: TextStyle(fontSize: 18)),
+                        onTap: () {
+                          Get.back(); // Close drawer
+                          Get.to(() => const PrayerTimesScreen());
                         },
                       ),
                       const Divider(thickness: 0.3),
@@ -93,105 +118,100 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                         title: const Text('الإعدادات',
                             style: TextStyle(fontSize: 18)),
                         onTap: () {
-                          Navigator.pop(context);
+                          Get.back(); // Close drawer
                           Get.to(() => const SettingsScreen());
                         },
                       ),
                       const Divider(thickness: 0.3),
                       ListTile(
                         onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return Directionality(
-                                textDirection: TextDirection.rtl,
-                                child: Theme(
-                                  data: Get.isDarkMode
-                                      ? ThemeData.dark()
-                                      : ThemeData.light(),
-                                  child: AlertDialog(
-                                    backgroundColor:
-                                        Get.isDarkMode ? bgDark : bgLight,
-                                    title: Text(
-                                      about,
-                                      style: TextStyle(
-                                        fontFamily: fontFamily,
-                                        color:
-                                            Get.isDarkMode ? bgLight : bgDark,
-                                      ),
+                          Get.dialog(
+                            Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Theme(
+                                data: Get.isDarkMode
+                                    ? ThemeData.dark()
+                                    : ThemeData.light(),
+                                child: AlertDialog(
+                                  backgroundColor:
+                                      Get.isDarkMode ? bgDark : bgLight,
+                                  title: Text(
+                                    about,
+                                    style: TextStyle(
+                                      fontFamily: fontFamily,
+                                      color: Get.isDarkMode ? bgLight : bgDark,
                                     ),
-                                    content: SizedBox(
-                                      height: 450,
-                                      child: Column(
-                                        children: [
-                                          ListTile(
-                                            leading: Image.asset(
-                                              icLauncher,
-                                              scale: 3,
-                                            ),
-                                            title: Text(aboutVersion),
-                                            subtitle: Text(aboutOpenSource),
+                                  ),
+                                  content: SizedBox(
+                                    height: 450,
+                                    child: Column(
+                                      children: [
+                                        ListTile(
+                                          leading: Image.asset(
+                                            icLauncher,
+                                            scale: 3,
                                           ),
-                                          const Divider(),
-                                          ListTile(
-                                            title: Text(
-                                              do3aa,
-                                              style: TextStyle(
-                                                  fontFamily: fontFamily,
-                                                  fontSize:
-                                                      double.parse(fontSize24)),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                          const Divider(),
-                                          ListTile(
-                                            leading:
-                                                const Icon(SimpleIcons.google),
-                                            title: Text(offielWebSite),
-                                            subtitle: Text(
-                                              offielWebSiteIbnWahf,
-                                              style: TextStyle(
+                                          title: Text(aboutVersion),
+                                          subtitle: Text(aboutOpenSource),
+                                        ),
+                                        const Divider(),
+                                        ListTile(
+                                          title: Text(
+                                            do3aa,
+                                            style: TextStyle(
                                                 fontFamily: fontFamily,
-                                              ),
-                                            ),
-                                            onTap: () {
-                                              openURL(oficialWebSiteLink);
-                                            },
-                                          ),
-                                          const Divider(),
-                                          ListTile(
-                                            leading:
-                                                const Icon(SimpleIcons.github),
-                                            title: Text(sourceCode),
-                                            onTap: () async {
-                                              await openURL(
-                                                githubLink,
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          leave,
-                                          style: TextStyle(
-                                            fontFamily: fontFamily,
-                                            color: Get.isDarkMode
-                                                ? bgLight
-                                                : bgDark,
+                                                fontSize:
+                                                    double.parse(fontSize24)),
+                                            textAlign: TextAlign.center,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const Divider(),
+                                        ListTile(
+                                          leading:
+                                              const Icon(SimpleIcons.google),
+                                          title: Text(offielWebSite),
+                                          subtitle: Text(
+                                            offielWebSiteIbnWahf,
+                                            style: TextStyle(
+                                              fontFamily: fontFamily,
+                                            ),
+                                          ),
+                                          onTap: () {
+                                            openURL(oficialWebSiteLink);
+                                          },
+                                        ),
+                                        const Divider(),
+                                        ListTile(
+                                          leading:
+                                              const Icon(SimpleIcons.github),
+                                          title: Text(sourceCode),
+                                          onTap: () async {
+                                            await openURL(
+                                              githubLink,
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.back();
+                                      },
+                                      child: Text(
+                                        leave,
+                                        style: TextStyle(
+                                          fontFamily: fontFamily,
+                                          color:
+                                              Get.isDarkMode ? bgLight : bgDark,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
+                              ),
+                            ),
                           );
                         },
                         leading: const Icon(Icons.info_rounded),
@@ -206,109 +226,113 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                       const Divider(thickness: 0.3),
                     ],
                   ),
-                ),
-                body: ListView.builder(
-                  itemCount: azkarList.length,
-                  itemBuilder: (context, index) {
-                    if (azkarList[index].category.contains(searchQuery)) {
-                      return Column(
-                        children: [
-                          ListTile(
-                            trailing: IconButton(
-                              icon: const Icon(Icons.headset_mic_sharp),
-                              onPressed: () {
-                                setState(() {
-                                  setupAudioPlayer(
-                                      _player, azkarList[index].audio);
+                )
+              : null,
+          body: ListView.builder(
+            itemCount: azkarList.length,
+            itemBuilder: (context, index) {
+              if (azkarList[index].category.contains(searchQuery)) {
+                return Column(
+                  children: [
+                    ListTile(
+                      trailing: IconButton(
+                        icon: const Icon(Icons.headset_mic_sharp),
+                        onPressed: () {
+                          setState(() {
+                            setupAudioPlayer(_player, azkarList[index].audio);
 
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return Directionality(
-                                        textDirection: TextDirection.rtl,
-                                        child: AlertDialog(
-                                          title: Text(
-                                            azkarList[index].category,
-                                            style: TextStyle(
-                                              fontFamily: fontFamily,
-                                              fontSize:
-                                                  double.parse(fontSize24),
-                                            ),
-                                          ),
-                                          content: Row(
-                                            children: [
-                                              Expanded(
-                                                flex: 4,
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 20),
-                                                  child: progressBar(_player),
-                                                ),
-                                              ),
-                                              Expanded(
-                                                flex: 1,
-                                                child: playbackControlButton(
-                                                    _player),
-                                              ),
-                                            ],
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                _player.stop();
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                leave,
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      double.parse(fontSize18),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                            Get.dialog(
+                              Directionality(
+                                textDirection: TextDirection.rtl,
+                                child: AlertDialog(
+                                  title: Text(
+                                    azkarList[index].category,
+                                    style: TextStyle(
+                                      fontFamily: fontFamily,
+                                      fontSize: double.parse(fontSize24),
+                                    ),
+                                  ),
+                                  content: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 4,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20),
+                                          child: progressBar(_player),
                                         ),
-                                      );
-                                    },
-                                  ).then((value) => _player.stop());
-                                });
-                              },
-                            ),
-                            leading: const Icon(Icons.ac_unit_sharp),
-                            title: Text(
-                              azkarList[index].category,
-                              style: TextStyle(
-                                fontSize: double.parse(fontSize18),
-                                fontFamily: fontFamily,
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: playbackControlButton(_player),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        _player.stop();
+                                        Get.back();
+                                      },
+                                      child: Text(
+                                        leave,
+                                        style: TextStyle(
+                                          fontSize: double.parse(fontSize18),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            onTap: () async {
-                              await Get.to(
-                                () => AzkarDetailsScreen(
-                                    azkarInfo: azkarList[index]),
-                              )?.then((value) => loadAzkarData());
-                            },
-                          ),
-                          const Divider(height: 1, thickness: 0.3)
-                        ],
-                      );
-                    } else {
-                      return Container(); // Return an empty container for non-matching items
-                    }
-                  },
-                ),
-              ),
-            ),
-          );
-        }));
+                            ).then((value) => _player.stop());
+                          });
+                        },
+                      ),
+                      leading: const Icon(Icons.ac_unit_sharp),
+                      title: Text(
+                        azkarList[index].category,
+                        style: TextStyle(
+                          fontSize: double.parse(fontSize18),
+                          fontFamily: fontFamily,
+                        ),
+                      ),
+                      onTap: () async {
+                        await Get.to(
+                          () => AzkarDetailsScreen(azkarInfo: azkarList[index]),
+                        )?.then((value) => loadAzkarData());
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 0.3)
+                  ],
+                );
+              } else {
+                return Container(); // Return an empty container for non-matching items
+              }
+            },
+          ),
+        ),
+      ),
+    );
+
+    // If this is the root widget, wrap with GetMaterialApp
+    if (widget.isRoot) {
+      return GetMaterialApp(
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: widget.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        debugShowCheckedModeBanner: false,
+        home: scaffoldContent,
+      );
+    }
+
+    // Otherwise, just return the scaffold content for navigation
+    return scaffoldContent;
   }
 
   @override
   void initState() {
     super.initState();
     loadAzkarData();
-    toggleTheme();
   }
 
   Future<void> loadAzkarData() async {
@@ -317,13 +341,6 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
 
     setState(() {
       azkarList = jsonList.map((json) => AzkarInfo.fromJson(json)).toList();
-    });
-  }
-
-  void toggleTheme() {
-    setState(() {
-      Get.changeTheme(Get.isDarkMode ? ThemeData.light() : ThemeData.dark());
-      iconColor = !Get.isDarkMode ? Icons.light_mode : Icons.dark_mode;
     });
   }
 
@@ -365,19 +382,11 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
     return [
       Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(iconColor),
-              onPressed: toggleTheme,
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() {
-                toggle = false;
-              }),
-            ),
-          ],
+        child: IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () => setState(() {
+            toggle = false;
+          }),
         ),
       ),
     ];

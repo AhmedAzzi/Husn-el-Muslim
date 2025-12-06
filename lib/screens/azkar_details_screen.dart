@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -30,12 +29,12 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
   int currentPageIndex = 0;
   final _player = AudioPlayer();
   int marrat = 0;
-  var iconColor = Get.isDarkMode ? Icons.light_mode : Icons.dark_mode;
   late List<ScreenshotController> screenshotControllers;
   late List<Key> screenshotKeys;
 
   Timer? _timer;
   bool isAutoPlaying = false;
+  int autoIncrementInterval = 1000; // milliseconds
   final ap.AudioPlayer _clickPlayer = ap.AudioPlayer();
   bool _clickSoundEnabled = true;
   bool _vibrationEnabled = true;
@@ -104,10 +103,119 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
       setState(() {
         isAutoPlaying = true;
       });
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timer = Timer.periodic(Duration(milliseconds: autoIncrementInterval),
+          (timer) {
         decrement();
       });
     }
+  }
+
+  void showIntervalDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        int tempInterval = autoIncrementInterval;
+        final TextEditingController intervalController = TextEditingController(
+          text: (tempInterval / 1000).toStringAsFixed(1),
+        );
+
+        void updateFromTextField(String value) {
+          final parsed = double.tryParse(value);
+          if (parsed != null && parsed >= 0.1) {
+            tempInterval = (parsed * 1000).round();
+          }
+        }
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: const Text('سرعة العداد التلقائي',
+                    style: TextStyle(fontFamily: 'Amiri')),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('الوقت بالثانية'),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () {
+                            setState(() {
+                              tempInterval += 100;
+                              intervalController.text =
+                                  (tempInterval / 1000).toStringAsFixed(1);
+                            });
+                          },
+                        ),
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            controller: intervalController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 8),
+                            ),
+                            onChanged: (value) {
+                              updateFromTextField(value);
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () {
+                            setState(() {
+                              if (tempInterval > 100) tempInterval -= 100;
+                              intervalController.text =
+                                  (tempInterval / 1000).toStringAsFixed(1);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('إلغاء'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Update from text field before saving
+                      updateFromTextField(intervalController.text);
+                      this.setState(() {
+                        autoIncrementInterval = tempInterval;
+                        if (isAutoPlaying) {
+                          // Restart timer with new interval
+                          _timer?.cancel();
+                          _timer = Timer.periodic(
+                              Duration(milliseconds: autoIncrementInterval),
+                              (timer) {
+                            decrement();
+                          });
+                        }
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text('حفظ'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   void resetCount() {
@@ -251,6 +359,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                         children: [
                           GestureDetector(
                             onTap: toggleAutoPlay,
+                            onLongPress: showIntervalDialog,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(

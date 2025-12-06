@@ -7,11 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
+import 'package:get/get.dart';
+import 'package:simple_icons/simple_icons.dart';
 import '../models/custom_dikr.dart';
 import '../constants/strings.dart';
+import '../constants/colors.dart';
+import '../utils.dart';
+import 'home_page.dart';
+import 'prayer_times_screen.dart';
+import 'settings_screen.dart';
 
 class CustomDikrScreen extends StatefulWidget {
-  const CustomDikrScreen({super.key});
+  final bool isHomeScreen;
+
+  const CustomDikrScreen({super.key, this.isHomeScreen = false});
 
   @override
   State<CustomDikrScreen> createState() => _CustomDikrScreenState();
@@ -84,18 +93,16 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
         dialogTitle: 'اختر مجلد الحفظ',
       );
 
-      if (selectedDirectory != null) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName = 'dikr_backup_$timestamp.json';
-        final file = File('$selectedDirectory/$fileName');
-        await file.writeAsString(jsonString);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تم حفظ النسخة الاحتياطية: $fileName'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'dikr_backup_$timestamp.json';
+      final file = File('$selectedDirectory/$fileName');
+      await file.writeAsString(jsonString);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم حفظ النسخة الاحتياطية: $fileName'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('فشل التصدير: $e')),
@@ -310,36 +317,51 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
   @override
   Widget build(BuildContext context) {
     int totalScore = dikrList.fold(0, (sum, item) => sum + item.totalCount);
+    Size screenSize = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: const Color(0xFF1A1A24), // Dark background
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: const Color(0xFF693B42), // Dark Red/Purple
-            iconTheme: const IconThemeData(color: Colors.white),
-            title: const Text('مسبحة',
-                style: TextStyle(fontFamily: 'Amiri', color: Colors.white)),
+            backgroundColor: theme.appBarTheme.backgroundColor,
+            iconTheme: IconThemeData(color: theme.appBarTheme.foregroundColor),
+            title: Text('مسبحة',
+                style: TextStyle(
+                    fontFamily: 'Amiri',
+                    color: theme.appBarTheme.foregroundColor)),
             // centerTitle: true,
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(appBarBG),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
             actions: [
               if (showScores)
                 Row(
                   children: [
                     Text(
                       '$totalScore',
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: theme.appBarTheme.foregroundColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 16),
                     ),
                     const SizedBox(width: 5),
-                    const Icon(Icons.diamond, color: Colors.white, size: 20),
+                    Icon(Icons.diamond,
+                        color: theme.appBarTheme.foregroundColor, size: 20),
                     const SizedBox(width: 10),
                   ],
                 ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
+                icon: Icon(Icons.more_vert,
+                    color: theme.appBarTheme.foregroundColor),
                 onSelected: (value) {
                   if (value == 'export') {
                     exportData();
@@ -376,6 +398,165 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
               ),
             ],
           ),
+          drawer: widget.isHomeScreen
+              ? Drawer(
+                  width: screenSize.width - 100,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      DrawerHeader(
+                        child:
+                            Center(child: Image(image: AssetImage(icLauncher))),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.list_rounded),
+                        title: Text(
+                          adkar,
+                          style: TextStyle(
+                            fontSize: double.parse(fontSize18),
+                            fontFamily: fontFamily,
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                        onTap: () {
+                          Get.back();
+                          Get.to(() => const MyHomePageScreen(
+                              isRoot: false, isHomeScreen: false));
+                        },
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        leading: const Icon(Icons.bubble_chart),
+                        title:
+                            const Text('مسبحة', style: TextStyle(fontSize: 18)),
+                        onTap: () => Get.back(),
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        leading: const Icon(Icons.access_time_filled_rounded),
+                        title: const Text('مواقيت الصلاة',
+                            style: TextStyle(fontSize: 18)),
+                        onTap: () {
+                          Get.back();
+                          Get.to(() => const PrayerTimesScreen());
+                        },
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        leading: const Icon(Icons.settings),
+                        title: const Text('الإعدادات',
+                            style: TextStyle(fontSize: 18)),
+                        onTap: () {
+                          Get.back();
+                          Get.to(() => const SettingsScreen());
+                        },
+                      ),
+                      const Divider(thickness: 0.3),
+                      ListTile(
+                        onTap: () {
+                          Get.dialog(
+                            Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Theme(
+                                data: Get.isDarkMode
+                                    ? ThemeData.dark()
+                                    : ThemeData.light(),
+                                child: AlertDialog(
+                                  backgroundColor:
+                                      Get.isDarkMode ? bgDark : bgLight,
+                                  title: Text(
+                                    about,
+                                    style: TextStyle(
+                                      fontFamily: fontFamily,
+                                      color: Get.isDarkMode ? bgLight : bgDark,
+                                    ),
+                                  ),
+                                  content: SizedBox(
+                                    height: 450,
+                                    child: Column(
+                                      children: [
+                                        ListTile(
+                                          leading: Image.asset(
+                                            icLauncher,
+                                            scale: 3,
+                                          ),
+                                          title: Text(aboutVersion),
+                                          subtitle: Text(aboutOpenSource),
+                                        ),
+                                        const Divider(),
+                                        ListTile(
+                                          title: Text(
+                                            do3aa,
+                                            style: TextStyle(
+                                                fontFamily: fontFamily,
+                                                fontSize:
+                                                    double.parse(fontSize24)),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                        const Divider(),
+                                        ListTile(
+                                          leading:
+                                              const Icon(SimpleIcons.google),
+                                          title: Text(offielWebSite),
+                                          subtitle: Text(
+                                            offielWebSiteIbnWahf,
+                                            style: TextStyle(
+                                              fontFamily: fontFamily,
+                                            ),
+                                          ),
+                                          onTap: () {
+                                            openURL(oficialWebSiteLink);
+                                          },
+                                        ),
+                                        const Divider(),
+                                        ListTile(
+                                          leading:
+                                              const Icon(SimpleIcons.github),
+                                          title: Text(sourceCode),
+                                          onTap: () async {
+                                            await openURL(
+                                              githubLink,
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.back();
+                                      },
+                                      child: Text(
+                                        leave,
+                                        style: TextStyle(
+                                          fontFamily: fontFamily,
+                                          color:
+                                              Get.isDarkMode ? bgLight : bgDark,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        leading: const Icon(Icons.info_rounded),
+                        title: Text(
+                          about,
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ),
+                      const Divider(thickness: 0.3),
+                    ],
+                  ),
+                )
+              : null,
           body: ListView.builder(
             itemCount: dikrList.length + 1,
             itemBuilder: (context, index) {
@@ -671,6 +852,17 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
       context: context,
       builder: (context) {
         int tempInterval = autoIncrementInterval;
+        final TextEditingController intervalController = TextEditingController(
+          text: (tempInterval / 1000).toStringAsFixed(1),
+        );
+
+        void updateFromTextField(String value) {
+          final parsed = double.tryParse(value);
+          if (parsed != null && parsed >= 0.1) {
+            tempInterval = (parsed * 1000).round();
+          }
+        }
+
         return Directionality(
           textDirection: TextDirection.rtl,
           child: StatefulBuilder(
@@ -691,17 +883,37 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                           onPressed: () {
                             setState(() {
                               tempInterval += 100;
+                              intervalController.text =
+                                  (tempInterval / 1000).toStringAsFixed(1);
                             });
                           },
                         ),
-                        Text((tempInterval / 1000).toStringAsFixed(1),
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            controller: intervalController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 8),
+                            ),
+                            onChanged: (value) {
+                              updateFromTextField(value);
+                            },
+                          ),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.remove_circle_outline),
                           onPressed: () {
                             setState(() {
                               if (tempInterval > 100) tempInterval -= 100;
+                              intervalController.text =
+                                  (tempInterval / 1000).toStringAsFixed(1);
                             });
                           },
                         ),
@@ -716,6 +928,8 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
+                      // Update from text field before saving
+                      updateFromTextField(intervalController.text);
                       this.setState(() {
                         autoIncrementInterval = tempInterval;
                         if (isAutoPlaying) {
