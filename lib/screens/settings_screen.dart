@@ -128,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // General Settings Section
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -136,9 +136,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         activeThumbColor: const Color(0xFFD64463),
                         activeTrackColor:
-                            const Color(0xFFD64463).withOpacity(0.3),
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
                         inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
                         title: const Text(
                           'صوت النقرة',
                           style: TextStyle(
@@ -152,14 +152,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           'تشغيل صوت عند النقر على المسبحة',
                           style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
                         secondary: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.1),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.volume_up_rounded,
@@ -169,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: _toggleClickSound,
                       ),
                       Divider(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         height: 1,
                         indent: 16,
                         endIndent: 16,
@@ -177,9 +178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         activeThumbColor: const Color(0xFFD64463),
                         activeTrackColor:
-                            const Color(0xFFD64463).withOpacity(0.3),
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
                         inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
                         title: const Text(
                           'الاهتزاز',
                           style: TextStyle(
@@ -193,14 +194,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           'اهتزاز الهاتف عند التسبيح',
                           style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
                         secondary: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.1),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.vibration_rounded,
@@ -210,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: _toggleVibration,
                       ),
                       Divider(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         height: 1,
                         indent: 16,
                         endIndent: 16,
@@ -219,9 +221,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         activeThumbColor: const Color(0xFFD64463),
                         activeTrackColor:
-                            const Color(0xFFD64463).withOpacity(0.3),
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
                         inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
                         title: const Text(
                           'الوضع الداكن',
                           style: TextStyle(
@@ -235,14 +237,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           'تفعيل المظهر الداكن للتطبيق',
                           style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
                         secondary: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.1),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -257,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: _toggleDarkMode,
                       ),
                       Divider(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         height: 1,
                         indent: 16,
                         endIndent: 16,
@@ -269,7 +272,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.1),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.home_rounded,
@@ -288,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           'اختر الصفحة التي يفتح عليها التطبيق',
                           style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
@@ -296,7 +300,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.2),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: DropdownButton<String>(
@@ -330,7 +335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Prayer Times Settings
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -340,7 +345,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD64463).withOpacity(0.1),
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.my_location,
@@ -359,14 +365,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           '${_prayerLogic.lat.toStringAsFixed(4)}, ${_prayerLogic.lon.toStringAsFixed(4)}',
                           style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
                         onTap: () async {
                           await _prayerLogic.ensureDataLoaded();
                           setState(() {});
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text('تم تحديث الموقع بنجاح')),
@@ -375,7 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                       Divider(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           height: 1,
                           indent: 16,
                           endIndent: 16),
@@ -410,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       Divider(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           height: 1,
                           indent: 16,
                           endIndent: 16),
@@ -434,8 +440,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontSize: 14),
                           items: const [
                             DropdownMenuItem(
-                                value: 'egypt', child: Text('مصرية')),
-                            DropdownMenuItem(
                                 value: 'ms',
                                 child: Text('رابطة العالم الإسلامي')),
                           ],
@@ -446,7 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       Divider(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           height: 1,
                           indent: 16,
                           endIndent: 16),
@@ -455,9 +459,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         activeThumbColor: const Color(0xFFD64463),
                         activeTrackColor:
-                            const Color(0xFFD64463).withOpacity(0.3),
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
                         inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
                         title: const Text('التوقيت الصيفي',
                             style: TextStyle(
                                 fontFamily: 'Amiri',
@@ -477,7 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Notification Settings Link
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: ListTile(
@@ -486,7 +490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD64463).withOpacity(0.1),
+                        color: const Color(0xFFD64463).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.notifications_active_rounded,
@@ -505,7 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       'تخصيص تنبيهات الصلوات والأذكار',
                       style: TextStyle(
                         fontFamily: 'Amiri',
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 14,
                       ),
                     ),

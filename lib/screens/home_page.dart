@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:simple_icons/simple_icons.dart';
 import '../models/azkar_info.dart';
+import '../models/prayer_times_logic.dart';
+import '../helpers/prayer_notification_helper.dart';
 import '../constants/colors.dart';
 import '../constants/strings.dart';
 import '../utils.dart';
@@ -12,6 +14,7 @@ import 'azkar_details_screen.dart';
 import 'custom_dikr_screen.dart';
 import 'prayer_times_screen.dart';
 import 'settings_screen.dart';
+import '../dialogs/ayat_hadith_dialog.dart';
 
 class MyHomePageScreen extends StatefulWidget {
   final bool isRoot;
@@ -55,7 +58,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
             title: SizedBox(
               height: 30,
               child: Text(
-                title,
+                'الأذكار',
                 style: TextStyle(
                   fontSize: double.parse(fontSize22),
                   fontFamily: fontFamily,
@@ -333,6 +336,23 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   void initState() {
     super.initState();
     loadAzkarData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final pendingPayload = NotificationService().pendingPayload;
+      if (pendingPayload != null) {
+        Get.dialog(AyatHadithDialog(prayerName: pendingPayload));
+        NotificationService().pendingPayload = null;
+      }
+
+      // Handle native pending screen (e.g. from persistent notification)
+      final pendingScreen = await PrayerNotificationHelper.getPendingScreen();
+      if (pendingScreen != null) {
+        if (pendingScreen == 'prayer_times') {
+          // If we are already on home screen, use Get.to
+          // Note: using Get.to allows user to go back to home
+          Get.to(() => const PrayerTimesScreen());
+        }
+      }
+    });
   }
 
   Future<void> loadAzkarData() async {

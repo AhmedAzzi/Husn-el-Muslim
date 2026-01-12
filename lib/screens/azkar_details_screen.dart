@@ -264,6 +264,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                 text: widget
                                     .azkarInfo.array[currentPageIndex].text))
                             .then((_) {
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Center(
@@ -282,9 +283,12 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                               await File('${tempDir.path}/AllAboutFlutter.png')
                                   .create();
                           file.writeAsBytesSync(list);
-                          await Share.shareXFiles(
-                            [XFile(file.path)],
-                            subject: "من أذكار ${widget.azkarInfo.category}",
+                          if (!context.mounted) return;
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              text: "من أذكار ${widget.azkarInfo.category}",
+                              files: [XFile(file.path)],
+                            ),
                           );
                         }).catchError((onError) {
                           if (kDebugMode) {
@@ -367,7 +371,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                 color: Colors.white,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 5,
                                     offset: const Offset(0, 2),
                                   ),
@@ -398,7 +402,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                 color: Colors.white,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 5,
                                     offset: const Offset(0, 2),
                                   ),

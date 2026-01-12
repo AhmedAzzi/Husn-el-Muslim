@@ -49,6 +49,9 @@ void main() async {
 
   await NotificationService().init();
 
+  // Initialize PrayerTimesLogic early to handle notification intents
+  await PrayerTimesLogic().ensureDataLoaded();
+
   // Load preferences
   final prefs = await SharedPreferences.getInstance();
   final homeScreen = prefs.getString('home_screen') ?? homeScreenAzkar;

@@ -97,6 +97,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       final fileName = 'dikr_backup_$timestamp.json';
       final file = File('$selectedDirectory/$fileName');
       await file.writeAsString(jsonString);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('تم حفظ النسخة الاحتياطية: $fileName'),
@@ -104,6 +105,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('فشل التصدير: $e')),
       );
@@ -125,11 +127,13 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
           dikrList = jsonList.map((e) => CustomDikr.fromJson(e)).toList();
         });
         saveDikrList();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم استيراد البيانات بنجاح')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('فشل الاستيراد: $e')),
       );
@@ -319,7 +323,6 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
     int totalScore = dikrList.fold(0, (sum, item) => sum + item.totalCount);
     Size screenSize = MediaQuery.of(context).size;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -1141,7 +1144,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 5,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1172,7 +1175,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 5,
                                   offset: const Offset(0, 2),
                                 ),

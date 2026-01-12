@@ -1,117 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:layoutDirection="rtl">
-
-    <!-- Top Row: Icon + Content -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <!-- App Icon -->
-        <ImageView
-            android:id="@+id/app_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@mipmap/ic_launcher"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="App Icon" />
-
-        <!-- Content Container -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <!-- Hijri Date -->
-            <TextView
-                android:id="@+id/hijri_date"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textDirection="rtl"
-                android:gravity="end"
-                android:paddingBottom="2dp" />
-
-            <!-- Prayer Info (Name + Time) -->
-            <TextView
-                android:id="@+id/prayer_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFEEEEEE"
-                android:textSize="13sp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textDirection="rtl"
-                android:gravity="end"
-                android:paddingBottom="2dp" />
-
-            <!-- Remaining Time -->
-            <TextView
-                android:id="@+id/remaining_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFD700"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:layoutDirection="ltr"
-                android:textDirection="ltr"
-                android:gravity="start" />
-
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:padding="0dp"
+              android:layoutDirection="ltr">
+    <!-- Content Container -->
+    <LinearLayout android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:gravity="center_vertical">
+        <!-- Hijri Date -->
+        <TextView android:id="@+id/hijri_date"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:textColor="#FFFFFFFF"
+                  android:textSize="13sp"
+                  android:maxLines="1"
+                  android:ellipsize="end"
+                  android:textDirection="ltr"
+                  android:gravity="left"
+                  android:includeFontPadding="false" />
+        <!-- Prayer Info Line (Merged but with different colors) -->
+        <LinearLayout android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:gravity="left"
+                      android:layoutDirection="ltr">
+            <!-- Name + Time (White) -->
+            <TextView android:id="@+id/prayer_info"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textColor="#FFFFFFFF"
+                      android:textSize="13sp"
+                      android:maxLines="1"
+                      android:ellipsize="end"
+                      android:textDirection="ltr"
+                      android:includeFontPadding="false" />
+            <!-- Remaining Time (Accent Color) -->
+            <TextView android:id="@+id/remaining_time"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textColor="#FFFFD700"
+                      android:textSize="13sp"
+                      android:textStyle="bold"
+                      android:maxLines="1"
+                      android:ellipsize="end"
+                      android:layoutDirection="ltr"
+                      android:textDirection="ltr"
+                      android:includeFontPadding="false" />
         </LinearLayout>
-
     </LinearLayout>
-
     <!-- Horizontal Button Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="8dp">
-
+    <LinearLayout android:id="@+id/button_row"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:gravity="center"
+                  android:layout_marginTop="0dp">
         <!-- Open App Button -->
-        <TextView
-            android:id="@+id/open_app_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="فتح التطبيق"
-            android:textColor="#FFFFFFFF"
-            android:textSize="12sp"
-            android:background="?android:attr/selectableItemBackground"
-            android:padding="8dp"
-            android:layout_marginEnd="4dp"
-            android:gravity="center"
-            android:textStyle="bold" />
-
+        <TextView android:id="@+id/open_app_button"
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:text="فتح"
+                  android:textColor="#FFFFFFFF"
+                  android:textSize="14sp"
+                  android:background="?android:attr/selectableItemBackground"
+                  android:paddingTop="14dp"
+                  android:paddingBottom="14dp"
+                  android:paddingStart="8dp"
+                  android:paddingEnd="8dp"
+                  android:layout_marginEnd="2dp"
+                  android:gravity="center"
+                  android:textStyle="bold" />
         <!-- Refresh GPS Button -->
-        <TextView
-            android:id="@+id/refresh_gps_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="تحديث الموقع"
-            android:textColor="#FFFFFFFF"
-            android:textSize="12sp"
-            android:background="?android:attr/selectableItemBackground"
-            android:padding="8dp"
-            android:layout_marginStart="4dp"
-            android:gravity="center"
-            android:textStyle="bold" />
-
+        <TextView android:id="@+id/refresh_gps_button"
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:text="تحديث"
+                  android:textColor="#FFFFFFFF"
+                  android:textSize="14sp"
+                  android:background="?android:attr/selectableItemBackground"
+                  android:paddingTop="14dp"
+                  android:paddingBottom="14dp"
+                  android:paddingStart="8dp"
+                  android:paddingEnd="8dp"
+                  android:layout_marginStart="2dp"
+                  android:gravity="center"
+                  android:textStyle="bold" />
     </LinearLayout>
-
 </LinearLayout>

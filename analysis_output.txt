@@ -1,0 +1,19 @@
+Analyzing hisn_el_muslim...                                     
+
+   info • The variable name 'EoT' isn't a lowerCamelCase identifier • lib/models/prayer_times_logic.dart:670:50 • non_constant_identifier_names
+   info • Don't use 'BuildContext's across async gaps • lib/screens/azkar_details_screen.dart:268:48 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/screens/azkar_details_screen.dart:287:33 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/screens/azkar_details_screen.dart:287:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/azkar_details_screen.dart:403:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/notification_settings_screen.dart:372:63 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/notification_settings_screen.dart:374:53 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/notification_settings_screen.dart:497:27 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/notification_settings_screen.dart:505:27 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/notification_settings_screen.dart:516:27 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/notification_settings_screen.dart:524:27 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/prayer_times_screen.dart:110:40 • use_build_context_synchronously
+   info • Unnecessary instance of 'Container' • lib/screens/prayer_times_screen.dart:645:28 • avoid_unnecessary_containers
+   info • Unnecessary instance of 'Container' • lib/screens/prayer_times_screen.dart:697:27 • avoid_unnecessary_containers
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/settings_screen.dart:376:50 • use_build_context_synchronously
+
+15 issues found. (ran in 3.6s)
