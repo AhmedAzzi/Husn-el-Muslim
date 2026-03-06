@@ -23,7 +23,6 @@ class PrayerTimeService : Service() {
     private val ALARM_NOTIFICATION_ID = 9999
     private var handler: Handler? = null
     private var runnable: Runnable? = null
-    private var wakeLock: PowerManager.WakeLock? = null
     
     // Missing properties added
     private var hijriDate: String = ""
@@ -33,6 +32,7 @@ class PrayerTimeService : Service() {
     
     private var nextTargetTimestamp: Long = 0
     private var nextPrayerInfo: String = ""
+    private var notificationMode: Int = 0 // 0: Both, 1: Notif, 2: Screen, 3: None
     
     private var challengeTimestamp: Long = 0
     private var challengeTriggered: Boolean = false
@@ -51,7 +51,6 @@ class PrayerTimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "STOP_SERVICE") {
-            releaseWakeLock()
             stopForeground(true)
             stopSelf()
             return START_NOT_STICKY
@@ -66,6 +65,7 @@ class PrayerTimeService : Service() {
             
             nextTargetTimestamp = it.getLongExtra("next_target_timestamp", 0) ?: nextTargetTimestamp
             nextPrayerInfo = it.getStringExtra("next_prayer_info") ?: nextPrayerInfo
+            notificationMode = it.getIntExtra("notification_mode", 0) ?: notificationMode
         
             val newChallengeTimestamp = it.getLongExtra("challenge_timestamp", 0) ?: challengeTimestamp
             if (newChallengeTimestamp != challengeTimestamp) {
@@ -77,9 +77,6 @@ class PrayerTimeService : Service() {
         
 
 
-        // Acquire wake lock to prevent CPU sleep
-        acquireWakeLock()
-        
         // Ensure both channels exist
         createNotificationChannel()
         createAlarmChannel()
@@ -137,7 +134,37 @@ class PrayerTimeService : Service() {
         runnable = object : Runnable {
             override fun run() {
                 updateNotification()
-                handler?.postDelayed(this, 1000)
+                
+                // Battery Optimization: Adjust update frequency
+                val now = System.currentTimeMillis()
+                val diff = targetTimestamp - now
+                
+                val delay = when {
+                    diff < 0 -> 60000L // After prayer, update every minute
+                    diff < 60000 -> 1000L // Last minute, update every second
+                    else -> 1000L // Still every second for countdown? 
+                    // Let's change to 10s if diff > 1 min to save battery
+                }
+                
+                // Actually, if screen is off, we can update even less frequently
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                val isScreenOn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                    powerManager.isInteractive
+                } else {
+                    powerManager.isScreenOn
+                }
+                
+                val finalDelay = if (!isScreenOn && diff > 60000) {
+                    60000L // Screen off and > 1 min remaining, update every minute
+                } else if (diff > 3600000) {
+                    60000L // More than 1 hour remaining, update every minute
+                } else if (diff > 60000) {
+                    10000L // More than 1 minute remaining, update every 10 seconds
+                } else {
+                    1000L // Last minute, update every second
+                }
+
+                handler?.postDelayed(this, finalDelay)
             }
         }
         handler?.post(runnable!!)
@@ -156,6 +183,8 @@ class PrayerTimeService : Service() {
     }
 
     private fun triggerAlarm(title: String, body: String, prayerName: String?) {
+        if (notificationMode == 3) return // No alert
+
         // 1. Fire Full Screen Intent Notification (Standard Android Alarm behavior)
         // This will wake the screen and show an alert. 
         // We removed direct launch here so it stays behind lock screen.
@@ -174,19 +203,45 @@ class PrayerTimeService : Service() {
             PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
-        val notification = NotificationCompat.Builder(this, ALARM_CHANNEL_ID)
+        val stopAdhanIntent = Intent(this, StopAdhanReceiver::class.java)
+        val stopAdhanPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.getBroadcast(this, 2, stopAdhanIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        } else {
+            PendingIntent.getBroadcast(this, 2, stopAdhanIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+
+        val builder = NotificationCompat.Builder(this, ALARM_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .setFullScreenIntent(fullScreenPendingIntent, true) // CRITICAL for full screen
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
+
+        if (notificationMode == 0 || notificationMode == 2) {
+            builder.setFullScreenIntent(fullScreenPendingIntent, true) // CRITICAL for full screen
+        }
+
+        if (notificationMode == 0 || notificationMode == 1) {
+             builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "إيقاف الأذان", stopAdhanPendingIntent)
+        }
+
+        // If screen only, we might want to launch app directly too if screen is on
+        if (notificationMode == 2) {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val isScreenOn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                powerManager.isInteractive
+            } else {
+                powerManager.isScreenOn
+            }
+            if (isScreenOn) {
+                launchAppWithPrayer(prayerName)
+            }
+        }
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(ALARM_NOTIFICATION_ID, notification)
+        notificationManager.notify(ALARM_NOTIFICATION_ID, builder.build())
     }
 
     private fun launchAppWithPrayer(prayerName: String?) {
@@ -222,7 +277,12 @@ class PrayerTimeService : Service() {
             val prayerDiff = targetTimestamp - now
             if (prayerDiff <= 0 && prayerDiff > -5000) { // 5s window for general prayers
                 lastTriggeredTimestamp = targetTimestamp
-                if (targetPrayerName != "الشروق") { // Usually don't alarm for Sunrise unless asked
+
+                // Mute logic: Skip triggering alarm for non-prayer times
+                val nonPrayerTimes = listOf("الشروق", "الثلث الأول", "منتصف الليل", "الثلث الأخير")
+                val isMutedTime = nonPrayerTimes.any { targetPrayerName.contains(it) }
+
+                if (!isMutedTime) {
                     triggerAlarm("وقت الصلاة", "حان الآن موعد أذان $targetPrayerName", targetPrayerName)
                 }
             }
@@ -388,35 +448,6 @@ class PrayerTimeService : Service() {
         return 0xFF000000.toInt() // Fallback
     }    
     
-    private fun acquireWakeLock() {
-        try {
-            if (wakeLock == null || wakeLock?.isHeld == false) {
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                wakeLock = powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK,
-                    "PrayerTimeService::WakeLock"
-                )
-                // Acquire indefinitely - will be released in onDestroy
-                wakeLock?.acquire()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-    
-    private fun releaseWakeLock() {
-        try {
-            wakeLock?.let {
-                if (it.isHeld) {
-                    it.release()
-                }
-            }
-            wakeLock = null
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     private fun saveData() {
         val prefs = getSharedPreferences("prayer_service_prefs", Context.MODE_PRIVATE)
         prefs.edit().apply {
@@ -452,7 +483,6 @@ class PrayerTimeService : Service() {
     
     override fun onDestroy() {
         handler?.removeCallbacksAndMessages(null)
-        releaseWakeLock()
         super.onDestroy()
     }
 }

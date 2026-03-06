@@ -11,6 +11,7 @@ class PrayerNotificationHelper {
     required Function onRefreshGps,
     required Function(String) onTriggerAlarm,
     required Function(String) onOpenScreen,
+    required Function onStopAdhan, // New param
   }) {
     // Set up method call handler to receive calls from native
     _channel.setMethodCallHandler((call) async {
@@ -26,6 +27,8 @@ class PrayerNotificationHelper {
         if (screenName != null) {
           onOpenScreen(screenName);
         }
+      } else if (call.method == 'stopAdhan') {
+        onStopAdhan.call();
       }
     });
   }
@@ -58,6 +61,7 @@ class PrayerNotificationHelper {
     String? nextPrayerInfo, // New param
     int? challengeTimestamp, // New param for Fajr Challenge
     bool isBlackBackground = false,
+    int notificationMode = 0, // New param
   }) async {
     try {
       final result = await _channel.invokeMethod('startPrayerCountdown', {
@@ -69,6 +73,7 @@ class PrayerNotificationHelper {
         'next_prayer_info': nextPrayerInfo,
         'challenge_timestamp': challengeTimestamp,
         'is_black_background': isBlackBackground,
+        'notification_mode': notificationMode,
       });
       return result ?? false;
     } catch (e) {

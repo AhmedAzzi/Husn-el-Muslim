@@ -6,6 +6,7 @@ import 'screens/home_page.dart';
 import 'screens/custom_dikr_screen.dart';
 import 'screens/prayer_times_screen.dart';
 import 'models/prayer_times_logic.dart';
+import 'helpers/dhikr_reminder_helper.dart';
 
 // Home screen options
 const String homeScreenAzkar = 'azkar';
@@ -48,6 +49,9 @@ void main() async {
   GoogleFonts.config.allowRuntimeFetching = false;
 
   await NotificationService().init();
+
+  // Initialize Dhikr Reminder System
+  await DhikrReminderHelper().init();
 
   // Initialize PrayerTimesLogic early to handle notification intents
   await PrayerTimesLogic().ensureDataLoaded();

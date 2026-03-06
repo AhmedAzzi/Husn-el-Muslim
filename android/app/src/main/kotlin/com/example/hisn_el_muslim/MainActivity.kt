@@ -45,6 +45,7 @@ class MainActivity : FlutterActivity() {
         // Turn screen on when activity starts (e.g. via full screen intent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setTurnScreenOn(true)
+            setShowWhenLocked(true)
         }
         
         // Keyguard and screen flags
@@ -425,5 +426,16 @@ class RefreshGpsReceiver : BroadcastReceiver() {
             // Call Flutter method to refresh GPS
             MainActivity.methodChannel?.invokeMethod("refreshGps", null)
         }
+    }
+}
+
+class StopAdhanReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        // Call Flutter method to stop audio
+        MainActivity.methodChannel?.invokeMethod("stopAdhan", null)
+        
+        // Dismiss the notification
+        val notificationManager = context?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(9999) // ALARM_NOTIFICATION_ID
     }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -11,8 +12,10 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/azkar_info.dart';
 import '../screens/fajr_challenge_screen.dart';
 import '../screens/prayer_times_screen.dart';
+import '../screens/azkar_details_screen.dart';
 import '../helpers/prayer_notification_helper.dart'; // Keep this import
 import '../dialogs/ayat_hadith_dialog.dart';
 
@@ -45,6 +48,24 @@ class PrayerTimesLogic {
   bool eveningAdhkarEnabled = true;
   bool nightPrayerTimesEnabled = true;
 
+  // Notification behavior:
+  // 0: Both notification and prayer screen (default)
+  // 1: Notification only
+  // 2: Prayer screen only
+  // 3: No alert
+  int notificationMode = 0;
+
+  // Prayer time offsets (in seconds)
+  Map<String, int> prayerOffsets = {
+    'Fajr': 60,
+    'Sunrise': 60,
+    'Dhuhr': 120,
+    'Asr': 120,
+    'Maghrib':
+        300, // Default 300 seconds (5 mins) offset to match official times
+    'Isha': 120,
+  };
+
   // Fajr Challenge Wake Up Settings
   // 'auto': Wake up at Last Third
   // 'custom': Wake up X minutes before Fajr
@@ -64,7 +85,7 @@ class PrayerTimesLogic {
   double customFajrAngle = 19.5;
   double customIshaAngle = 17.5;
   bool dstEnabled = false;
-  int hijriOffset = 0;
+  int hijriOffset = -3; // Default -3 offset to match 16 Ramadan 1447
 
   Timer? _notificationTimer;
   final Set<int> _firedPrayerIndexes = <int>{};
@@ -78,7 +99,11 @@ class PrayerTimesLogic {
     'الظهر',
     'العصر',
     'المغرب',
-    'العشاء'
+    'العشاء',
+    'الشروق',
+    'الثلث الأول',
+    'منتصف الليل',
+    'الثلث الأخير'
   ];
 
   // --- Initialization ---
@@ -112,6 +137,9 @@ class PrayerTimesLogic {
             Get.to(() => const PrayerTimesScreen());
           }
         }
+      },
+      onStopAdhan: () {
+        stopAudio();
       },
     );
 
@@ -577,10 +605,11 @@ class PrayerTimesLogic {
     return PrayerTime(name: name, time: time, time24h: time24h);
   }
 
-  PrayerTime _createPrayerTime(String name, int minutes, DateTime date) {
-    final hours = (minutes / 60).floor() % 24;
-    final mins = minutes % 60;
-    final time = DateTime(date.year, date.month, date.day, hours, mins);
+  PrayerTime _createPrayerTime(String name, int totalSeconds, DateTime date) {
+    final hours = (totalSeconds / 3600).floor() % 24;
+    final mins = (totalSeconds / 60).floor() % 60;
+    final secs = totalSeconds % 60;
+    final time = DateTime(date.year, date.month, date.day, hours, mins, secs);
     final time24h =
         '${hours.toString().padLeft(2, '0')}:${mins.toString().padLeft(2, '0')}';
     return PrayerTime(name: name, time: time, time24h: time24h);
@@ -609,25 +638,60 @@ class PrayerTimesLogic {
     double toMin(double r) => _rad2deg(r) * 4;
 
     return {
-      'fajr': (noonUTC + offset - toMin(hf) + (dstEnabled ? 60 : 0)).round(),
-      'sunrise': (noonUTC + offset - toMin(hs) + (dstEnabled ? 60 : 0)).round(),
-      'dhuhr': (noonUTC + offset + (dstEnabled ? 60 : 0)).round(),
-      'asr': (noonUTC + offset + toMin(ha) + (dstEnabled ? 60 : 0)).round(),
-      'maghrib': (noonUTC + offset + toMin(hs) + (dstEnabled ? 60 : 0)).round(),
-      'isha': (noonUTC + offset + toMin(hi) + (dstEnabled ? 60 : 0)).round(),
+      'fajr': ((noonUTC + offset - toMin(hf) + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Fajr'] ?? 0))
+          .round(),
+      'sunrise': ((noonUTC + offset - toMin(hs) + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Sunrise'] ?? 0))
+          .round(),
+      'dhuhr': ((noonUTC + offset + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Dhuhr'] ?? 0))
+          .round(),
+      'asr': ((noonUTC + offset + toMin(ha) + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Asr'] ?? 0))
+          .round(),
+      'maghrib': ((noonUTC + offset + toMin(hs) + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Maghrib'] ?? 0))
+          .round(),
+      'isha': ((noonUTC + offset + toMin(hi) + (dstEnabled ? 60 : 0)) * 60 +
+              (prayerOffsets['Isha'] ?? 0))
+          .round(),
     };
   }
 
   Map<String, double> _getOptions() {
-    double fajr = 19.5;
-    double isha = 17.5;
+    double fajr = 18.0;
+    double isha = 17.0;
 
-    if (angles == 'ms') {
-      fajr = 18.0;
-      isha = 17.0;
-    } else if (angles == 'custom') {
-      fajr = customFajrAngle;
-      isha = customIshaAngle;
+    switch (angles) {
+      case 'mwl': // Muslim World League (Recommended for Algeria)
+        fajr = 18.0;
+        isha = 17.0;
+        break;
+      case 'egypt': // Egyptian General Authority of Survey
+        fajr = 19.5;
+        isha = 17.5;
+        break;
+      case 'makkah': // Umm Al-Qura University, Makkah
+        fajr = 18.5;
+        isha = 18.5; // Actually 90 min after Maghrib, handled elsewhere usually
+        break;
+      case 'isna': // Islamic Society of North America
+        fajr = 15.0;
+        isha = 15.0;
+        break;
+      case 'karachi': // University of Islamic Sciences, Karachi
+        fajr = 18.0;
+        isha = 18.0;
+        break;
+      case 'custom':
+        fajr = customFajrAngle;
+        isha = customIshaAngle;
+        break;
+      case 'ms':
+      default:
+        fajr = 18.0;
+        isha = 17.0;
     }
 
     return {
@@ -827,11 +891,14 @@ class PrayerTimesLogic {
     eveningAdhkarEnabled = prefs.getBool('eveningAdhkarEnabled') ?? true;
     nightPrayerTimesEnabled = prefs.getBool('nightPrayerTimesEnabled') ?? false;
 
+    notificationMode = prefs.getInt('notificationMode') ?? 0;
+
     // Load calculation settings
     dstEnabled = prefs.getBool('dstEnabled') ?? false;
-    hijriOffset = prefs.getInt('hijriOffset') ?? 0;
+    hijriOffset = prefs.getInt('hijriOffset') ?? -3;
 
-    // Load cached location - check if we actually have cached values
+    // Default to MWL if not set for better compatibility in North Africa
+    angles = prefs.getString('angles') ?? 'mwl';
     final cachedLat = prefs.getDouble('lat');
     final cachedLon = prefs.getDouble('lon');
     if (cachedLat != null && cachedLon != null) {
@@ -852,11 +919,36 @@ class PrayerTimesLogic {
     }
 
     asrMethod = prefs.getString('asrMethod') ?? 'shafi';
-    angles = prefs.getString('angles') ?? 'ms';
+    // Removed old redundant load of 'angles' to keep it cleaner
+
+    // Load offsets
+    for (var name in prayerOffsets.keys) {
+      prayerOffsets[name] = prefs.getInt('offset_$name') ??
+          (name == 'Fajr'
+              ? 60
+              : name == 'Sunrise'
+                  ? 60
+                  : name == 'Dhuhr'
+                      ? 120
+                      : name == 'Asr'
+                          ? 120
+                          : name == 'Maghrib'
+                              ? 300
+                              : name == 'Isha'
+                                  ? 120
+                                  : 0);
+    }
 
     for (var name in arabicPrayerNames) {
+      // Default to true for actual prayers, false for non-prayer times (Sunrise/Night thirds)
+      bool isActualPrayer = ![
+        'الشروق',
+        'الثلث الأول',
+        'منتصف الليل',
+        'الثلث الأخير'
+      ].contains(name);
       prayerNotificationsEnabled[name] =
-          prefs.getBool('notification_$name') ?? true;
+          prefs.getBool('notification_$name') ?? isActualPrayer;
     }
     // Load night prayer preferences (defaulting to false if not set, or true?)
     // Let's default to false to avoid unexpected alarms unless enabled
@@ -880,6 +972,11 @@ class PrayerTimesLogic {
     await prefs.setBool('dstEnabled', dstEnabled);
     await prefs.setInt('hijriOffset', hijriOffset);
 
+    // Save offsets
+    for (var entry in prayerOffsets.entries) {
+      await prefs.setInt('offset_${entry.key}', entry.value);
+    }
+
     _calculateTimes();
   }
 
@@ -894,8 +991,14 @@ class PrayerTimesLogic {
       int? challengeCustomOffset, // New param
       bool? morningAdhkarValue,
       bool? eveningAdhkarValue,
-      bool? nightPrayerTimesValue}) async {
+      bool? nightPrayerTimesValue,
+      int? notificationModeValue}) async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (notificationModeValue != null) {
+      await prefs.setInt('notificationMode', notificationModeValue);
+      notificationMode = notificationModeValue;
+    }
 
     await prefs.setBool('notificationsEnabled', globalValue);
     notificationsEnabled = globalValue;
@@ -1161,6 +1264,7 @@ class PrayerTimesLogic {
       nextPrayerInfo: fallbackInfo,
       challengeTimestamp: challengeTimestamp,
       isBlackBackground: persistentNotificationBlackBg,
+      notificationMode: notificationMode,
     );
   }
 
@@ -1182,10 +1286,10 @@ class PrayerTimesLogic {
       // Compute times for yesterday to get accurate Maghrib
       final yesterdayTimes =
           _computeDayTimes(yesterday.year, yesterday.month, yesterday.day);
-      final maghribMinutes = yesterdayTimes['maghrib']!;
+      final maghribSeconds = yesterdayTimes['maghrib']!;
 
       DateTime maghribTime =
-          _createPrayerTime('Maghrib', maghribMinutes, yesterday).time;
+          _createPrayerTime('Maghrib', maghribSeconds, yesterday).time;
 
       // Calculate duration
       final nightTimes = _calculateNightBoundaries(maghribTime, fajrTime);
@@ -1235,8 +1339,8 @@ class PrayerTimesLogic {
       final tomorrow = now.add(const Duration(days: 1));
       final tomorrowTimes =
           _computeDayTimes(tomorrow.year, tomorrow.month, tomorrow.day);
-      final fajrMinutes = tomorrowTimes['fajr']!;
-      nextPrayer = _createPrayerTime('Fajr', fajrMinutes, tomorrow);
+      final fajrSeconds = tomorrowTimes['fajr']!;
+      nextPrayer = _createPrayerTime('Fajr', fajrSeconds, tomorrow);
       nextTime = nextPrayer.time;
     }
 
@@ -1291,6 +1395,12 @@ class PrayerTimesLogic {
 
       final prayerName = arabicNameMap[prayer.name] ?? prayer.name;
 
+      // Skip non-prayer times (Mute)
+      if (['الشروق', 'الثلث الأول', 'منتصف الليل', 'الثلث الأخير']
+          .contains(prayerName)) {
+        continue;
+      }
+
       // Only schedule if explicitly enabled in settings
       // CRITICAL FIX: To avoid double notifications, we only schedule standard local notifications
       // if the persistent foreground service is DISABLED. If the service is enabled,
@@ -1327,6 +1437,7 @@ class PrayerTimesLogic {
         adhkarTime,
         notificationSoundEnabled,
         payload: 'Morning_Adhkar',
+        isAlarm: false, // Don't show prayer screen or play adhan
       );
     }
 
@@ -1343,6 +1454,7 @@ class PrayerTimesLogic {
         adhkarTime,
         notificationSoundEnabled,
         payload: 'Evening_Adhkar',
+        isAlarm: false, // Don't show prayer screen or play adhan
       );
     }
   }
@@ -1380,6 +1492,13 @@ class PrayerTimesLogic {
         };
 
         final prayerName = arabicNameMap[prayer.name] ?? prayer.name;
+
+        // Skip non-prayer times (Mute)
+        if (['الشروق', 'الثلث الأول', 'منتصف الليل', 'الثلث الأخير']
+            .contains(prayerName)) {
+          _firedPrayerIndexes.add(i);
+          continue;
+        }
 
         if (prayerNotificationsEnabled[prayerName] == true) {
           // Check if app is in foreground
@@ -1556,6 +1675,30 @@ class NotificationService {
   bool _isInitialized = false;
   String? pendingPayload;
 
+  void handleAdhkarNotification(String payload) async {
+    final String category =
+        payload == 'Morning_Adhkar' ? 'أذكار الصباح' : 'أذكار المساء';
+
+    if (Get.context != null) {
+      // Load azkar data to find the matching category
+      final String jsonData =
+          await rootBundle.loadString('assets/hisnmuslim.json');
+      final List<dynamic> jsonList = json.decode(jsonData);
+      final azkarList =
+          jsonList.map((json) => AzkarInfo.fromJson(json)).toList();
+
+      try {
+        final targetAzkar =
+            azkarList.firstWhere((element) => element.category == category);
+        Get.to(() => AzkarDetailsScreen(azkarInfo: targetAzkar));
+      } catch (e) {
+        if (kDebugMode) print('Error finding azkar category: $e');
+      }
+    } else {
+      pendingPayload = payload;
+    }
+  }
+
   Future<void> init() async {
     if (_isInitialized) return;
     tz.initializeTimeZones();
@@ -1587,6 +1730,9 @@ class NotificationService {
             } else {
               pendingPayload = response.payload;
             }
+          } else if (response.payload == 'Morning_Adhkar' ||
+              response.payload == 'Evening_Adhkar') {
+            handleAdhkarNotification(response.payload!);
           } else {
             if (Get.context != null) {
               Get.dialog(AyatHadithDialog(prayerName: response.payload!));
@@ -1613,11 +1759,12 @@ class NotificationService {
 
   Future<void> showNotification(int id, String title, String body,
       DateTime scheduledDate, bool soundEnabled,
-      {String? payload}) async {
+      {String? payload, bool isAlarm = true}) async {
     final androidDetails = AndroidNotificationDetails(
-      'prayer_times_channel',
-      'مواقيت الصلاة',
-      channelDescription: 'تنبيهات أوقات الصلاة',
+      isAlarm ? 'prayer_times_channel' : 'adhkar_channel',
+      isAlarm ? 'مواقيت الصلاة' : 'تنبيهات الأذكار',
+      channelDescription:
+          isAlarm ? 'تنبيهات أوقات الصلاة' : 'تنبيهات أذكار الصباح والمساء',
       importance: Importance.max,
       priority: Priority.high,
       playSound: soundEnabled,
@@ -1625,8 +1772,10 @@ class NotificationService {
       icon: '@mipmap/ic_launcher',
       largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       styleInformation: BigTextStyleInformation(body),
-      category: AndroidNotificationCategory.alarm,
-      fullScreenIntent: true,
+      category: isAlarm
+          ? AndroidNotificationCategory.alarm
+          : AndroidNotificationCategory.reminder,
+      fullScreenIntent: isAlarm,
       visibility: NotificationVisibility.public,
       autoCancel: true,
     );

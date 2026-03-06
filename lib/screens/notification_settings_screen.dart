@@ -53,7 +53,8 @@ class _NotificationSettingsScreenState
       bool? morningAdhkarValue,
       bool? eveningAdhkarValue,
       bool? persistentBgValue,
-      bool? nightPrayerTimesValue}) async {
+      bool? nightPrayerTimesValue,
+      int? notificationModeValue}) async {
     await _logic.saveNotificationPreference(
       _logic.notificationsEnabled,
       _logic.prayerNotificationsEnabled,
@@ -74,6 +75,7 @@ class _NotificationSettingsScreenState
       eveningAdhkarValue: eveningAdhkarValue ?? _logic.eveningAdhkarEnabled,
       nightPrayerTimesValue:
           nightPrayerTimesValue ?? _logic.nightPrayerTimesEnabled,
+      notificationModeValue: notificationModeValue ?? _logic.notificationMode,
     );
     if (mounted) setState(() {});
   }
@@ -234,7 +236,15 @@ class _NotificationSettingsScreenState
                         _logic.notificationsEnabled = value;
                         // Update all individual prayer notifications to match
                         for (var name in _logic.arabicPrayerNames) {
-                          _logic.prayerNotificationsEnabled[name] = value;
+                          // Only enable for actual prayers by default if turning global ON
+                          bool isActualPrayer = ![
+                            'الشروق',
+                            'الثلث الأول',
+                            'منتصف الليل',
+                            'الثلث الأخير'
+                          ].contains(name);
+                          _logic.prayerNotificationsEnabled[name] =
+                              value ? isActualPrayer : false;
                         }
                       });
                       _saveSettings();
@@ -287,35 +297,79 @@ class _NotificationSettingsScreenState
                     color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: SwitchListTile(
-                    activeThumbColor: const Color(0xFFD64463),
-                    activeTrackColor:
-                        const Color(0xFFD64463).withValues(alpha: 0.3),
-                    inactiveThumbColor: Colors.grey,
-                    inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                    title: const Text(
-                      'إشعار دائم',
-                      style: TextStyle(
-                        fontFamily: 'Amiri',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        activeThumbColor: const Color(0xFFD64463),
+                        activeTrackColor:
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
+                        inactiveThumbColor: Colors.grey,
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+                        title: const Text(
+                          'إشعار دائم',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'عرض التاريخ الهجري والصلاة القادمة',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 14,
+                          ),
+                        ),
+                        value: _logic.persistentNotificationEnabled,
+                        onChanged: (value) {
+                          setState(() =>
+                              _logic.persistentNotificationEnabled = value);
+                          _saveSettings(persistentValue: value);
+                        },
                       ),
-                    ),
-                    subtitle: Text(
-                      'عرض التاريخ الهجري والصلاة القادمة',
-                      style: TextStyle(
-                        fontFamily: 'Amiri',
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 14,
-                      ),
-                    ),
-                    value: _logic.persistentNotificationEnabled,
-                    onChanged: (value) {
-                      setState(
-                          () => _logic.persistentNotificationEnabled = value);
-                      _saveSettings(persistentValue: value);
-                    },
+                      if (_logic.persistentNotificationEnabled) ...[
+                        const Divider(color: Colors.white24, height: 1),
+                        ListTile(
+                          title: const Text(
+                            'طريقة التنبيه عند الصلاة',
+                            style: TextStyle(
+                              fontFamily: 'Amiri',
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                          trailing: DropdownButton<int>(
+                            value: _logic.notificationMode,
+                            dropdownColor: const Color(0xFF2C2C35),
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.arrow_drop_down,
+                                color: Colors.white),
+                            style: const TextStyle(
+                                fontFamily: 'Amiri',
+                                color: Colors.white,
+                                fontSize: 14),
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 0, child: Text('تنبيه وشاشة')),
+                              DropdownMenuItem(
+                                  value: 1, child: Text('تنبيه فقط')),
+                              DropdownMenuItem(
+                                  value: 2, child: Text('شاشة فقط')),
+                              DropdownMenuItem(
+                                  value: 3, child: Text('بدون تنبيه')),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _logic.notificationMode = value);
+                                _saveSettings(notificationModeValue: value);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 

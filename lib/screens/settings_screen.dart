@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_settings_screen.dart';
+import '../helpers/dhikr_reminder_helper.dart';
 
 import 'package:small_husn_muslim/constants/strings.dart';
 
@@ -16,10 +17,15 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final PrayerTimesLogic _prayerLogic = PrayerTimesLogic();
+  final DhikrReminderHelper _reminderHelper = DhikrReminderHelper();
   bool _clickSoundEnabled = true;
   bool _vibrationEnabled = true;
   bool _darkModeEnabled = true;
   String _selectedHomeScreen = 'azkar';
+
+  // Reminder settings
+  bool _reminderEnabled = true;
+  int _reminderInterval = 15;
 
   // Home screen options
   static const Map<String, String> _homeScreenOptions = {
@@ -42,6 +48,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
       _darkModeEnabled = prefs.getBool('dark_mode') ?? true;
       _selectedHomeScreen = prefs.getString('home_screen') ?? 'azkar';
+      _reminderEnabled = _reminderHelper.isEnabled;
+      _reminderInterval = _reminderHelper.intervalMinutes;
+    });
+  }
+
+  Future<void> _toggleReminder(bool value) async {
+    await _reminderHelper.updateSettings(value, _reminderInterval);
+    setState(() {
+      _reminderEnabled = value;
+    });
+  }
+
+  Future<void> _setReminderInterval(int value) async {
+    await _reminderHelper.updateSettings(_reminderEnabled, value);
+    setState(() {
+      _reminderInterval = value;
     });
   }
 
@@ -88,6 +110,200 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
+  }
+
+  void _showManualAdjustmentDialog() {
+    final Map<String, String> prayerNames = {
+      'Fajr': 'الفجر',
+      'Sunrise': 'الشروق',
+      'Dhuhr': 'الظهر',
+      'Asr': 'العصر',
+      'Maghrib': 'المغرب',
+      'Isha': 'العشاء',
+    };
+
+    Get.dialog(
+      Directionality(
+        textDirection: TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2C2C35),
+              title: const Text(
+                'تعديل مواقيت الصلاة',
+                style: TextStyle(fontFamily: 'Amiri', color: Colors.white),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: prayerNames.entries.map((entry) {
+                    final int totalSeconds =
+                        _prayerLogic.prayerOffsets[entry.key] ?? 0;
+                    final int mins = (totalSeconds / 60).floor();
+                    final int secs = totalSeconds % 60;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.value,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildNumberInput(
+                                  label: 'دقائق',
+                                  value: mins,
+                                  onChanged: (v) {
+                                    setDialogState(() {
+                                      _prayerLogic.prayerOffsets[entry.key] =
+                                          (v * 60) + secs;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildNumberInput(
+                                  label: 'ثواني',
+                                  value: secs,
+                                  onChanged: (v) {
+                                    setDialogState(() {
+                                      _prayerLogic.prayerOffsets[entry.key] =
+                                          (mins * 60) + v;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('إلغاء',
+                      style: TextStyle(color: Colors.white70)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _prayerLogic.saveCalculationSettings();
+                    setState(() {});
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD64463)),
+                  child: const Text('حفظ'),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumberInput(
+      {required String label,
+      required int value,
+      required Function(int) onChanged}) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.remove_circle_outline, color: Colors.white70),
+          onPressed: () => onChanged(value - 1),
+        ),
+        Expanded(
+          child: Text(
+            '$value $label',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add_circle_outline, color: Colors.white70),
+          onPressed: () => onChanged(value + 1),
+        ),
+      ],
+    );
+  }
+
+  void _showHijriAdjustmentDialog() {
+    Get.dialog(
+      Directionality(
+        textDirection: TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2C2C35),
+              title: const Text(
+                'تعديل التاريخ الهجري',
+                style: TextStyle(fontFamily: 'Amiri', color: Colors.white),
+              ),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline,
+                        color: Colors.white, size: 30),
+                    onPressed: () {
+                      setDialogState(() {
+                        _prayerLogic.hijriOffset--;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 20),
+                  Text(
+                    '${_prayerLogic.hijriOffset} يوم',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 20),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline,
+                        color: Colors.white, size: 30),
+                    onPressed: () {
+                      setDialogState(() {
+                        _prayerLogic.hijriOffset++;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('إلغاء',
+                      style: TextStyle(color: Colors.white70)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _prayerLogic.saveCalculationSettings();
+                    setState(() {});
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD64463)),
+                  child: const Text('حفظ'),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -330,6 +546,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // Dhikr Reminder Section
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        activeThumbColor: const Color(0xFFD64463),
+                        activeTrackColor:
+                            const Color(0xFFD64463).withValues(alpha: 0.3),
+                        inactiveThumbColor: Colors.grey,
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+                        title: const Text(
+                          'تذكير تلقائي',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'عرض أذكار قصيرة بشكل دوري',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 14,
+                          ),
+                        ),
+                        secondary: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.mode_night_sharp,
+                              color: Color(0xFFD64463), size: 20),
+                        ),
+                        value: _reminderEnabled,
+                        onChanged: _toggleReminder,
+                      ),
+                      if (_reminderEnabled) ...[
+                        Divider(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          height: 1,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD64463)
+                                  .withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.timer_outlined,
+                                color: Color(0xFFD64463), size: 20),
+                          ),
+                          title: const Text(
+                            'وتيرة التذكير',
+                            style: TextStyle(
+                              fontFamily: 'Amiri',
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'كل $_reminderInterval دقيقة',
+                            style: TextStyle(
+                              fontFamily: 'Amiri',
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 14,
+                            ),
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD64463)
+                                  .withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: DropdownButton<int>(
+                              value: _reminderInterval,
+                              dropdownColor: const Color(0xFF2C2C35),
+                              underline: const SizedBox(),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: Colors.white),
+                              style: const TextStyle(
+                                fontFamily: 'Amiri',
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                              items: [5, 10, 15, 30, 60].map((int value) {
+                                return DropdownMenuItem<int>(
+                                  value: value,
+                                  child: Text('$value دقيقة'),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) _setReminderInterval(val);
+                              },
+                            ),
+                          ),
+                        ),
+                        Divider(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          height: 1,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD64463)
+                                  .withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.play_circle_outline,
+                                color: Color(0xFFD64463), size: 20),
+                          ),
+                          title: const Text(
+                            'تجربة التذكير',
+                            style: TextStyle(
+                              fontFamily: 'Amiri',
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'اضغط لإظهار تذكير تجريبي الآن',
+                            style: TextStyle(
+                              fontFamily: 'Amiri',
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 14,
+                            ),
+                          ),
+                          onTap: () {
+                            _reminderHelper.showReminder(context);
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 20),
 
                 // Prayer Times Settings
@@ -440,8 +813,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontSize: 14),
                           items: const [
                             DropdownMenuItem(
-                                value: 'ms',
+                                value: 'mwl',
                                 child: Text('رابطة العالم الإسلامي')),
+                            DropdownMenuItem(
+                                value: 'egypt',
+                                child: Text('الهيئة العامة المصرية')),
+                            DropdownMenuItem(
+                                value: 'makkah', child: Text('أم القرى')),
+                            DropdownMenuItem(
+                                value: 'karachi', child: Text('كراتشي')),
+                            DropdownMenuItem(
+                                value: 'isna', child: Text('أمريكا الشمالية')),
                           ],
                           onChanged: (value) {
                             setState(() => _prayerLogic.angles = value!);
@@ -472,6 +854,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _prayerLogic.dstEnabled = value);
                           _prayerLogic.saveCalculationSettings();
                         },
+                      ),
+                      Divider(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          height: 1,
+                          indent: 16,
+                          endIndent: 16),
+
+                      // Manual Adjustment
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.tune,
+                              color: Color(0xFFD64463), size: 20),
+                        ),
+                        title: const Text(
+                          'تعديل يدوي (بالدقائق والثواني)',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () => _showManualAdjustmentDialog(),
+                      ),
+                      Divider(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          height: 1,
+                          indent: 16,
+                          endIndent: 16),
+
+                      // Hijri Adjustment
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFFD64463).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.calendar_month,
+                              color: Color(0xFFD64463), size: 20),
+                        ),
+                        title: const Text(
+                          'تعديل التاريخ الهجري',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          _prayerLogic.hijriOffset == 0
+                              ? 'بدون تعديل'
+                              : '${_prayerLogic.hijriOffset > 0 ? '+' : ''}${_prayerLogic.hijriOffset} يوم',
+                          style: TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 14,
+                          ),
+                        ),
+                        onTap: () => _showHijriAdjustmentDialog(),
                       ),
                     ],
                   ),

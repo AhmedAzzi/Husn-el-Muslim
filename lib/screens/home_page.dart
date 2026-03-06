@@ -36,6 +36,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   List<AzkarInfo> azkarList = [];
   final _player = AudioPlayer();
   final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
   String searchQuery = '';
   bool toggle = true;
 
@@ -49,25 +50,61 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
         textDirection: TextDirection.rtl,
         child: Scaffold(
           appBar: AppBar(
-            leading: widget.isHomeScreen
-                ? null // Let drawer icon show automatically
-                : IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Get.back(),
+            leading: toggle
+                ? (widget.isHomeScreen
+                    ? null // Let drawer icon show automatically
+                    : IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => Get.back(),
+                      ))
+                : null, // No leading icon during search
+            title: toggle
+                ? SizedBox(
+                    height: 30,
+                    child: Text(
+                      'الأذكار',
+                      style: TextStyle(
+                        fontSize: double.parse(fontSize22),
+                        fontFamily: fontFamily,
+                        color: bgLight,
+                      ),
+                    ),
+                  )
+                : Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      focusNode: searchFocusNode,
+                      autofocus: true,
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontFamily: fontFamily,
+                          fontSize: 16,
+                        ),
+                        hintText: search,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 8),
+                      ),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Amiri',
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
-            title: SizedBox(
-              height: 30,
-              child: Text(
-                'الأذكار',
-                style: TextStyle(
-                  fontSize: double.parse(fontSize22),
-                  fontFamily: fontFamily,
-                  color: bgLight,
-                ),
-              ),
-            ),
             iconTheme: IconThemeData(color: bgLight),
-            actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
+            actions: toggle ? _toggleSearchIcon() : _clearSearchAction(),
             flexibleSpace: SizedBox(
               height: 60,
               child: Image.asset(appBarBG, fit: BoxFit.cover),
@@ -339,7 +376,12 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final pendingPayload = NotificationService().pendingPayload;
       if (pendingPayload != null) {
-        Get.dialog(AyatHadithDialog(prayerName: pendingPayload));
+        if (pendingPayload == 'Morning_Adhkar' ||
+            pendingPayload == 'Evening_Adhkar') {
+          NotificationService().handleAdhkarNotification(pendingPayload);
+        } else {
+          Get.dialog(AyatHadithDialog(prayerName: pendingPayload));
+        }
         NotificationService().pendingPayload = null;
       }
 
@@ -364,37 +406,26 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
     });
   }
 
-  List<Widget> _toggleSearchBar() {
+  List<Widget> _clearSearchAction() {
     return [
-      const Spacer(),
-      Expanded(
-        flex: 6,
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: TextField(
-            controller: searchController,
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-            },
-            decoration: InputDecoration(
-              hintStyle: TextStyle(color: bgLight),
-              hintText: search,
-              prefixIcon: Icon(Icons.search, color: bgLight),
-            ),
-            style: TextStyle(color: bgLight),
-          ),
-        ),
-      ),
       IconButton(
-        icon: const Icon(Icons.exit_to_app),
+        icon: const Icon(Icons.close),
         onPressed: () => setState(() {
           searchController.clear();
           searchQuery = '';
           toggle = true;
         }),
       ),
+      if (searchQuery.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            setState(() {
+              searchController.clear();
+              searchQuery = '';
+            });
+          },
+        ),
     ];
   }
 

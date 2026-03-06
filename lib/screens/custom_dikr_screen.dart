@@ -42,13 +42,47 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
   Future<void> loadDikrList() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(customDikrKey);
+
+    // Load default list from JSON to compare
+    final String jsonString =
+        await rootBundle.loadString('assets/custom_dikr.json');
+    final List<dynamic> defaultJsonList = json.decode(jsonString);
+    final defaultDikrs =
+        defaultJsonList.map((e) => CustomDikr.fromJson(e)).toList();
+
     if (saved != null) {
       final List<dynamic> jsonList = json.decode(saved);
+      final List<CustomDikr> loadedList =
+          jsonList.map((e) => CustomDikr.fromJson(e)).toList();
+
+      // Sync autoSpeedSeconds for default dikrs if not already set or updated in JSON
+      for (var loadedDikr in loadedList) {
+        try {
+          // Find matching default dikr by arabic text
+          final defaultMatch = defaultDikrs.firstWhere(
+            (d) => d.arabic == loadedDikr.arabic,
+          );
+          // If the loaded speed is the old default (1.0), update it to the new JSON speed
+          // This ensures existing users get the new speeds without losing their counts
+          if (loadedDikr.autoSpeedSeconds == 1.0 &&
+              defaultMatch.autoSpeedSeconds != 1.0) {
+            loadedDikr.autoSpeedSeconds = defaultMatch.autoSpeedSeconds;
+          }
+        } catch (e) {
+          // Not a default dikr, keep as is
+        }
+      }
+
       setState(() {
-        dikrList = jsonList.map((e) => CustomDikr.fromJson(e)).toList();
+        dikrList = loadedList;
       });
+      // Save the updated speeds back to cache
+      saveDikrList();
     } else {
-      await loadDefaultDikr();
+      setState(() {
+        dikrList = defaultDikrs;
+      });
+      saveDikrList();
     }
   }
 
@@ -260,10 +294,14 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                       builder: (_) => DikrCounterScreen(
                         dikr: dikr,
                         initialCount: count,
-                        onUpdate: (newMaxScore, totalDelta) {
+                        onUpdate: (newMaxScore, totalDelta, [newSpeedSeconds]) {
                           setState(() {
                             dikrList[index].maxScore = newMaxScore;
                             dikrList[index].totalCount += totalDelta;
+                            if (newSpeedSeconds != null) {
+                              dikrList[index].autoSpeedSeconds =
+                                  newSpeedSeconds;
+                            }
                           });
                         },
                       ),
@@ -372,6 +410,29 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                     importData();
                   } else if (value == 'toggle_scores') {
                     toggleShowScores();
+                  } else if (value == 'reset') {
+                    Get.dialog(
+                      Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: AlertDialog(
+                          title: const Text('استعادة الأذكار الافتراضية؟'),
+                          content: const Text(
+                              'سيتم حذف جميع أذكارك الحالية واستبدالها بالقائمة الافتراضية مع السرعات الجديدة.'),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Get.back(),
+                                child: const Text('إلغاء')),
+                            TextButton(
+                                onPressed: () {
+                                  loadDefaultDikr().then((_) => saveDikrList());
+                                  Get.back();
+                                },
+                                child: const Text('استعادة',
+                                    style: TextStyle(color: Colors.red))),
+                          ],
+                        ),
+                      ),
+                    );
                   }
                 },
                 itemBuilder: (BuildContext context) {
@@ -387,6 +448,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                           Text(showScores ? 'إخفاء النقاط' : 'إظهار النقاط'),
                         ],
                       ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'reset',
+                      child: Text('استعادة الافتراضي'),
                     ),
                     const PopupMenuItem(
                       value: 'export',
@@ -617,7 +682,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '${dikr.maxScore}',
+                              '${dikr.totalCount}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -656,6 +721,7 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
   late TextEditingController dikrController;
   late TextEditingController benefitController;
   late TextEditingController referenceController;
+  late TextEditingController autoSpeedController;
 
   @override
   void initState() {
@@ -664,6 +730,20 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
     benefitController = TextEditingController(text: widget.dikr?.benefit ?? '');
     referenceController =
         TextEditingController(text: widget.dikr?.reference ?? '');
+    autoSpeedController = TextEditingController(
+        text: (widget.dikr?.autoSpeedSeconds ?? 1.0).toStringAsFixed(1));
+  }
+
+  @override
+  void didUpdateWidget(covariant AddEditDikrSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.dikr != oldWidget.dikr) {
+      dikrController.text = widget.dikr?.arabic ?? '';
+      benefitController.text = widget.dikr?.benefit ?? '';
+      referenceController.text = widget.dikr?.reference ?? '';
+      autoSpeedController.text =
+          (widget.dikr?.autoSpeedSeconds ?? 1.0).toStringAsFixed(1);
+    }
   }
 
   @override
@@ -671,6 +751,7 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
     dikrController.dispose();
     benefitController.dispose();
     referenceController.dispose();
+    autoSpeedController.dispose();
     super.dispose();
   }
 
@@ -719,6 +800,16 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
               minLines: 1,
               maxLines: 2,
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: autoSpeedController,
+              decoration: const InputDecoration(
+                  labelText: 'سرعة العداد التلقائي (بالثانية)',
+                  border: OutlineInputBorder()),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              textDirection: TextDirection.rtl,
+            ),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -733,6 +824,11 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (dikrController.text.trim().isEmpty) return;
+
+                      double speedInSeconds =
+                          double.tryParse(autoSpeedController.text) ?? 1.0;
+                      if (speedInSeconds < 0.1) speedInSeconds = 0.1;
+
                       widget.onSave(
                         CustomDikr(
                           arabic: dikrController.text.trim(),
@@ -743,6 +839,8 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
                               ? null
                               : referenceController.text.trim(),
                           maxScore: widget.dikr?.maxScore ?? 0,
+                          totalCount: widget.dikr?.totalCount ?? 0,
+                          autoSpeedSeconds: speedInSeconds,
                         ),
                       );
                       Navigator.pop(context);
@@ -762,7 +860,8 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
 class DikrCounterScreen extends StatefulWidget {
   final CustomDikr dikr;
   final int initialCount;
-  final void Function(int maxScore, int totalDelta) onUpdate;
+  final void Function(int maxScore, int totalDelta, [double? newSpeedSeconds])
+      onUpdate;
   const DikrCounterScreen(
       {super.key,
       required this.dikr,
@@ -794,6 +893,8 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
     sessionMaxCount = 0; // Initialize session max
     sessionTotalDelta = 0; // Initialize session delta
     limit = widget.initialCount;
+    autoIncrementInterval = (widget.dikr.autoSpeedSeconds * 1000)
+        .round(); // Convert to ms for Timer
     _loadSettings();
   }
 
@@ -935,6 +1036,14 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                       updateFromTextField(intervalController.text);
                       this.setState(() {
                         autoIncrementInterval = tempInterval;
+                        // Update the original dikr speed as well
+                        widget.onUpdate(
+                            startingMaxScore > sessionMaxCount
+                                ? startingMaxScore
+                                : sessionMaxCount,
+                            0,
+                            tempInterval / 1000.0);
+
                         if (isAutoPlaying) {
                           // Restart timer with new interval
                           _timer?.cancel();
