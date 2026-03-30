@@ -77,7 +77,7 @@ Future<void> openURL(String url) async {
   } catch (_) {}
 }
 
-setupAudioPlayer(AudioPlayer player, String url) async {
+Future<void> setupAudioPlayer(AudioPlayer player, String url) async {
   player.playbackEventStream.listen((event) {},
       onError: (Object e, StackTrace stacktrace) {
     if (kDebugMode) {

@@ -42,11 +42,12 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                   onSelected: (value) async {
                     switch (value) {
                       case 'نسخ':
+                        final messenger = ScaffoldMessenger.of(context);
                         Clipboard.setData(ClipboardData(
                                 text: widget
                                     .azkarInfo.array[currentPageIndex].text))
                             .then((_) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                               const SnackBar(
                                   content: Center(
                                       child:
@@ -65,9 +66,11 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                               await File('${tempDir.path}/AllAboutFlutter.png')
                                   .create();
                           file.writeAsBytesSync(list);
-                          await Share.shareXFiles(
-                            [XFile(file.path)],
-                            subject: "من أذكار ${widget.azkarInfo.category}",
+                          await SharePlus.instance.share(
+                            ShareParams(
+                              files: [XFile(file.path)],
+                              subject: "من أذكار ${widget.azkarInfo.category}",
+                            ),
                           );
                         }).catchError((onError) {
                           if (kDebugMode) {

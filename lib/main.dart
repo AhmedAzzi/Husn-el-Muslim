@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:just_audio/just_audio.dart';
 import 'package:simple_icons/simple_icons.dart';
-import 'package:small_husn_muslim/adkar.dart';
-import 'package:small_husn_muslim/azkar_class.dart';
-import 'package:small_husn_muslim/constant/colors.dart';
-import 'package:small_husn_muslim/constant/strings.dart';
+
+import 'adkar.dart';
+import 'azkar_class.dart';
+import 'constant/colors.dart';
+import 'constant/strings.dart';
 
 void main() async {
   runApp(const MyHomePageScreen());
@@ -381,25 +381,38 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
       Expanded(
         flex: 6,
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextField(
             controller: searchController,
+            autofocus: true,
             onChanged: (value) {
               setState(() {
                 searchQuery = value;
               });
             },
             decoration: InputDecoration(
-              hintStyle: TextStyle(color: bgLight),
+              hintStyle: TextStyle(color: bgLight.withValues(alpha: 0.7)),
               hintText: search,
+              border: InputBorder.none,
               prefixIcon: Icon(Icons.search, color: bgLight),
+              suffixIcon: searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: bgLight),
+                      onPressed: () {
+                        setState(() {
+                          searchController.clear();
+                          searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
             ),
-            style: TextStyle(color: bgLight),
+            style: TextStyle(color: bgLight, fontSize: 18, fontFamily: fontFamily),
           ),
         ),
       ),
       IconButton(
-        icon: const Icon(Icons.exit_to_app),
+        icon: const Icon(Icons.close),
         onPressed: () => setState(() {
           searchController.clear();
           searchQuery = '';
