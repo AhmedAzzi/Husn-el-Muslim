@@ -59,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: ListView(
           children: [
             SwitchListTile(
-              activeColor: const Color(0xFF693B42),
+              activeThumbColor: const Color(0xFF693B42),
               title: const Text(
                 'صوت النقرة',
                 style: TextStyle(
@@ -73,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const Divider(color: Colors.grey, height: 1),
             SwitchListTile(
-              activeColor: const Color(0xFF693B42),
+              activeThumbColor: const Color(0xFF693B42),
               title: const Text(
                 'الاهتزاز',
                 style: TextStyle(

@@ -38,19 +38,73 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
               textDirection: TextDirection.rtl,
               child: Scaffold(
                 appBar: AppBar(
-                  title: SizedBox(
-                    height: 30,
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: double.parse(fontSize22),
-                        fontFamily: fontFamily,
-                        color: bgLight,
-                      ),
-                    ),
-                  ),
+                  title: toggle
+                      ? SizedBox(
+                          height: 30,
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: double.parse(fontSize22),
+                              fontFamily: fontFamily,
+                              color: bgLight,
+                            ),
+                          ),
+                        )
+                      : TextField(
+                          controller: searchController,
+                          autofocus: true,
+                          style: TextStyle(
+                            color: bgLight,
+                            fontFamily: fontFamily,
+                            fontSize: double.parse(fontSize18),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: search,
+                            hintStyle:
+                                TextStyle(color: bgLight.withOpacity(0.7)),
+                            border: InputBorder.none,
+                            suffixIcon: searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(Icons.clear, color: bgLight),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                        searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                            });
+                          },
+                        ),
                   iconTheme: IconThemeData(color: bgLight),
-                  actions: toggle ? _toggleSearchIcon() : _toggleSearchBar(),
+                  actions: toggle
+                      ? [
+                          IconButton(
+                            icon: Icon(iconColor),
+                            onPressed: toggleTheme,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: () => setState(() {
+                              toggle = false;
+                            }),
+                          ),
+                        ]
+                      : [
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => setState(() {
+                              searchController.clear();
+                              searchQuery = '';
+                              toggle = true;
+                            }),
+                          ),
+                        ],
                   flexibleSpace: SizedBox(
                     height: 60,
                     child: Image.asset(appBarBG, fit: BoxFit.cover),
@@ -327,59 +381,4 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
     });
   }
 
-  List<Widget> _toggleSearchBar() {
-    return [
-      const Spacer(),
-      Expanded(
-        flex: 6,
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: TextField(
-            controller: searchController,
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-            },
-            decoration: InputDecoration(
-              hintStyle: TextStyle(color: bgLight),
-              hintText: search,
-              prefixIcon: Icon(Icons.search, color: bgLight),
-            ),
-            style: TextStyle(color: bgLight),
-          ),
-        ),
-      ),
-      IconButton(
-        icon: const Icon(Icons.exit_to_app),
-        onPressed: () => setState(() {
-          searchController.clear();
-          searchQuery = '';
-          toggle = true;
-        }),
-      ),
-    ];
-  }
-
-  List<Widget> _toggleSearchIcon() {
-    return [
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(iconColor),
-              onPressed: toggleTheme,
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() {
-                toggle = false;
-              }),
-            ),
-          ],
-        ),
-      ),
-    ];
-  }
 }
