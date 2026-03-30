@@ -4,9 +4,9 @@
 
     <application
         android:requestLegacyExternalStorage="true"
-        android:label="husn_el_muslim"
+        android:label="حصن المسلم"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
