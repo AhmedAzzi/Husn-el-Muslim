@@ -68,6 +68,8 @@ class PrayerTimeService : Service() {
     private var dhikrIntervalMinutes: Int = 15
     private var dhikrList: ArrayList<String> = arrayListOf()
     private var lastDhikrTimestamp: Long = 0
+    private var isDhikrShowing: Boolean = false
+    private var isAyatShowing: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
@@ -351,6 +353,9 @@ class PrayerTimeService : Service() {
     }
 
     private fun triggerAyatHadithOverlay(prayerName: String) {
+        if (isAyatShowing) return
+        isAyatShowing = true
+        
         Handler(Looper.getMainLooper()).post {
             val canDraw = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 Settings.canDrawOverlays(this) else true
@@ -807,6 +812,7 @@ class PrayerTimeService : Service() {
                     .setDuration(400)
                     .withEndAction {
                         try { wm.removeView(root) } catch (e: Exception) {}
+                        isAyatShowing = false
                     }
                     .start()
 
@@ -821,6 +827,9 @@ class PrayerTimeService : Service() {
     }
 
     private fun triggerDhikrOverlay() {
+        if (isDhikrShowing) return
+        isDhikrShowing = true
+        
         Handler(Looper.getMainLooper()).post {
             val dhikr = if (dhikrList.isNotEmpty())
                 dhikrList[(dhikrList.indices).random()] else "سبحان الله"
@@ -983,7 +992,11 @@ class PrayerTimeService : Service() {
             // ═══════════════════════════════════════════════════════════════
             val totalMs = 5000L
             
+            var wasDismissed = false
             val exitAnimation = Runnable {
+                if (wasDismissed) return@Runnable
+                wasDismissed = true
+                
                 root.animate()
                     .alpha(0f)
                     .scaleX(0.9f)
@@ -992,6 +1005,7 @@ class PrayerTimeService : Service() {
                     .setInterpolator(PathInterpolator(0.215f, 0.61f, 0.355f, 1f))
                     .withEndAction {
                         try { wm.removeView(root) } catch (e: Exception) {}
+                        isDhikrShowing = false
                     }
                     .start()
             }
@@ -1007,7 +1021,10 @@ class PrayerTimeService : Service() {
                 }
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
-                        exitAnimation.run()
+                        // Only run exit if not cancelled by click
+                        if (!wasDismissed) {
+                            exitAnimation.run()
+                        }
                     }
                 })
             }
