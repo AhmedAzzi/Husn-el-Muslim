@@ -42,15 +42,17 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Turn screen on when activity starts (e.g. via full screen intent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setTurnScreenOn(true)
-            setShowWhenLocked(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
         }
         
         // Keyguard and screen flags
         window.addFlags(
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
@@ -80,6 +82,7 @@ class MainActivity : FlutterActivity() {
                 methodChannel?.invokeMethod("openScreen", mapOf("screen_name" to screenToOpen))
             }, 1000)
         }
+
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -164,6 +167,11 @@ class MainActivity : FlutterActivity() {
                     val nextPrayerInfo = call.argument<String>("next_prayer_info") ?: ""
                     val isBlackBackground = call.argument<Boolean>("is_black_background") ?: false
                     
+                    // Dhikr parameters
+                    val dhikrEnabled = call.argument<Boolean>("dhikr_enabled") ?: false
+                    val dhikrInterval = call.argument<Int>("dhikr_interval") ?: 15
+                    val dhikrList = call.argument<List<String>>("dhikr_list")
+                    
                     val serviceIntent = Intent(this, PrayerTimeService::class.java).apply {
                         putExtra("hijri_date", hijriDate)
                         putExtra("prayer_info", prayerInfo)
@@ -172,6 +180,13 @@ class MainActivity : FlutterActivity() {
                         putExtra("challenge_timestamp", challengeTimestamp)
                         putExtra("next_prayer_info", nextPrayerInfo)
                         putExtra("is_black_background", isBlackBackground)
+                        
+                        // Pass Dhikr extras
+                        putExtra("dhikr_enabled", dhikrEnabled)
+                        putExtra("dhikr_interval", dhikrInterval)
+                        if (dhikrList != null) {
+                            putStringArrayListExtra("dhikr_list", ArrayList(dhikrList))
+                        }
                     }
                     
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -180,6 +195,25 @@ class MainActivity : FlutterActivity() {
                         startService(serviceIntent)
                     }
                     result.success(true)
+                }
+                "checkOverlayPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        result.success(Settings.canDrawOverlays(this))
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "requestOverlayPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                        startActivityForResult(intent, 1234)
+                        result.success(true)
+                    } else {
+                        result.success(true)
+                    }
                 }
                 "hideNotification" -> {
                     hideNotification()
@@ -191,6 +225,17 @@ class MainActivity : FlutterActivity() {
                 }       
                 "bringAppToForeground" -> {
                     bringAppToForeground()
+                    result.success(true)
+                }
+                "testAyatOverlay" -> {
+                    val intent = Intent(this, PrayerTimeService::class.java).apply {
+                        action = "TEST_AYAT_OVERLAY"
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
                     result.success(true)
                 }
                 else -> {
