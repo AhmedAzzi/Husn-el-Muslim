@@ -1,0 +1,29 @@
+# Flutter / Dart
+*.dart text eol=lf
+
+# Kotlin / Java (source code)
+*.kt text eol=lf
+*.java text eol=lf
+
+# Swift / Objective-C
+*.swift text eol=lf
+*.m text eol=lf
+*.h text eol=lf
+
+# XML / Gradle / CMake / YAML / JSON / TXT
+*.xml text eol=lf
+*.gradle text eol=lf
+*.cmake text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+
+# Ignore binaries (don’t touch these)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ttf binary
+*.otf binary
+*.so binary
+*.jar binary
+*.keystore binary
