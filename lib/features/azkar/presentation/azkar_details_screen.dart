@@ -11,9 +11,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart' as ap;
-import 'package:vibration/vibration.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AzkarDetailsScreen extends StatefulWidget {
   final AzkarInfo azkarInfo;
@@ -35,9 +32,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
   Timer? _timer;
   bool isAutoPlaying = false;
   int autoIncrementInterval = 1000; // milliseconds
-  final ap.AudioPlayer _clickPlayer = ap.AudioPlayer();
-  bool _clickSoundEnabled = true;
-  bool _vibrationEnabled = true;
+  final ClickFeedback _clickFeedback = ClickFeedback();
 
   @override
   void initState() {
@@ -53,44 +48,14 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
       widget.azkarInfo.array.length,
       (index) => GlobalKey(debugLabel: 'screenshot_key_$index'),
     );
-    _loadSettings();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _player.dispose();
-    _clickPlayer.dispose();
+    _clickFeedback.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _clickSoundEnabled = prefs.getBool('click_sound_enabled') ?? true;
-      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
-    });
-  }
-
-  Future<void> playClickSound() async {
-    if (!_clickSoundEnabled) return;
-    try {
-      await _clickPlayer.play(ap.AssetSource('click.wav'));
-    } catch (e) {
-      // Silently fail
-    }
-  }
-
-  Future<void> vibrateDevice() async {
-    if (!_vibrationEnabled) return;
-    try {
-      bool? hasVibrator = await Vibration.hasVibrator();
-      if (hasVibrator == true) {
-        Vibration.vibrate(duration: 50);
-      }
-    } catch (e) {
-      // Silently fail
-    }
   }
 
   void toggleAutoPlay() {
@@ -229,8 +194,8 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
 
   void decrement() {
     if (widget.azkarInfo.array[currentPageIndex].count > 0) {
-      playClickSound();
-      vibrateDevice();
+      _clickFeedback.playClickSound();
+      _clickFeedback.vibrateDevice();
       setState(() {
         widget.azkarInfo.array[currentPageIndex].count--;
         if (widget.azkarInfo.array[currentPageIndex].count == 0) {

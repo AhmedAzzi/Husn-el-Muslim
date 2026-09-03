@@ -5,9 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:vibration/vibration.dart';
 import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/masbaha/data/custom_dikr.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
@@ -717,9 +716,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
   Timer? _timer;
   bool isAutoPlaying = false;
   int autoIncrementInterval = 1000; // milliseconds
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _clickSoundEnabled = true;
-  bool _vibrationEnabled = true;
+  final ClickFeedback _clickFeedback = ClickFeedback();
 
   @override
   void initState() {
@@ -731,43 +728,13 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
     limit = widget.initialCount;
     autoIncrementInterval = (widget.dikr.autoSpeedSeconds * 1000)
         .round(); // Convert to ms for Timer
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = SharedPrefsCache.instance;
-    setState(() {
-      _clickSoundEnabled = prefs.getBool('click_sound_enabled') ?? true;
-      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
-    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _audioPlayer.dispose();
+    _clickFeedback.dispose();
     super.dispose();
-  }
-
-  Future<void> playClickSound() async {
-    if (!_clickSoundEnabled) return;
-    try {
-      await _audioPlayer.play(AssetSource('click.wav'));
-    } catch (e) {
-      // Silently fail if sound cannot be played
-    }
-  }
-
-  Future<void> vibrateDevice() async {
-    if (!_vibrationEnabled) return;
-    try {
-      bool? hasVibrator = await Vibration.hasVibrator();
-      if (hasVibrator == true) {
-        Vibration.vibrate(duration: 50);
-      }
-    } catch (e) {
-      // Silently fail if vibration is not supported
-    }
   }
 
   void toggleAutoPlay() {
@@ -923,8 +890,8 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
   }
 
   void increment() {
-    playClickSound();
-    vibrateDevice();
+    _clickFeedback.playClickSound();
+    _clickFeedback.vibrateDevice();
     setState(() {
       if (limit == 0 || count < limit) {
         count++;
@@ -952,8 +919,8 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
   }
 
   void decrement() {
-    playClickSound();
-    vibrateDevice();
+    _clickFeedback.playClickSound();
+    _clickFeedback.vibrateDevice();
     setState(() {
       if (count > 0) {
         count--;

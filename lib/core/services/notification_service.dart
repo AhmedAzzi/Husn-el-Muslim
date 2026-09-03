@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/features/azkar/data/azkar_info.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
@@ -22,8 +23,9 @@ class NotificationService {
   String? pendingPayload;
 
   Future<void> handleAdhkarNotification(String payload) async {
-    final String category =
-        payload == 'Morning_Adhkar' ? 'أذكار الصباح' : 'أذكار المساء';
+    final String category = payload == NotificationIds.morningAdhkarPayload
+        ? 'أذكار الصباح'
+        : 'أذكار المساء';
 
     if (Get.context != null) {
       // Load azkar data to find the matching category
@@ -76,8 +78,8 @@ class NotificationService {
             } else {
               pendingPayload = response.payload;
             }
-          } else if (response.payload == 'Morning_Adhkar' ||
-              response.payload == 'Evening_Adhkar') {
+          } else if (response.payload == NotificationIds.morningAdhkarPayload ||
+              response.payload == NotificationIds.eveningAdhkarPayload) {
             handleAdhkarNotification(response.payload!);
           }
         }

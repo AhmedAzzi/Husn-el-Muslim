@@ -2,6 +2,53 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:audioplayers/audioplayers.dart' as ap;
+import 'package:vibration/vibration.dart';
+import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+
+/// Shared config for tactile/audio feedback used by the interactive
+/// counters (misbaha, azkar details). Both players enable/disable the same
+/// behaviour based on the shared click-sound / vibration preferences.
+class ClickFeedback {
+  ClickFeedback() : clickPlayer = ap.AudioPlayer() {
+    _loadSettings();
+  }
+
+  final ap.AudioPlayer clickPlayer;
+  bool _clickSoundEnabled = true;
+  bool _vibrationEnabled = true;
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPrefsCache.instanceAsync;
+    _clickSoundEnabled = prefs.getBool('click_sound_enabled') ?? true;
+    _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+  }
+
+  Future<void> playClickSound() async {
+    if (!_clickSoundEnabled) return;
+    try {
+      await clickPlayer.play(ap.AssetSource('click.wav'));
+    } catch (_) {
+      // Silently fail
+    }
+  }
+
+  Future<void> vibrateDevice() async {
+    if (!_vibrationEnabled) return;
+    try {
+      final hasVibrator = await Vibration.hasVibrator();
+      if (hasVibrator == true) {
+        Vibration.vibrate(duration: 50);
+      }
+    } catch (_) {
+      // Silently fail
+    }
+  }
+
+  void dispose() {
+    clickPlayer.dispose();
+  }
+}
 
 Future<void> setupAudioPlayer(AudioPlayer player, String url) async {
   player.playbackEventStream.listen((event) {},

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 /// Helper class to communicate with native Android notification
 class PrayerNotificationHelper {
   static const MethodChannel _channel =
-      MethodChannel('com.example.hisn_el_muslim/prayer_notification');
+      MethodChannel('com.ahmed.hisnelmuslim/prayer_notification');
 
   /// Set callback for when refresh GPS button is pressed in notification
   static void setMethodCallHandler({
@@ -90,6 +90,16 @@ class PrayerNotificationHelper {
     }
   }
 
+  /// Re-render any pinned home-screen prayer widgets from cached data.
+  /// Fire-and-forget: safe to call even when no widget is pinned.
+  static Future<void> updatePrayerWidgets() async {
+    try {
+      await _channel.invokeMethod('updatePrayerWidgets');
+    } catch (e) {
+      debugPrint('Error updating prayer widgets: $e');
+    }
+  }
+
   /// Hide the persistent notification
   static Future<bool> hideNotification() async {
     try {
@@ -110,6 +120,28 @@ class PrayerNotificationHelper {
     } catch (e) {
       debugPrint('Error getting pending screen: $e');
       return null;
+    }
+  }
+
+  /// Check for a pending alarm trigger (e.g. AlarmManager fired during cold start)
+  static Future<String?> getPendingAlarm() async {
+    try {
+      final String? prayerName = await _channel.invokeMethod('getPendingAlarm');
+      return prayerName;
+    } catch (e) {
+      debugPrint('Error getting pending alarm: $e');
+      return null;
+    }
+  }
+
+  /// Cancel the Fajr challenge full-screen notification and its exact alarm
+  static Future<bool> cancelAlarmNotification() async {
+    try {
+      final result = await _channel.invokeMethod('cancelAlarmNotification');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error cancelling alarm notification: $e');
+      return false;
     }
   }
 
@@ -140,6 +172,70 @@ class PrayerNotificationHelper {
       return result ?? false;
     } catch (e) {
       debugPrint('Error testing Ayat overlay: $e');
+      return false;
+    }
+  }
+
+  /// True when the app is currently allowed to schedule exact alarms.
+  /// Always true pre-Android 12; on 12+ reflects the "Alarms & reminders"
+  /// system toggle, which the user can revoke at any time.
+  static Future<bool> canScheduleExactAlarms() async {
+    try {
+      final bool? result =
+          await _channel.invokeMethod('canScheduleExactAlarms');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error checking exact alarm permission: $e');
+      return false;
+    }
+  }
+
+  /// Opens the per-app "Alarms & reminders" system screen (Android 12+)
+  /// so the user can grant exact-alarm permission. No-op on older versions.
+  static Future<void> openExactAlarmSettings() async {
+    try {
+      await _channel.invokeMethod('openExactAlarmSettings');
+    } catch (e) {
+      debugPrint('Error opening exact alarm settings: $e');
+    }
+  }
+
+  /// Schedule the real Fajr challenge native alarm a few seconds from now for testing.
+  static Future<bool> testFajrChallengeAlarm({int delaySeconds = 5}) async {
+    try {
+      final result = await _channel.invokeMethod('testFajrChallengeAlarm', {
+        'delay_seconds': delaySeconds,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error testing Fajr challenge alarm: $e');
+      return false;
+    }
+  }
+
+  /// Schedule (or cancel with 0) the Fajr challenge exact alarm natively,
+  /// independent of the persistent notification service.
+  static Future<bool> scheduleFajrChallengeAlarm(int challengeTimestamp) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleFajrChallengeAlarm', {
+        'challenge_timestamp': challengeTimestamp,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Fajr challenge alarm: $e');
+      return false;
+    }
+  }
+
+  /// Allow/disallow the app from rendering above the lock screen.
+  /// Only used while an alarm / Fajr challenge is active.
+  static Future<bool> setLockScreenMode(bool enable) async {
+    try {
+      final result = await _channel.invokeMethod(
+          enable ? 'enableLockScreenMode' : 'disableLockScreenMode');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error setting lock screen mode: $e');
       return false;
     }
   }

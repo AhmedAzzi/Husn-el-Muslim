@@ -1,7 +1,7 @@
 name: small_husn_muslim
-description: "A new Flutter project."
+description: "Husn el-Muslim — open-source Islamic app: daily adhkar, accurate prayer times with alarms, Fajr wake-up challenge, electronic masbaha, ruqyah, dua, and nearby mosque finder."
 publish_to: "none"
-version: 1.2.0
+version: 1.4.0+2
 
 environment:
   sdk: ">=3.2.3 <4.0.0"
@@ -34,6 +34,10 @@ dependencies:
   flutter_foreground_task: ^9.1.0
   volume_controller: ^3.4.3
   workmanager: ^0.9.0+3
+  http: ^1.1.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  flutter_map_marker_cluster: ^1.4.0
 
 
 dev_dependencies:
@@ -47,6 +51,7 @@ flutter:
   assets:
     - assets/hisnmuslim.json
     - assets/custom_dikr.json
+    - assets/book_structured.json
     - assets/sabha.png
     - assets/counterBG.png
     - assets/appBarBG.jpg

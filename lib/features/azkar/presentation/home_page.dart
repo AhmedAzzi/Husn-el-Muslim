@@ -5,6 +5,7 @@ import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
@@ -222,8 +223,8 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
       if (pendingPayload != null) {
         if (pendingPayload == 'Fajr_Challenge') {
           Get.to(() => const FajrChallengeScreen());
-        } else if (pendingPayload == 'Morning_Adhkar' ||
-            pendingPayload == 'Evening_Adhkar') {
+        } else if (pendingPayload == NotificationIds.morningAdhkarPayload ||
+            pendingPayload == NotificationIds.eveningAdhkarPayload) {
           NotificationService().handleAdhkarNotification(pendingPayload);
         }
         NotificationService().pendingPayload = null;

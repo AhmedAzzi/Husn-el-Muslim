@@ -4,6 +4,7 @@ import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
 import 'package:small_husn_muslim/core/services/battery_optimization_helper.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -81,23 +82,31 @@ class _NotificationSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: const Color(0xFF1A1A24),
+          backgroundColor:
+              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF1A1A24),
+            backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: isDark ? Colors.white : Colors.black87,
+                size: 20,
+              ),
               onPressed: () => Get.back(),
             ),
-            title: const Text(
-              'إعدادات التنبيهات',
+            title: Text(
+              'إعدادات التنبيهات والأذان',
               style: TextStyle(
                 fontFamily: 'Amiri',
-                color: Colors.white,
+                color: isDark ? Colors.white : Colors.black87,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -108,324 +117,234 @@ class _NotificationSettingsScreenState
                 image: DecorationImage(
                   image: AssetImage(appBarBG),
                   fit: BoxFit.cover,
+                  opacity: isDark ? 0.35 : 0.15,
                 ),
               ),
             ),
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             physics: const BouncingScrollPhysics(),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Battery Optimization Warning Banner
                 if (!_isCheckingBattery && _isBatteryOptimizationEnabled)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: Colors.amber.withValues(alpha: 0.5), width: 2),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded,
-                                color: Colors.amber, size: 28),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'تحذير: تحسين البطارية مفعّل',
-                                style: TextStyle(
-                                  fontFamily: 'Amiri',
-                                  color: Colors.amber,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'تحسين البطارية قد يوقف الإشعار الدائم ويظهر "الآن" بدلاً من الوقت المتبقي. لضمان عمل التطبيق بشكل صحيح، يُنصح بتعطيل تحسين البطارية.',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 14,
-                            height: 1.6,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              await BatteryOptimizationHelper
-                                  .requestIgnoreBatteryOptimization();
-                              // Re-check after a delay to see if user disabled it
-                              Future.delayed(const Duration(seconds: 2), () {
-                                _checkBatteryOptimization();
-                              });
-                            },
-                            icon: const Icon(Icons.battery_saver, size: 20),
-                            label: const Text(
-                              'تعطيل تحسين البطارية',
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber,
-                              foregroundColor: Colors.black87,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildBatteryBanner(isDark),
 
-                // Persistent notification switch
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        activeThumbColor: const Color(0xFFD64463),
-                        activeTrackColor:
-                            const Color(0xFFD64463).withValues(alpha: 0.3),
-                        inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                        title: const Text(
-                          'إشعار دائم',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'عرض التاريخ الهجري والصلاة القادمة',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                          ),
-                        ),
-                        value: _logic.persistentNotificationEnabled,
-                        onChanged: (value) {
-                          setState(() =>
-                              _logic.persistentNotificationEnabled = value);
-                          _saveSettings(persistentValue: value);
-                        },
-                      ),
-                    ],
-                  ),
+                // Section 1: Persistent Status Bar Notification
+                SettingsWidgets.buildSectionHeader(
+                  context: context,
+                  title: 'إشعارات النظام الدائمة',
+                  icon: Icons.push_pin_outlined,
+                  color: const Color(0xFF3B82F6),
                 ),
-
+                SettingsWidgets.buildCardContainer(
+                  context: context,
+                  children: [
+                    SettingsWidgets.buildSwitchTile(
+                      context: context,
+                      title: 'إشعار شريط الحالة الدائم',
+                      subtitle: 'عرض التاريخ الهجري وموعد الصلاة القادمة دائماً',
+                      icon: Icons.calendar_today_rounded,
+                      iconColor: const Color(0xFF3B82F6),
+                      value: _logic.persistentNotificationEnabled,
+                      onChanged: (value) {
+                        setState(() =>
+                            _logic.persistentNotificationEnabled = value);
+                        _saveSettings(persistentValue: value);
+                      },
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
 
-                // Wake Up Challenge Section
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD64463).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                        color: const Color(0xFFD64463).withValues(alpha: 0.3)),
-                  ),
-                  child: SwitchListTile(
-                    activeThumbColor: const Color(0xFFD64463),
-                    activeTrackColor:
-                        const Color(0xFFD64463).withValues(alpha: 0.3),
-                    inactiveThumbColor: Colors.grey,
-                    inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD64463).withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.alarm_on,
-                          color: Color(0xFFD64463), size: 28),
-                    ),
-                    title: const Text(
-                      'تحدي صلاة الفجر',
-                      style: TextStyle(
-                        fontFamily: 'Amiri',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'منبه لا يتوقف إلا بحل الأسئلة',
-                      style: TextStyle(
-                        fontFamily: 'Amiri',
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                    value: _logic.fajrChallengeEnabled,
-                    onChanged: (value) {
-                      setState(() => _logic.fajrChallengeEnabled = value);
-                      _saveSettings(fajrChallengeValue: value);
-                    },
-                  ),
+                // Section 2: Fajr Challenge Smart Alarm
+                SettingsWidgets.buildSectionHeader(
+                  context: context,
+                  title: 'تحدي الاستيقاظ لصلاة الفجر',
+                  icon: Icons.alarm_rounded,
+                  color: const Color(0xFFD64463),
                 ),
-
-                if (_logic.fajrChallengeEnabled)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
+                SettingsWidgets.buildCardContainer(
+                  context: context,
+                  children: [
+                    SettingsWidgets.buildSwitchTile(
+                      context: context,
+                      title: 'تفعيل منبه تحدي الفجر',
+                      subtitle: 'منبه تفاعلي ذكي لا يتوقف إلا بعد حل أسئلة',
+                      icon: Icons.alarm_on_rounded,
+                      iconColor: const Color(0xFFD64463),
+                      value: _logic.fajrChallengeEnabled,
+                      onChanged: (value) {
+                        setState(() => _logic.fajrChallengeEnabled = value);
+                        _saveSettings(fajrChallengeValue: value);
+                      },
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'عدد الأسئلة: ${_logic.fajrChallengeQuestionsCount}',
-                          style: const TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Slider(
-                          value: _logic.fajrChallengeQuestionsCount.toDouble(),
-                          min: 1,
-                          max: 10,
-                          divisions: 9,
-                          activeColor: const Color(0xFFD64463),
-                          inactiveColor: Colors.grey.withValues(alpha: 0.3),
-                          label: '${_logic.fajrChallengeQuestionsCount}',
-                          onChanged: (double value) {
-                            setState(() {
-                              _logic.fajrChallengeQuestionsCount =
-                                  value.toInt();
-                            });
-                          },
-                          onChangeEnd: (double value) {
-                            _saveSettings(
-                                challengeQuestionsCount: value.toInt());
-                          },
-                        ),
-                        const Divider(color: Colors.white24),
-                        SwitchListTile(
-                          activeThumbColor: const Color(0xFFD64463),
-                          activeTrackColor:
-                              const Color(0xFFD64463).withValues(alpha: 0.3),
-                          inactiveThumbColor: Colors.grey,
-                          inactiveTrackColor:
-                              Colors.grey.withValues(alpha: 0.3),
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'كتابة الإجابة',
-                            style: TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'أكثر صعوبة: اكتب الإجابة بدلاً من الاختيار',
-                            style: TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                          value: _logic.fajrChallengeIsTextInput,
-                          onChanged: (value) {
-                            setState(() {
-                              _logic.fajrChallengeIsTextInput = value;
-                            });
-                            _saveSettings(challengeIsTextInput: value);
-                          },
-                        ),
-                        const Divider(color: Colors.white24),
-
-                        // Wake Up Mode Section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Text(
-                            'وقت الاستيقاظ',
-                            style: TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        RadioGroup<String>(
-                          groupValue: _logic.fajrChallengeWakeUpMode,
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _logic.fajrChallengeWakeUpMode = val;
-                              });
-                              _saveSettings(challengeWakeUpMode: val);
-                            }
-                          },
-                          child: Column(
-                            children: [
-                              RadioListTile<String>(
-                                value: 'auto',
-                                activeColor: const Color(0xFFD64463),
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'تلقائي (عند الثلث الأخير)',
+                    if (_logic.fajrChallengeEnabled) ...[
+                      SettingsWidgets.buildDivider(context),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Questions count slider
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'عدد أسئلة التحدي',
                                   style: TextStyle(
-                                      fontFamily: 'Amiri', color: Colors.white),
+                                    fontFamily: 'Amiri',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD64463)
+                                        .withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${_logic.fajrChallengeQuestionsCount} أسئلة',
+                                    style: const TextStyle(
+                                      fontFamily: 'Amiri',
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD64463),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Slider(
+                              value:
+                                  _logic.fajrChallengeQuestionsCount.toDouble(),
+                              min: 1,
+                              max: 10,
+                              divisions: 9,
+                              activeColor: const Color(0xFFD64463),
+                              inactiveColor: isDark
+                                  ? Colors.white12
+                                  : Colors.grey.shade300,
+                              label:
+                                  '${_logic.fajrChallengeQuestionsCount} أسئلة',
+                              onChanged: (double value) {
+                                setState(() {
+                                  _logic.fajrChallengeQuestionsCount =
+                                      value.toInt();
+                                });
+                              },
+                              onChangeEnd: (double value) {
+                                _saveSettings(
+                                    challengeQuestionsCount: value.toInt());
+                              },
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Text Input switch
+                            SwitchListTile(
+                              activeThumbColor: const Color(0xFFD64463),
+                              activeTrackColor: const Color(0xFFD64463)
+                                  .withValues(alpha: 0.3),
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                'كتابة الإجابة نصياً',
+                                style: TextStyle(
+                                  fontFamily: 'Amiri',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              RadioListTile<String>(
-                                value: 'custom',
-                                activeColor: const Color(0xFFD64463),
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'مخصص (قبل الفجر)',
-                                  style: TextStyle(
-                                      fontFamily: 'Amiri', color: Colors.white),
+                              subtitle: Text(
+                                'زيادة مستوى التحدي بالكتابة بدلاً من الاختيار من متعدد',
+                                style: TextStyle(
+                                  fontFamily: 'Amiri',
+                                  fontSize: 13,
+                                  color:
+                                      isDark ? Colors.white60 : Colors.black54,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                              value: _logic.fajrChallengeIsTextInput,
+                              onChanged: (value) {
+                                setState(() {
+                                  _logic.fajrChallengeIsTextInput = value;
+                                });
+                                _saveSettings(challengeIsTextInput: value);
+                              },
+                            ),
+                            const Divider(height: 24),
 
-                        // Custom Offset Slider (Visible only if Custom)
-                        if (_logic.fajrChallengeWakeUpMode == 'custom')
-                          Column(
-                            children: [
+                            // Wake Up Mode Segmented Selection
+                            const Text(
+                              'موعد رنين المنبه',
+                              style: TextStyle(
+                                fontFamily: 'Amiri',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SettingsWidgets.buildChoiceCard(
+                                    context: context,
+                                    title: 'الثلث الأخير',
+                                    subtitle: 'تلقائياً لقيام الليل',
+                                    isSelected:
+                                        _logic.fajrChallengeWakeUpMode == 'auto',
+                                    onTap: () {
+                                      setState(() => _logic
+                                          .fajrChallengeWakeUpMode = 'auto');
+                                      _saveSettings(
+                                          challengeWakeUpMode: 'auto');
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: SettingsWidgets.buildChoiceCard(
+                                    context: context,
+                                    title: 'وقت مخصص',
+                                    subtitle: 'دقائق محددة قبل الفجر',
+                                    isSelected: _logic
+                                            .fajrChallengeWakeUpMode ==
+                                        'custom',
+                                    onTap: () {
+                                      setState(() => _logic
+                                          .fajrChallengeWakeUpMode = 'custom');
+                                      _saveSettings(
+                                          challengeWakeUpMode: 'custom');
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Custom Offset Slider
+                            if (_logic.fajrChallengeWakeUpMode == 'custom') ...[
+                              const SizedBox(height: 16),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
+                                  const Text(
+                                    'الرنين قبل أذان الفجر بـ:',
+                                    style: TextStyle(
+                                      fontFamily: 'Amiri',
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                   Text(
                                     '${_logic.fajrChallengeCustomOffsetMinutes} دقيقة',
-                                    style: const TextStyle(color: Colors.amber),
-                                  ),
-                                  const Text(
-                                    'قبل الفجر بـ:',
-                                    style: TextStyle(
-                                        fontFamily: 'Amiri',
-                                        color: Colors.white70),
+                                    style: const TextStyle(
+                                      fontFamily: 'Amiri',
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD64463),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -433,11 +352,12 @@ class _NotificationSettingsScreenState
                                 value: _logic.fajrChallengeCustomOffsetMinutes
                                     .toDouble(),
                                 min: 10,
-                                max: 120, // Max 2 hours before
-                                divisions: 11, // 10, 20, ... 120
+                                max: 120,
+                                divisions: 11,
                                 activeColor: const Color(0xFFD64463),
-                                inactiveColor:
-                                    Colors.grey.withValues(alpha: 0.3),
+                                inactiveColor: isDark
+                                    ? Colors.white12
+                                    : Colors.grey.shade300,
                                 label:
                                     '${_logic.fajrChallengeCustomOffsetMinutes} دقيقة',
                                 onChanged: (val) {
@@ -445,136 +365,164 @@ class _NotificationSettingsScreenState
                                     _logic.fajrChallengeCustomOffsetMinutes =
                                         val.toInt();
                                   });
+                                },
+                                onChangeEnd: (val) {
                                   _saveSettings(
                                       challengeCustomOffset: val.toInt());
                                 },
                               ),
                             ],
-                          ),
 
-                        const Divider(color: Colors.white24),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'تجربة التحدي',
-                            style: TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'جرب التحدي الآن للتأكد من عمله',
-                            style: TextStyle(
-                              fontFamily: 'Amiri',
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const FajrChallengeScreen());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD64463),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Get.to(() => const FajrChallengeScreen());
+                                },
+                                icon: const Icon(Icons.play_arrow_rounded,
+                                    size: 22),
+                                label: const Text(
+                                  'تجربة التحدي الآن',
+                                  style: TextStyle(
+                                    fontFamily: 'Amiri',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFD64463),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                               ),
                             ),
-                            child: const Text('بدء التجربة'),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 12),
-
-                // Adhkar Auto-Reminders Section
-                Text(
-                  'تنبيهات الأذكار التلقائية',
-                  style: TextStyle(
-                    fontFamily: 'Amiri',
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        activeThumbColor: const Color(0xFFD64463),
-                        activeTrackColor:
-                            const Color(0xFFD64463).withValues(alpha: 0.3),
-                        inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                        title: const Text(
-                          'أذكار الصباح',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'بعد صلاة الفجر بـ ساعة واحدة',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                          ),
-                        ),
-                        value: _logic.morningAdhkarEnabled,
-                        onChanged: (value) {
-                          setState(() => _logic.morningAdhkarEnabled = value);
-                          _saveSettings(morningAdhkarValue: value);
-                        },
-                      ),
-                      const Divider(color: Colors.white24, height: 1),
-                      SwitchListTile(
-                        activeThumbColor: const Color(0xFFD64463),
-                        activeTrackColor:
-                            const Color(0xFFD64463).withValues(alpha: 0.3),
-                        inactiveThumbColor: Colors.grey,
-                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
-                        title: const Text(
-                          'أذكار المساء',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'بعد صلاة العصر بـساعة واحدة',
-                          style: TextStyle(
-                            fontFamily: 'Amiri',
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                          ),
-                        ),
-                        value: _logic.eveningAdhkarEnabled,
-                        onChanged: (value) {
-                          setState(() => _logic.eveningAdhkarEnabled = value);
-                          _saveSettings(eveningAdhkarValue: value);
-                        },
                       ),
                     ],
-                  ),
+                  ],
                 ),
+                const SizedBox(height: 20),
+
+                // Section 3: Morning & Evening Adhkar Scheduled Alerts
+                SettingsWidgets.buildSectionHeader(
+                  context: context,
+                  title: 'تنبيهات أذكار الصباح والمساء',
+                  icon: Icons.wb_twilight_rounded,
+                  color: const Color(0xFFF59E0B),
+                ),
+                SettingsWidgets.buildCardContainer(
+                  context: context,
+                  children: [
+                    SettingsWidgets.buildSwitchTile(
+                      context: context,
+                      title: 'تنبيه أذكار الصباح',
+                      subtitle: 'تذكير مبارك بعد صلاة الفجر بساعة واحدة',
+                      icon: Icons.wb_sunny_rounded,
+                      iconColor: const Color(0xFFF59E0B),
+                      value: _logic.morningAdhkarEnabled,
+                      onChanged: (value) {
+                        setState(() => _logic.morningAdhkarEnabled = value);
+                        _saveSettings(morningAdhkarValue: value);
+                      },
+                    ),
+                    SettingsWidgets.buildDivider(context),
+                    SettingsWidgets.buildSwitchTile(
+                      context: context,
+                      title: 'تنبيه أذكار المساء',
+                      subtitle: 'تذكير مبارك بعد صلاة العصر بساعة واحدة',
+                      icon: Icons.nights_stay_rounded,
+                      iconColor: const Color(0xFF8B5CF6),
+                      value: _logic.eveningAdhkarEnabled,
+                      onChanged: (value) {
+                        setState(() => _logic.eveningAdhkarEnabled = value);
+                        _saveSettings(eveningAdhkarValue: value);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBatteryBanner(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 26),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'تحسين البطارية مفعل في النظام',
+                  style: TextStyle(
+                    fontFamily: 'Amiri',
+                    color: Colors.amber,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'قد يُوقف النظام إشعارات الأذان والعد التنازلي التلقائي لتوفير الطاقة. يوصى باستثناء التطبيق من تحسين البطارية لضمان دقة التنبيهات.',
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              color: isDark ? Colors.white70 : Colors.black87,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await BatteryOptimizationHelper
+                    .requestIgnoreBatteryOptimization();
+                Future.delayed(const Duration(seconds: 2), () {
+                  _checkBatteryOptimization();
+                });
+              },
+              icon: const Icon(Icons.battery_saver_rounded, size: 18),
+              label: const Text(
+                'استثناء التطبيق من تحسين البطارية',
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                foregroundColor: Colors.black87,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

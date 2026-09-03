@@ -354,7 +354,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             'بسم الله الرحمن الرحيم',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'AmiriQuran',
+              fontFamily: 'Amiri',
               fontSize: 22,
               color: const Color(0xFFD4AF37).withValues(alpha: 0.85),
               height: 1.6,

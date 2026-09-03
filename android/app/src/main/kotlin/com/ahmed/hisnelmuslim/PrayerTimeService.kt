@@ -1,5 +1,5 @@
-package com.example.hisn_el_muslim
- 
+package com.ahmed.hisnelmuslim
+
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
@@ -36,11 +36,14 @@ import android.widget.LinearLayout
 import android.widget.RemoteViews
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.example.hisn_el_muslim.R
 import java.util.ArrayList
 import java.util.HashSet
 
 class PrayerTimeService : Service() {
+    companion object {
+        const val ACTION_TRIGGER_AYAT = "com.ahmed.hisnelmuslim.ACTION_TRIGGER_AYAT"
+    }
+
     private val CHANNEL_ID = "prayer_notification_channel"
     private val NOTIFICATION_ID = 1001
     private val ALARM_CHANNEL_ID = "fajr_challenge_alarm_channel"
@@ -48,7 +51,8 @@ class PrayerTimeService : Service() {
     private var handler: Handler? = null
     private var runnable: Runnable? = null
     private var mediaPlayer: MediaPlayer? = null
-    
+    private var lastWidgetUpdate: Long = 0
+
     // Properties
     private var hijriDate: String = ""
     private var prayerInfoOriginal: String = ""
@@ -57,7 +61,7 @@ class PrayerTimeService : Service() {
     private var nextTargetTimestamp: Long = 0
     private var nextTargetPrayerName: String = ""
     private var nextPrayerInfo: String = ""
-    private var notificationMode: Int = 0 
+    private var notificationMode: Int = 0
     private var challengeTimestamp: Long = 0
     private var challengeTriggered: Boolean = false
     private var prayerTriggered: Boolean = false
@@ -84,7 +88,19 @@ class PrayerTimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        
+
+        if (intent?.action == ACTION_TRIGGER_AYAT) {
+            // Fired by PrayerAlarmReceiver (AlarmManager exact alarm)
+            val prayerName = intent.getStringExtra("prayer_name") ?: "Fajr"
+            val flutterPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val isSpecialTime = prayerName in listOf("Sunrise", "First Third", "Midnight", "Last Third")
+            val isAyatEnabled = flutterPrefs.getBoolean("flutter.ayat_hadith_$prayerName", !isSpecialTime)
+            if (isAyatEnabled && notificationMode != 3) {
+                triggerAyatHadithOverlay(prayerName)
+            }
+            return START_STICKY
+        }
+
         if (intent?.action == "TEST_AYAT_OVERLAY") {
             triggerAyatHadithOverlay("Fajr")
             return START_STICKY
@@ -103,7 +119,7 @@ class PrayerTimeService : Service() {
             nextTargetPrayerName = it.getStringExtra("next_target_prayer_name") ?: nextTargetPrayerName
             nextPrayerInfo = it.getStringExtra("next_prayer_info") ?: nextPrayerInfo
             notificationMode = it.getIntExtra("notification_mode", 0)
-        
+
             val newChallengeTimestamp = it.getLongExtra("challenge_timestamp", 0)
             if (newChallengeTimestamp != challengeTimestamp) {
                 challengeTimestamp = newChallengeTimestamp
@@ -112,7 +128,7 @@ class PrayerTimeService : Service() {
 
             val wasEnabled = dhikrEnabled
             dhikrEnabled = it.getBooleanExtra("dhikr_enabled", false)
-            
+
             if (dhikrEnabled && (lastDhikrTimestamp == 0L || !wasEnabled)) {
                 val now = System.currentTimeMillis()
                 lastDhikrTimestamp = now
@@ -131,7 +147,7 @@ class PrayerTimeService : Service() {
             if (incomingList != null) {
                 dhikrList = ArrayList(incomingList)
             }
-            
+
             saveData()
         }
 
@@ -180,13 +196,45 @@ class PrayerTimeService : Service() {
 
     private fun updateNotification() {
         val now = System.currentTimeMillis()
+
+        // Keep home-screen widgets live (countdown recomputed natively).
+        // 30s cadence: smooth enough for a minute-precision countdown,
+        // cheap enough to never matter for battery.
+        if (now - lastWidgetUpdate >= 30_000L) {
+            lastWidgetUpdate = now
+            try {
+                PrayerWidgetData.updateAll(this)
+            } catch (e: Exception) {
+                Log.w("PrayerTimeService", "Widget refresh failed: ${e.message}")
+            }
+        }
+
         var diff = targetTimestamp - now
-        
+
         if (challengeTimestamp > 0 && !challengeTriggered) {
              val challengeDiff = challengeTimestamp - now
              if (challengeDiff <= 0 && challengeDiff > -60000) {
                  challengeTriggered = true
+                 // Fallback trigger for when the exact alarm was missed
+                 // (e.g. permission revoked). AlarmSound is idempotent, so no
+                 // double playback if the receiver already fired.
+                 AlarmSound.play(this)
                  triggerAlarm("تحدي الفجر", "حان وقت الاستيقاظ لتحدي الفجر!", "Fajr_Challenge")
+                 // Also bring the app to the front directly: the full-screen
+                 // intent may be suppressed while the app is in the foreground.
+                 try {
+                     val intent = Intent(this, MainActivity::class.java).apply {
+                         action = Intent.ACTION_MAIN
+                         addCategory(Intent.CATEGORY_LAUNCHER)
+                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                 Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                                 Intent.FLAG_ACTIVITY_SINGLE_TOP
+                         putExtra("triggered_prayer", "Fajr_Challenge")
+                     }
+                     startActivity(intent)
+                 } catch (e: Exception) {
+                     // Blocked (background launch restriction) - rely on the notification.
+                 }
              }
         }
 
@@ -196,9 +244,10 @@ class PrayerTimeService : Service() {
                   prayerTriggered = true
                   // Check user preference from Flutter SharedPreferences
                   val flutterPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-                  val isAyatEnabled = flutterPrefs.getBoolean("flutter.ayat_hadith_$targetPrayerName", true)
-                  
-                  if (isAyatEnabled) {
+                  val isSpecialTime = targetPrayerName in listOf("Sunrise", "First Third", "Midnight", "Last Third")
+                  val isAyatEnabled = flutterPrefs.getBoolean("flutter.ayat_hadith_$targetPrayerName", !isSpecialTime)
+
+                  if (isAyatEnabled && notificationMode != 3) {
                       triggerAyatHadithOverlay(targetPrayerName)
                   }
               }
@@ -218,12 +267,13 @@ class PrayerTimeService : Service() {
             targetPrayerName = nextTargetPrayerName
             prayerTriggered = false
             prayerInfoOriginal = nextPrayerInfo
-            nextTargetTimestamp = 0 
+            nextTargetTimestamp = 0
             nextTargetPrayerName = ""
             nextPrayerInfo = ""
             diff = targetTimestamp - now
+            saveData() // persist the roll-forward so BootReceiver can reschedule the new target
         }
-        
+
         val remainingTimeText = when {
             diff > 0 -> {
                 val hours = diff / 3600000
@@ -237,7 +287,7 @@ class PrayerTimeService : Service() {
 
         val remainingWithComma = if (remainingTimeText.isNotEmpty()) "  - $remainingTimeText" else ""
         val notification = buildNotification(prayerInfoOriginal, remainingWithComma)
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
@@ -252,18 +302,18 @@ class PrayerTimeService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             putExtra("screen_to_open", "prayer_times")
         }
-        
+
         val openAppPendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent, 
+            this, 0, openAppIntent,
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val refreshGpsIntent = Intent(this, RefreshGpsReceiver::class.java).apply {
-            action = "com.example.hisn_el_muslim.ACTION_REFRESH_GPS"
+            action = "com.ahmed.hisnelmuslim.ACTION_REFRESH_GPS"
         }
 
         val refreshGpsPendingIntent = PendingIntent.getBroadcast(
-            this, 1, refreshGpsIntent, 
+            this, 1, refreshGpsIntent,
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -320,9 +370,9 @@ class PrayerTimeService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             if (prayerName != null) putExtra("triggered_prayer", prayerName)
         }
-        
+
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent, 
+            this, 0, intent,
             (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -355,7 +405,7 @@ class PrayerTimeService : Service() {
     private fun triggerAyatHadithOverlay(prayerName: String) {
         if (isAyatShowing) return
         isAyatShowing = true
-        
+
         Handler(Looper.getMainLooper()).post {
             val canDraw = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 Settings.canDrawOverlays(this) else true
@@ -401,7 +451,7 @@ class PrayerTimeService : Service() {
             val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val dp = resources.displayMetrics.density
             val displayMetrics = resources.displayMetrics
-            
+
             val screenWidth = displayMetrics.widthPixels
             val screenHeight = displayMetrics.heightPixels
 
@@ -434,13 +484,13 @@ class PrayerTimeService : Service() {
                     }
                     alpha = 0.3f + (Math.random() * 0.5f).toFloat()
                 }
-                
+
                 val lp = FrameLayout.LayoutParams(size, size).apply {
                     leftMargin = (Math.random() * screenWidth).toInt()
                     topMargin = (Math.random() * screenHeight).toInt()
                 }
                 particlesContainer.addView(star, lp)
-                
+
                 // Gentle floating animation
                 star.animate()
                     .translationY(-30f * dp)
@@ -549,7 +599,7 @@ class PrayerTimeService : Service() {
             // PRAYER TIME ANNOUNCEMENT
             // ═══════════════════════════════════════════════════════════════
             val arabicName = getArabicPrayerName(prayerName)
-            
+
             val timeLabel = TextView(this).apply {
                 text = "حان الآن موعد"
                 setTextColor(0xCCFFFFFF.toInt())
@@ -771,7 +821,7 @@ class PrayerTimeService : Service() {
 
             try {
                 wm.addView(root, params)
-                
+
                 // Entrance animation
                 root.animate()
                     .alpha(1f)
@@ -800,7 +850,7 @@ class PrayerTimeService : Service() {
             val dismissOverlay = {
                 pulseAnim.cancel()
                 glowPulse.cancel()
-                
+
                 try {
                     mediaPlayer?.stop()
                     mediaPlayer?.release()
@@ -829,7 +879,7 @@ class PrayerTimeService : Service() {
     private fun triggerDhikrOverlay() {
         if (isDhikrShowing) return
         isDhikrShowing = true
-        
+
         Handler(Looper.getMainLooper()).post {
             val dhikr = if (dhikrList.isNotEmpty())
                 dhikrList[(dhikrList.indices).random()] else "سبحان الله"
@@ -865,7 +915,7 @@ class PrayerTimeService : Service() {
             // ═══════════════════════════════════════════════════════════════
             // val cardWidth = (280 * dp).toInt()
             val cardWidth = (280f * dp)
-            
+
             val root = FrameLayout(this).apply {
                 background = GradientDrawable().also { gd ->
                     gd.shape = GradientDrawable.RECTANGLE
@@ -991,12 +1041,12 @@ class PrayerTimeService : Service() {
             // ANIMATION & AUTO-DISMISS (MATCH FLUTTER)
             // ═══════════════════════════════════════════════════════════════
             val totalMs = 5000L
-            
+
             var wasDismissed = false
             val exitAnimation = Runnable {
                 if (wasDismissed) return@Runnable
                 wasDismissed = true
-                
+
                 root.animate()
                     .alpha(0f)
                     .scaleX(0.9f)
@@ -1031,7 +1081,7 @@ class PrayerTimeService : Service() {
 
             try {
                 wm.addView(root, params)
-                
+
                 // Entrance
                 root.animate()
                     .alpha(1f)
@@ -1095,11 +1145,11 @@ class PrayerTimeService : Service() {
         val savedList: Set<String>? = prefs.getStringSet("dhikr_list", null)
         if (savedList != null) dhikrList = ArrayList(savedList.toList())
     }
-    
+
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
     }
-    
+
     override fun onDestroy() {
         handler?.removeCallbacksAndMessages(null)
         super.onDestroy()

@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:small_husn_muslim/features/book/services/book_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
+import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/core/utils/asset_loader.dart';
 
 class FajrChallengeScreen extends StatefulWidget {
@@ -18,7 +20,7 @@ class FajrChallengeScreen extends StatefulWidget {
 class _FajrChallengeScreenState extends State<FajrChallengeScreen>
     with WidgetsBindingObserver {
   late AudioPlayer _audioPlayer;
-  static const platform = MethodChannel('com.yourapp/volume_lock');
+  static const platform = MethodChannel('com.ahmed.hisnelmuslim/volume_lock');
   int _currentQuestionIndex = 0;
   int? _selectedAnswerIndex;
   bool _isAnswerCorrect = false;
@@ -28,6 +30,10 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
   bool _isLoading = true;
   final TextEditingController _textController = TextEditingController();
   List<Question> _questions = [];
+
+  /// Tracks whether WE locked the volume, so dispose never mutes the user
+  /// when the lock call itself failed.
+  bool _volumeLocked = false;
 
   @override
   void initState() {
@@ -39,6 +45,10 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
     _isTextInputMode = logic.fajrChallengeIsTextInput;
 
     _loadQuestionsFromJSON();
+    // Stop any in-flight alarm audio (native AlarmSound / stray Dart player)
+    // before starting our own loop — otherwise they overlap and echo.
+    PrayerTimesLogic().stopAudio();
+    PrayerNotificationHelper.cancelAlarmNotification();
     _initAudio();
     _lockVolumeAtMax();
   }
@@ -121,12 +131,15 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
   Future<void> _lockVolumeAtMax() async {
     try {
       await platform.invokeMethod('lockVolumeAtMax');
+      _volumeLocked = true;
     } catch (e) {
       debugPrint('Error locking volume: $e');
     }
   }
 
   Future<void> _unlockVolume() async {
+    if (!_volumeLocked) return;
+    _volumeLocked = false;
     try {
       await platform.invokeMethod('unlockVolume');
     } catch (e) {
@@ -136,6 +149,8 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
 
   Future<void> _initAudio() async {
     _audioPlayer = AudioPlayer();
+    // Honor the in-app sound toggle — native AlarmSound already does too.
+    if (!PrayerTimesLogic().notificationSoundEnabled) return;
     await _audioPlayer.setReleaseMode(ReleaseMode.loop);
     await _audioPlayer.setVolume(1.0);
     try {
@@ -154,10 +169,7 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
   }
 
   String _normalizeString(String input) {
-    String text = input.trim();
-    text = text.replaceAll(RegExp(r'[\u064B-\u065F]'), '');
-    text = text.replaceAll(RegExp(r'[أإآ]'), 'ا');
-    text = text.replaceAll('ة', 'ه');
+    String text = BookService.normalizeArabic(input);
     text = text.replaceAll('ـ', '');
     return text;
   }
@@ -238,6 +250,9 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
     await _unlockVolume();
     await _audioPlayer.stop();
     PrayerTimesLogic().stopAudio();
+    PrayerTimesLogic().resetFajrChallengeFired();
+    await PrayerNotificationHelper.cancelAlarmNotification();
+    await PrayerNotificationHelper.setLockScreenMode(false);
 
     if (mounted) {
       Navigator.of(context).pop();

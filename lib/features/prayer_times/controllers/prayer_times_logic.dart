@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,9 +14,12 @@ import 'package:small_husn_muslim/core/services/cache_manager.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_calculation_engine.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
+import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
+import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
+import 'package:small_husn_muslim/features/prayer_times/services/prayer_widget_sync.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
 
 class DayPrayerSummary {
@@ -47,6 +52,29 @@ class PrayerTimesLogic extends GetxController {
     audioPlayer = AudioPlayer();
     _cacheManager = CacheManager();
   }
+
+  // Prayer time source mode: calculated (offline) vs mosque (online/cache)
+  final prayerTimeSourceRx = PrayerTimeSource.calculated.obs;
+  PrayerTimeSource get prayerTimeSource => prayerTimeSourceRx.value;
+  set prayerTimeSource(PrayerTimeSource value) =>
+      prayerTimeSourceRx.value = value;
+
+  final selectedMosqueRx = Rxn<MosquePoint>();
+  MosquePoint? get selectedMosque => selectedMosqueRx.value;
+  set selectedMosque(MosquePoint? value) => selectedMosqueRx.value = value;
+
+  final isMosqueScheduleOfflineRx = false.obs;
+  bool get isMosqueScheduleOffline => isMosqueScheduleOfflineRx.value;
+  set isMosqueScheduleOffline(bool value) =>
+      isMosqueScheduleOfflineRx.value = value;
+
+  // Nearby mosque search state
+  final nearbyMosquesRx = <MosquePoint>[].obs;
+  List<MosquePoint> get nearbyMosques => nearbyMosquesRx.toList();
+  final isSearchingMosquesRx = false.obs;
+  bool get isSearchingMosques => isSearchingMosquesRx.value;
+  final nearbyMosqueCountryRx = ''.obs;
+  String get nearbyMosqueCountry => nearbyMosqueCountryRx.value;
 
   // Rx State variables
   final prayerTimesRx = Rxn<List<PrayerTime>>();
@@ -99,14 +127,25 @@ class PrayerTimesLogic extends GetxController {
   };
 
   // User-facing prayer time offsets (visible in settings)
-  Map<String, int> prayerOffsets = {
+  final Map<String, int> prayerOffsets = {
     'Fajr': 0,
     'Sunrise': 0,
     'Dhuhr': 0,
     'Asr': 0,
     'Maghrib': 0,
     'Isha': 0,
-  };
+  }.obs;
+
+  // Iqama offsets in minutes (per-prayer, used in calculated mode)
+  // e.g. {'Fajr': 10, 'Dhuhr': 15, ...}
+  final Map<String, int> iqamaOffsets = {
+    'Fajr': 0,
+    'Sunrise': 0,
+    'Dhuhr': 0,
+    'Asr': 0,
+    'Maghrib': 0,
+    'Isha': 0,
+  }.obs;
 
   // Helper to get combined offsets for internal calculations
   Map<String, int> _getEffectiveOffsets() {
@@ -146,6 +185,15 @@ class PrayerTimesLogic extends GetxController {
   final timeRemainingRx = ''.obs;
   String get timeRemaining => timeRemainingRx.value;
 
+  final iqamaCountdownRx = ''.obs;
+  String get iqamaCountdown => iqamaCountdownRx.value;
+
+  final nextPrayerIqamaTimeRx = ''.obs;
+  String get nextPrayerIqamaTime => nextPrayerIqamaTimeRx.value;
+
+  final hasIqamaDataRx = false.obs;
+  bool get hasIqamaData => hasIqamaDataRx.value;
+
   Timer? _countdownTimer;
 
   @override
@@ -165,6 +213,9 @@ class PrayerTimesLogic extends GetxController {
     final info = getNextPrayerInfo();
     nextPrayerNameRx.value = info['name'] ?? '';
     timeRemainingRx.value = info['timeRemaining'] ?? '';
+    iqamaCountdownRx.value = info['iqamaCountdown'] ?? '';
+    nextPrayerIqamaTimeRx.value = info['iqamaTime'] ?? '';
+    hasIqamaDataRx.value = info['hasIqama'] == true;
     currentTime = _formatCurrentTime();
   }
 
@@ -188,6 +239,44 @@ class PrayerTimesLogic extends GetxController {
   Timer? _notificationTimer;
   final Set<int> _firedPrayerIndexes = <int>{};
   DateTime _firedDate = DateTime.now();
+
+  /// Allow the Fajr challenge to be triggered again (e.g. repeated tests).
+  void resetFajrChallengeFired() {
+    _firedPrayerIndexes.remove(NotificationIds.fajrChallengeIndex);
+    _fajrChallengeOpen = false;
+  }
+
+  /// Re-entrancy guard: the native alarm and the Dart timer can fire within
+  /// milliseconds of each other — without this the screen pushes twice and
+  /// the second instance keeps looping audio behind the first.
+  bool _fajrChallengeOpen = false;
+
+  /// Single guarded entry point for opening the Fajr challenge UI.
+  ///
+  /// Enforces the "No alert" notification mode, prevents double-push from
+  /// the concurrent trigger paths, and owns the bring-to-foreground hop.
+  /// Native [AlarmSound] owns the alarm audio (it works even when the Dart
+  /// engine was dead); the challenge screen stops it on open.
+  Future<void> _openFajrChallenge() async {
+    if (notificationMode == 3) return;
+    if (_fajrChallengeOpen) return;
+    _fajrChallengeOpen = true;
+    try {
+      try {
+        const platform =
+            MethodChannel('com.ahmed.hisnelmuslim/prayer_notification');
+        await platform.invokeMethod('bringAppToForeground');
+      } catch (e) {
+        if (kDebugMode) print("Error bringing - $e");
+      }
+      await Get.to(() => const FajrChallengeScreen());
+    } catch (e) {
+      if (kDebugMode) print('Error opening Fajr challenge: $e');
+    } finally {
+      _fajrChallengeOpen = false;
+    }
+  }
+
   // _lastNotificationContent removed as unused
   dynamic _lastSentTargetTimestamp;
 
@@ -250,6 +339,13 @@ class PrayerTimesLogic extends GetxController {
           Get.to(() => const PrayerTimesScreen());
         }
       }
+    }
+
+    // Handle a pending alarm trigger that fired during cold start
+    // (AlarmManager exact alarm -> full-screen intent -> this activity)
+    final pendingAlarm = await PrayerNotificationHelper.getPendingAlarm();
+    if (pendingAlarm != null) {
+      _handleTriggeredAlarm(pendingAlarm);
     }
 
     // 4. Check onboarding status for UI silence
@@ -399,10 +495,12 @@ class PrayerTimesLogic extends GetxController {
         // or during the 'force' path in ensureDataLoaded.
         // Actually, let's look at the flow.
         // If we're here and it's denied, we should stop unless it's a direct user action.
-        
+
         // For the fix, we won't auto-request here.
         // The Onboarding screen or Settings will handle the request.
-        if (kDebugMode) print("Location permission denied, skipping auto-request.");
+        if (kDebugMode) {
+          print("Location permission denied, skipping auto-request.");
+        }
         isLoadingLocation = false;
         return;
       }
@@ -431,7 +529,7 @@ class PrayerTimesLogic extends GetxController {
         // We no longer auto-request background upgrade here.
         // It's handled by Onboarding or explicit user Settings navigation.
       }
-      
+
       // Try to get last known position first (faster and works even when GPS is temporarily blocked)
       Position? position = await Geolocator.getLastKnownPosition();
 
@@ -599,7 +697,7 @@ class PrayerTimesLogic extends GetxController {
     if (status == LocationPermission.whileInUse) {
       if (kDebugMode) print("Upgrading to background location permission...");
       try {
-        const platform = MethodChannel('com.example.hisn_el_muslim/location');
+        const platform = MethodChannel('com.ahmed.hisnelmuslim/location');
         final bool granted =
             await platform.invokeMethod('requestBackgroundLocationPermission');
         return granted;
@@ -613,7 +711,8 @@ class PrayerTimesLogic extends GetxController {
 
   // --- Calculation Logic (from user provided code) ---
 
-  Future<void> _calculateTimes({DateTime? targetDate, bool force = false}) async {
+  Future<void> _calculateTimes(
+      {DateTime? targetDate, bool force = false}) async {
     final date = targetDate ?? DateTime.now();
     final dateKey = "${date.year}-${date.month}-${date.day}";
 
@@ -621,7 +720,8 @@ class PrayerTimesLogic extends GetxController {
     if (!force) {
       final cachedWeek = _cacheManager.getCachedWeekPrayerTimes();
       if (cachedWeek != null && cachedWeek.containsKey(dateKey)) {
-        final List<dynamic> jsonList = jsonDecode(cachedWeek[dateKey] as String);
+        final List<dynamic> jsonList =
+            jsonDecode(cachedWeek[dateKey] as String);
         final List<PrayerTime> cachedTimes = jsonList
             .map((j) => PrayerTime.fromJson(j as Map<String, dynamic>))
             .toList();
@@ -631,12 +731,67 @@ class PrayerTimesLogic extends GetxController {
           prayerTimes = cachedTimes;
           isLoadingPrayerTimes = false;
           displayDate();
+          // Push today's snapshot to the home-screen widgets.
+          PrayerWidgetSync.syncFromTimes(
+              times: cachedTimes, hijriDate: hijriDate);
 
           if (persistentNotificationEnabled) {
             updatePersistentNotification();
           }
+          _syncFajrChallengeAlarm();
         }
         return;
+      }
+    }
+
+    // If Mosque mode is active and we have an active mosque, resolve mosque schedule
+    if (prayerTimeSource == PrayerTimeSource.mosque && selectedMosque != null) {
+      try {
+        MosqueSchedule? schedule;
+        if (!force) {
+          schedule = await OfflineCache.getSchedule(selectedMosque!.slug);
+          if (schedule != null) {
+            isMosqueScheduleOffline = true;
+          }
+        }
+        if (schedule == null) {
+          try {
+            final api = MawaqitApi();
+            schedule = await api.scheduleBySlug(selectedMosque!.slug,
+                forceRefresh: force);
+            isMosqueScheduleOffline = false;
+          } catch (_) {
+            schedule = await OfflineCache.getSchedule(selectedMosque!.slug);
+            isMosqueScheduleOffline = true;
+          }
+        }
+
+        if (schedule != null) {
+          final mosqueTimes = schedule.toPrayerTimes(date);
+          final currentCache = _cacheManager.getCachedWeekPrayerTimes() ?? {};
+          currentCache[dateKey] =
+              jsonEncode(mosqueTimes.map((p) => p.toJson()).toList());
+          await _cacheManager.cacheWeekPrayerTimes(currentCache);
+
+          if (targetDate == null) {
+            prayerTimes = mosqueTimes;
+            isLoadingPrayerTimes = false;
+            displayDate();
+            // Push today's snapshot to the home-screen widgets.
+            PrayerWidgetSync.syncFromTimes(
+                times: mosqueTimes, hijriDate: hijriDate);
+
+            if (persistentNotificationEnabled) {
+              updatePersistentNotification();
+            }
+            _syncFajrChallengeAlarm();
+          }
+          return;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("Mosque schedule error, falling back to calculation: $e");
+        }
       }
     }
 
@@ -695,6 +850,18 @@ class PrayerTimesLogic extends GetxController {
       _createPrayerTime('Isha', timesMap['isha'] as int, date),
     ];
 
+    // Attach iqama times from manual offsets (calculated mode only)
+    if (prayerTimeSource == PrayerTimeSource.calculated) {
+      for (int i = 0; i < mainPrayersList.length; i++) {
+        final p = mainPrayersList[i];
+        final offsetMin = iqamaOffsets[p.name] ?? 0;
+        if (offsetMin > 0) {
+          final iqamaDt = p.time.add(Duration(minutes: offsetMin));
+          mainPrayersList[i] = p.copyWith(iqamaTime: iqamaDt);
+        }
+      }
+    }
+
     mainPrayersList.sort((a, b) => a.time.compareTo(b.time));
 
     final fajrP = mainPrayersList.firstWhere((p) => p.name == 'Fajr');
@@ -734,10 +901,14 @@ class PrayerTimesLogic extends GetxController {
       prayerTimes = calculatedTimes;
       isLoadingPrayerTimes = false;
       displayDate();
+      // Push today's snapshot to the home-screen widgets.
+      PrayerWidgetSync.syncFromTimes(
+          times: calculatedTimes, hijriDate: hijriDate);
 
       if (persistentNotificationEnabled) {
         updatePersistentNotification();
       }
+      _syncFajrChallengeAlarm();
     }
   }
 
@@ -880,7 +1051,7 @@ class PrayerTimesLogic extends GetxController {
     final hijri = HijriCalendar.fromDate(hijriNow);
     final dayName = getArabicDayName(now.weekday);
     hijriDate =
-        '$dayName، ${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ';
+        '$dayName ${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ،';
 
     // Time: HH:mm:ss
     currentTime =
@@ -946,11 +1117,11 @@ class PrayerTimesLogic extends GetxController {
         print("Loaded cached location from preferences: ($lat, $lon)");
       }
     } else {
-      // Use default values (Mostaganem, Algeria)
-      lat = 35.9311;
-      lon = 0.0892;
+      // Use neutral default (Mecca) instead of hardcoded location
+      lat = 21.4225;
+      lon = 39.8262;
       _hasCachedLocation = false;
-      // Also default to MWL for Mostaganem
+      // Default to MWL for Mecca
       if (!prefs.containsKey('angles')) angles = 'mwl';
 
       if (kDebugMode) {
@@ -965,6 +1136,11 @@ class PrayerTimesLogic extends GetxController {
     for (var name in prayerOffsets.keys) {
       // Default to 0 for most, except maybe a slight buffer if desired.
       prayerOffsets[name] = prefs.getInt('offset_$name') ?? 0;
+    }
+
+    // Load iqama offsets
+    for (var name in iqamaOffsets.keys) {
+      iqamaOffsets[name] = prefs.getInt('iqama_offset_$name') ?? 0;
     }
 
     for (var name in arabicPrayerNames) {
@@ -1008,6 +1184,19 @@ class PrayerTimesLogic extends GetxController {
     //       prefs.getBool('notification_$name') ?? false;
     // }
 
+    // Load prayer times source (calculated vs mosque)
+    final savedSource = prefs.getString('prayer_time_source');
+    if (savedSource == 'mosque') {
+      prayerTimeSource = PrayerTimeSource.mosque;
+    } else {
+      prayerTimeSource = PrayerTimeSource.calculated;
+    }
+
+    final activeMosque = await OfflineCache.getActiveMosque();
+    if (activeMosque != null) {
+      selectedMosque = activeMosque;
+    }
+
     if (persistentNotificationEnabled || notificationsEnabled) {
       startNotificationUpdates();
     }
@@ -1019,6 +1208,148 @@ class PrayerTimesLogic extends GetxController {
       await prefs.setBool('internal_offsets_v2', true);
     }
   }
+
+  /// Changes the prayer times source (calculated vs mosque).
+  Future<void> setPrayerTimeSource(PrayerTimeSource source) async {
+    if (prayerTimeSource == source) return;
+    prayerTimeSource = source;
+    final prefs = SharedPrefsCache.instance;
+    await prefs.setString('prayer_time_source',
+        source == PrayerTimeSource.mosque ? 'mosque' : 'calculated');
+    await _cacheManager.clearCache();
+    await _calculateTimes(force: true);
+    displayDate();
+    if (persistentNotificationEnabled) {
+      updatePersistentNotification();
+    }
+  }
+
+  /// Sets the active mosque and immediately switches the source to [PrayerTimeSource.mosque].
+  Future<void> setSelectedMosque(MosquePoint mosque,
+      {MosqueSchedule? schedule}) async {
+    selectedMosque = mosque;
+    await OfflineCache.saveActiveMosque(mosque);
+    if (schedule != null) {
+      await OfflineCache.saveSchedule(mosque.slug, schedule);
+    }
+    prayerTimeSource = PrayerTimeSource.mosque;
+    final prefs = SharedPrefsCache.instance;
+    await prefs.setString('prayer_time_source', 'mosque');
+
+    await _cacheManager.clearCache();
+    await _calculateTimes(force: true);
+    displayDate();
+    if (persistentNotificationEnabled) {
+      updatePersistentNotification();
+    }
+  }
+
+  /// Loads ALL mosques for the user's country (not just nearby ones),
+  /// computing each one's distance to the user and sorting nearest-first.
+  ///
+  /// The user's country is inferred from their coordinates using the nearest
+  /// supported-country center point. Falls back to the coordinate-based
+  /// proximity search if the country list cannot be determined or loaded.
+  Future<void> searchNearbyMosques() async {
+    isSearchingMosquesRx.value = true;
+    try {
+      final api = MawaqitApi();
+      final countryCode = _countryCodeFor(lat, lon);
+      nearbyMosqueCountryRx.value = '';
+      List<MosquePoint> results;
+      try {
+        final all = await api.mosquesByCountry(countryCode);
+        nearbyMosqueCountryRx.value = _countryNameFor(countryCode);
+        // Keep only mosques that have coordinates, annotate distance, sort.
+        results = all
+            .where((m) => m.latitude != 0 || m.longitude != 0)
+            .map((m) => m.copyWithProximity(
+                _distanceMeters(lat, lon, m.latitude, m.longitude)))
+            .toList()
+          ..sort((a, b) => a.proximityMeters.compareTo(b.proximityMeters));
+      } catch (e) {
+        if (kDebugMode) print('Country mosque list error: $e');
+        // Fallback: coordinate-based search which still returns nearby entries.
+        results = await api.searchNearby(lat, lon);
+      }
+      nearbyMosquesRx.value = results;
+    } catch (e) {
+      if (kDebugMode) print('Nearby mosque search error: $e');
+      nearbyMosquesRx.value = [];
+    } finally {
+      isSearchingMosquesRx.value = false;
+    }
+  }
+
+  /// Approximate the user's country from coordinates by picking the supported
+  /// country whose center point is closest to (lat, lon).
+  String _countryCodeFor(double lat, double lon) {
+    String best = 'DZ';
+    double bestDist = double.infinity;
+    for (final c in _countryCenters.entries) {
+      final d = _distanceMeters(lat, lon, c.value.$1, c.value.$2);
+      if (d < bestDist) {
+        bestDist = d;
+        best = c.key;
+      }
+    }
+    return best;
+  }
+
+  String _countryNameFor(String code) {
+    for (final c in _countryNames.entries) {
+      if (c.key == code) return c.value;
+    }
+    return code;
+  }
+
+  /// Haversine distance in meters between two coordinates.
+  double _distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371000.0; // Earth radius in meters
+    final dLat = _toRad(lat2 - lat1);
+    final dLon = _toRad(lon2 - lon1);
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_toRad(lat1)) * cos(_toRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    return 2 * r * atan2(sqrt(a), sqrt(1 - a));
+  }
+
+  double _toRad(double deg) => deg * pi / 180;
+
+  static const Map<String, (double, double)> _countryCenters = {
+    'DZ': (36.75, 3.05),
+    'SA': (24.71, 46.67),
+    'EG': (30.04, 31.23),
+    'MA': (33.57, -7.58),
+    'TN': (36.80, 10.18),
+    'AE': (25.20, 55.27),
+    'FR': (48.85, 2.35),
+    'GB': (51.50, -0.12),
+    'TR': (39.93, 32.85),
+    'DE': (52.52, 13.40),
+    'CA': (45.42, -75.69),
+    'US': (38.90, -77.03),
+    'ES': (40.41, -3.70),
+    'BE': (50.85, 4.35),
+    'IT': (41.90, 12.49),
+  };
+
+  static const Map<String, String> _countryNames = {
+    'DZ': 'الجزائر',
+    'SA': 'السعودية',
+    'EG': 'مصر',
+    'MA': 'المغرب',
+    'TN': 'تونس',
+    'AE': 'الإمارات',
+    'FR': 'فرنسا',
+    'GB': 'بريطانيا',
+    'TR': 'تركيا',
+    'DE': 'ألمانيا',
+    'CA': 'كندا',
+    'US': 'الولايات المتحدة',
+    'ES': 'إسبانيا',
+    'BE': 'بلجيكا',
+    'IT': 'إيطاليا',
+  };
 
   Future<void> saveCalculationSettings() async {
     final prefs = SharedPrefsCache.instance;
@@ -1032,6 +1363,11 @@ class PrayerTimesLogic extends GetxController {
     // Save offsets
     for (var entry in prayerOffsets.entries) {
       await prefs.setInt('offset_${entry.key}', entry.value);
+    }
+
+    // Save iqama offsets
+    for (var entry in iqamaOffsets.entries) {
+      await prefs.setInt('iqama_offset_${entry.key}', entry.value);
     }
 
     // Force recalculation to reflect manual adjustments
@@ -1117,6 +1453,10 @@ class PrayerTimesLogic extends GetxController {
     // Schedule adhkar notifications
     scheduleAdhkarNotifications();
 
+    // Always keep the Fajr challenge exact alarm in sync, regardless of the
+    // persistent notification state, so toggling/offset changes take effect.
+    await _syncFajrChallengeAlarm();
+
     if (persistentNotificationEnabled) {
       startNotificationUpdates();
       updatePersistentNotification();
@@ -1134,10 +1474,13 @@ class PrayerTimesLogic extends GetxController {
 
   Future<void> toggleAyatHadith(String prayerName) async {
     final prefs = SharedPrefsCache.instance;
-    final currentValue = prayerAyatHadithEnabled[prayerName] ?? true;
-    prayerAyatHadithEnabled[prayerName] = !currentValue;
-    await prefs.setBool('ayat_hadith_$prayerName', !currentValue);
-    
+    final isSpecialTime = ['Sunrise', 'First Third', 'Midnight', 'Last Third']
+        .contains(prayerName);
+    final currentValue = prayerAyatHadithEnabled[prayerName] ?? !isSpecialTime;
+    final newValue = !currentValue;
+    prayerAyatHadithEnabled[prayerName] = newValue;
+    await prefs.setBool('ayat_hadith_$prayerName', newValue);
+
     // Sync with background service immediately
     updatePersistentNotification();
   }
@@ -1168,6 +1511,7 @@ class PrayerTimesLogic extends GetxController {
       // Check fajr challenge
       if (fajrChallengeEnabled) {
         _checkFajrChallenge();
+        _syncFajrChallengeAlarm();
       }
 
       if (!persistentNotificationEnabled) {
@@ -1258,26 +1602,23 @@ class PrayerTimesLogic extends GetxController {
       fallbackPrayer = sequence[nextIndex + 1];
     }
 
-    final arabicNameMap = {
-      'Fajr': 'الفجر',
-      'Sunrise': 'الشروق',
-      'Dhuhr': 'الظهر',
-      'Asr': 'العصر',
-      'Maghrib': 'المغرب',
-      'Isha': 'العشاء',
-      'First Third': 'الثلث الأول',
-      'Midnight': 'منتصف الليل',
-      'Last Third': 'الثلث الأخير',
-    };
-
-    String targetName = arabicNameMap[targetPrayer.name] ?? targetPrayer.name;
+    String targetName =
+        kArabicPrayerNames[targetPrayer.name] ?? targetPrayer.name;
     String info = '$targetName ,${targetPrayer.time24h}';
+
+    // Append iqama time to notification info if available
+    if (targetPrayer.iqamaTime != null) {
+      final iqamaH = targetPrayer.iqamaTime!.hour.toString().padLeft(2, '0');
+      final iqamaM = targetPrayer.iqamaTime!.minute.toString().padLeft(2, '0');
+      info += ' | الإقامة $iqamaH:$iqamaM';
+    }
 
     String? fallbackInfo;
     int? fallbackTimestamp;
 
     if (fallbackPrayer != null) {
-      String fbName = arabicNameMap[fallbackPrayer.name] ?? fallbackPrayer.name;
+      String fbName =
+          kArabicPrayerNames[fallbackPrayer.name] ?? fallbackPrayer.name;
       fallbackInfo = '$fbName في ${fallbackPrayer.time24h}';
       fallbackTimestamp = fallbackPrayer.time.millisecondsSinceEpoch;
     }
@@ -1312,9 +1653,13 @@ class PrayerTimesLogic extends GetxController {
     final dhikrInterval = dhikrHelper.intervalMinutes;
     final dhikrList = dhikrHelper.adhkar;
 
-    // Optimization check (Include Dhikr in check to prevent blocking Dhikr settings updates)
-    final checkKey =
-        "${targetPrayer.time.millisecondsSinceEpoch}_${dhikrEnabled}_$dhikrInterval";
+    // Optimization check (Include Dhikr and Fajr Challenge in check to prevent blocking settings updates)
+    final checkKey = '${targetPrayer.time.millisecondsSinceEpoch}'
+        '_$dhikrEnabled'
+        '_$dhikrInterval'
+        '_$fajrChallengeEnabled'
+        '_$fajrChallengeWakeUpMode'
+        '_$fajrChallengeCustomOffsetMinutes';
     if (_lastSentTargetTimestamp == checkKey) {
       if (kDebugMode) print("Skipping redundant notification update");
       return;
@@ -1329,7 +1674,8 @@ class PrayerTimesLogic extends GetxController {
       nextPrayerName: targetPrayer.name, // Use English for key checking
       targetTimestamp: targetPrayer.time.millisecondsSinceEpoch,
       nextTargetTimestamp: fallbackTimestamp,
-      nextTargetPrayerName: fallbackPrayer?.name, // Use English for fallback name
+      nextTargetPrayerName:
+          fallbackPrayer?.name, // Use English for fallback name
       nextPrayerInfo: fallbackInfo,
       challengeTimestamp: challengeTimestamp,
       isBlackBackground: persistentNotificationBlackBg,
@@ -1381,36 +1727,89 @@ class PrayerTimesLogic extends GetxController {
     return null;
   }
 
+  /// Schedule (or cancel) the Fajr challenge exact alarm on the native side,
+  /// independent of the persistent notification service, so it works even when
+  /// the persistent notification / location permission is unavailable.
+  Future<void> _syncFajrChallengeAlarm() async {
+    if (!fajrChallengeEnabled || prayerTimes == null || prayerTimes!.isEmpty) {
+      await PrayerNotificationHelper.scheduleFajrChallengeAlarm(0);
+      return;
+    }
+    try {
+      final fajrPrayer = prayerTimes!.firstWhere((p) => p.name == 'Fajr');
+      DateTime? cTime = await _getFajrChallengeTime(fajrPrayer);
+      final now = DateTime.now();
+
+      // If today's challenge time passed, schedule for tomorrow's Fajr
+      if (cTime != null && cTime.isBefore(now)) {
+        cTime = await _getFajrChallengeTime(fajrPrayer.copyWith(
+            time: fajrPrayer.time.add(const Duration(days: 1))));
+      }
+
+      await PrayerNotificationHelper.scheduleFajrChallengeAlarm(
+          cTime?.millisecondsSinceEpoch ?? 0);
+    } catch (e) {
+      if (kDebugMode) print('Error syncing fajr challenge alarm: $e');
+    }
+  }
+
   Map<String, dynamic> getNextPrayerInfo() {
     if (prayerTimes == null || prayerTimes!.isEmpty) {
-      return {'name': '', 'timeRemaining': ''};
+      return {
+        'name': '',
+        'timeRemaining': '',
+        'iqamaCountdown': '',
+        'iqamaTime': '',
+        'hasIqama': false
+      };
     }
 
     final now = DateTime.now();
-    final arabicNames = {
-      'Fajr': 'الفجر',
-      'Sunrise': 'الشروق',
-      'Dhuhr': 'الظهر',
-      'Asr': 'العصر',
-      'Maghrib': 'المغرب',
-      'Isha': 'العشاء',
-      'First Third': 'الثلث الأول',
-      'Midnight': 'منتصف الليل',
-      'Last Third': 'الثلث الأخير',
-    };
+    final arabicNames = kArabicPrayerNames;
 
+    // 1) Look for the currently-active prayer: its adhan has already
+    //    sounded but its iqama time is still ahead (we are inside the
+    //    adhan -> iqama window). Only then do we show the iqama countdown.
+    PrayerTime? activeIqamaPrayer;
+    for (var prayer in prayerTimes!) {
+      final iqama = prayer.iqamaTime;
+      if (iqama == null) continue;
+      // Prayer list may include Sunrise/night thirds; iqama only applies to
+      // the five main prayers which always have iqamaTime when available.
+      if (prayer.time.isBefore(now) && iqama.isAfter(now)) {
+        if (activeIqamaPrayer == null ||
+            prayer.time.isAfter(activeIqamaPrayer.time)) {
+          activeIqamaPrayer = prayer;
+        }
+      }
+    }
+
+    // If we are inside an active iqama window (adhan already fired),
+    // display the countdown to iqama.
+    if (activeIqamaPrayer != null) {
+      final iqama = activeIqamaPrayer.iqamaTime!;
+      final iqamaRemaining = iqama.difference(now);
+      final iqamaCountdown = _formatCountdown(iqamaRemaining);
+      final iqamaTimeStr =
+          '${iqama.hour.toString().padLeft(2, '0')}:${iqama.minute.toString().padLeft(2, '0')}';
+      return {
+        'name': arabicNames[activeIqamaPrayer.name] ?? activeIqamaPrayer.name,
+        'timeRemaining': iqamaCountdown,
+        'iqamaCountdown': iqamaCountdown,
+        'iqamaTime': iqamaTimeStr,
+        'hasIqama': true,
+        'prayerTime': activeIqamaPrayer.time24h,
+      };
+    }
+
+    // 2) Otherwise, determine the next upcoming adhan and count down to it.
     PrayerTime? nextPrayer;
     DateTime? nextTime;
 
     for (var prayer in prayerTimes!) {
-      // Skip Sunrise if you don't want it to be a "Next Prayer" target
-      // if (prayer.name == 'Sunrise') continue;
-
       final prayerDateTime = prayer.time;
 
-      // Check if this prayer is in the future
       if (prayerDateTime.isAfter(now)) {
-        // If we haven't found a next prayer yet, OR this one is sooner than the one we found
         if (nextTime == null || prayerDateTime.isBefore(nextTime)) {
           nextTime = prayerDateTime;
           nextPrayer = prayer;
@@ -1444,32 +1843,35 @@ class PrayerTimesLogic extends GetxController {
       nextTime = nextPrayer.time;
     }
 
+    // Adhan countdown (iqama not active, so no iqama display)
     final remaining = nextTime!.difference(now);
-
-    if (remaining.inSeconds <= 0 && remaining.inSeconds >= -9) {
-      return {
-        'name': arabicNames[nextPrayer.name] ?? nextPrayer.name,
-        'timeRemaining': 'الآن',
-        'prayerTime': nextPrayer.time24h,
-      };
-    }
-
-    final hours = remaining.inHours;
-    final minutes = remaining.inMinutes % 60;
-    final seconds = remaining.inSeconds % 60;
-
-    String remainingTime = '';
-    if (hours > 0) {
-      remainingTime += '${hours.toString().padLeft(2, '0')}:';
-    }
-    remainingTime +=
-        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final adhanCountdown = _formatCountdown(remaining);
 
     return {
       'name': arabicNames[nextPrayer.name] ?? nextPrayer.name,
-      'timeRemaining': remainingTime,
+      'timeRemaining': adhanCountdown,
+      'iqamaCountdown': '',
+      'iqamaTime': '',
+      'hasIqama': false,
       'prayerTime': nextPrayer.time24h,
     };
+  }
+
+  /// Formats a duration as a countdown string, showing "الآن" when within 10s.
+  String _formatCountdown(Duration remaining) {
+    if (remaining.inSeconds <= 0 && remaining.inSeconds >= -9) {
+      return 'الآن';
+    }
+    String result = '';
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes % 60;
+    final seconds = remaining.inSeconds % 60;
+    if (hours > 0) {
+      result += '${hours.toString().padLeft(2, '0')}:';
+    }
+    result +=
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    return result;
   }
 
   void scheduleAdhkarNotifications() {
@@ -1485,12 +1887,12 @@ class PrayerTimesLogic extends GetxController {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
       NotificationService().showNotification(
-        100, // Unique ID for Morning Adhkar
+        NotificationIds.morningAdhkar,
         'أذكار الصباح',
         'حان الآن وقت أذكار الصباح',
         adhkarTime,
         notificationSoundEnabled,
-        payload: 'Morning_Adhkar',
+        payload: NotificationIds.morningAdhkarPayload,
         isAlarm: false,
       );
     }
@@ -1502,12 +1904,12 @@ class PrayerTimesLogic extends GetxController {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
       NotificationService().showNotification(
-        101, // Unique ID for Evening Adhkar
+        NotificationIds.eveningAdhkar,
         'أذكار المساء',
         'حان الآن وقت أذكار المساء',
         adhkarTime,
         notificationSoundEnabled,
-        payload: 'Evening_Adhkar',
+        payload: NotificationIds.eveningAdhkarPayload,
         isAlarm: false,
       );
     }
@@ -1515,6 +1917,7 @@ class PrayerTimesLogic extends GetxController {
 
   Future<void> _checkFajrChallenge() async {
     if (!fajrChallengeEnabled || prayerTimes == null) return;
+    if (notificationMode == 3) return; // "No alert" silences everything
     final now = DateTime.now();
 
     if (_firedDate.year != now.year ||
@@ -1528,7 +1931,7 @@ class PrayerTimesLogic extends GetxController {
       final prayer = prayerTimes![i];
 
       if (prayer.name == 'Fajr') {
-        int challengeIndex = 9999;
+        int challengeIndex = NotificationIds.fajrChallengeIndex;
 
         if (!_firedPrayerIndexes.contains(challengeIndex)) {
           DateTime? challengeTime = await _getFajrChallengeTime(prayer);
@@ -1536,17 +1939,9 @@ class PrayerTimesLogic extends GetxController {
             final challengeDiff = now.difference(challengeTime);
             if (!challengeTime.isAfter(now) &&
                 challengeDiff.inSeconds.abs() <= 60) {
-              if (notificationSoundEnabled) playAudio();
-
-              try {
-                const platform = MethodChannel(
-                    'com.example.hisn_el_muslim/prayer_notification');
-                platform.invokeMethod('bringAppToForeground');
-              } catch (e) {
-                if (kDebugMode) print("Error bringing - $e");
-              }
-
-              Get.to(() => const FajrChallengeScreen());
+              // No Dart-side audio here: native AlarmSound already rings
+              // (audible even from background); the screen starts its loop.
+              _openFajrChallenge();
               _firedPrayerIndexes.add(challengeIndex);
             }
           }
@@ -1583,20 +1978,14 @@ class PrayerTimesLogic extends GetxController {
 
     // Only handle Fajr Challenge triggers
     if (prayerName == 'Fajr_Challenge' || prayerName == 'تحي الفجر') {
-      if (_firedPrayerIndexes.contains(9999)) return;
-      _firedPrayerIndexes.add(9999);
-
-      if (notificationSoundEnabled) playAudio();
-
-      try {
-        const platform =
-            MethodChannel('com.example.hisn_el_muslim/prayer_notification');
-        platform.invokeMethod('bringAppToForeground');
-      } catch (e) {
-        if (kDebugMode) print("Error bringing - $e");
+      if (notificationMode == 3) return; // "No alert" silences everything
+      if (_firedPrayerIndexes.contains(NotificationIds.fajrChallengeIndex)) {
+        return;
       }
+      _firedPrayerIndexes.add(NotificationIds.fajrChallengeIndex);
 
-      Get.to(() => const FajrChallengeScreen());
+      // No Dart-side audio here: native AlarmSound already rings.
+      _openFajrChallenge();
       return;
     }
 
@@ -1607,6 +1996,7 @@ class PrayerTimesLogic extends GetxController {
   @override
   void onClose() {
     _notificationTimer?.cancel();
+    _countdownTimer?.cancel();
     audioPlayer.dispose();
     super.onClose();
   }

@@ -1,4 +1,4 @@
-package com.example.hisn_el_muslim
+package com.ahmed.hisnelmuslim
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -20,20 +20,21 @@ import android.app.KeyguardManager
 import android.os.Bundle
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.hisn_el_muslim/prayer_notification"
-    private val BATTERY_CHANNEL = "com.example.hisn_el_muslim/battery_optimization"
-    private val LOCATION_CHANNEL = "com.example.hisn_el_muslim/location"
+    private val CHANNEL = "com.ahmed.hisnelmuslim/prayer_notification"
+    private val BATTERY_CHANNEL = "com.ahmed.hisnelmuslim/battery_optimization"
+    private val LOCATION_CHANNEL = "com.ahmed.hisnelmuslim/location"
     private val NOTIFICATION_ID = 1001
     private val CHANNEL_ID = "prayer_notification_channel"
     private val BACKGROUND_LOCATION_REQUEST_CODE = 1002
-    
+
     companion object {
-        const val ACTION_REFRESH_GPS = "com.example.hisn_el_muslim.ACTION_REFRESH_GPS"
+        const val ACTION_REFRESH_GPS = "com.ahmed.hisnelmuslim.ACTION_REFRESH_GPS"
         var methodChannel: MethodChannel? = null
         var pendingScreen: String? = null
+        var pendingTriggeredPrayer: String? = null
     }
 
-    private val VOLUME_CHANNEL = "com.yourapp/volume_lock"
+    private val VOLUME_CHANNEL = "com.ahmed.hisnelmuslim/volume_lock"
     private var audioManager: android.media.AudioManager? = null
     private var originalVolume: Int = 0
     private var isVolumeLocked = false
@@ -41,21 +42,20 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setTurnScreenOn(true)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            )
-        }
-        
-        // Keyguard and screen flags
+
+        // Keep the screen awake while the app is in the foreground. The
+        // ability to render above the lock screen (showWhenLocked/turnScreenOn)
+        // is applied dynamically ONLY when an alarm / Fajr challenge trigger
+        // fires (see handleIntent), so a normal app launch stays off the keyguard.
         window.addFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
             WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
+
+        // Reset any leaked show-when-locked flag (e.g. process died mid-alarm
+        // while lock-screen mode was enabled). handleIntent() re-enables it
+        // below for genuine alarm triggers.
+        setLockScreenMode(false)
 
         handleIntent(intent)
     }
@@ -69,6 +69,12 @@ class MainActivity : FlutterActivity() {
     private fun handleIntent(intent: Intent?) {
         val triggeredPrayer = intent?.getStringExtra("triggered_prayer")
         if (triggeredPrayer != null) {
+            // This is an alarm / Fajr challenge trigger: allow the challenge
+            // to render above the lock screen and wake the screen.
+            setLockScreenMode(true)
+            // Remember the trigger so it survives a cold start (Flutter may not
+            // be ready to receive the method call yet).
+            pendingTriggeredPrayer = triggeredPrayer
             // Wait slightly for Flutter to be ready if app was killed
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 methodChannel?.invokeMethod("triggerPrayerAlarm", mapOf("prayer_name" to triggeredPrayer))
@@ -87,10 +93,10 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        
+
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
-        
+
         // Location Permission Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LOCATION_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -102,7 +108,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-        
+
         // Volume Lock Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, VOLUME_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -119,7 +125,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-        
+
         // Battery Optimization Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BATTERY_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -140,21 +146,54 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-        
+
         // Notification Channel
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
-        
+
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getPendingScreen" -> {
                     result.success(pendingScreen)
                     pendingScreen = null // Clear after reading
                 }
+                "getPendingAlarm" -> {
+                    result.success(pendingTriggeredPrayer)
+                    pendingTriggeredPrayer = null // Clear after reading
+                }
+                "canScheduleExactAlarms" -> {
+                    result.success(AlarmScheduler.canScheduleExact(this))
+                }
+                "openExactAlarmSettings" -> {
+                    // Deep-link to the per-app "Alarms & reminders" screen (Android 12+).
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val intent = Intent(
+                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                            ).apply {
+                                data = Uri.parse("package:$packageName")
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        result.success(false)
+                    }
+                }
+                "cancelAlarmNotification" -> {
+                    AlarmSound.stop()
+                    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.cancel(9999)
+                    AlarmScheduler.cancelChallenge(this)
+                    result.success(true)
+                }
                 "showPrayerNotification" -> {
                     val hijriDate = call.argument<String>("hijri_date") ?: ""
                     val prayerInfo = call.argument<String>("prayer_info") ?: ""
                     val remainingTime = call.argument<String>("remaining_time") ?: ""
-                    
+
                     showPrayerNotification(hijriDate, prayerInfo, remainingTime)
                     result.success(true)
                 }
@@ -165,13 +204,16 @@ class MainActivity : FlutterActivity() {
                     val nextTargetTimestamp = call.argument<Number>("next_target_timestamp")?.toLong() ?: 0L
                     val challengeTimestamp = call.argument<Number>("challenge_timestamp")?.toLong() ?: 0L
                     val nextPrayerInfo = call.argument<String>("next_prayer_info") ?: ""
+                    val nextPrayerName = call.argument<String>("next_prayer_name") ?: ""
+                    val nextTargetPrayerName = call.argument<String>("next_target_prayer_name") ?: ""
+                    val notificationMode = call.argument<Int>("notification_mode") ?: 0
                     val isBlackBackground = call.argument<Boolean>("is_black_background") ?: false
-                    
+
                     // Dhikr parameters
                     val dhikrEnabled = call.argument<Boolean>("dhikr_enabled") ?: false
                     val dhikrInterval = call.argument<Int>("dhikr_interval") ?: 15
                     val dhikrList = call.argument<List<String>>("dhikr_list")
-                    
+
                     val serviceIntent = Intent(this, PrayerTimeService::class.java).apply {
                         putExtra("hijri_date", hijriDate)
                         putExtra("prayer_info", prayerInfo)
@@ -179,8 +221,11 @@ class MainActivity : FlutterActivity() {
                         putExtra("next_target_timestamp", nextTargetTimestamp)
                         putExtra("challenge_timestamp", challengeTimestamp)
                         putExtra("next_prayer_info", nextPrayerInfo)
+                        putExtra("next_prayer_name", nextPrayerName)
+                        putExtra("next_target_prayer_name", nextTargetPrayerName)
+                        putExtra("notification_mode", notificationMode)
                         putExtra("is_black_background", isBlackBackground)
-                        
+
                         // Pass Dhikr extras
                         putExtra("dhikr_enabled", dhikrEnabled)
                         putExtra("dhikr_interval", dhikrInterval)
@@ -188,13 +233,41 @@ class MainActivity : FlutterActivity() {
                             putStringArrayListExtra("dhikr_list", ArrayList(dhikrList))
                         }
                     }
-                    
+
+                    // Exact alarm scheduling (reference-app parity):
+                    // reschedule everything whenever the timestamps change.
+                    AlarmScheduler.cancelAll(this)
+                    if (challengeTimestamp > 0) {
+                        AlarmScheduler.scheduleChallenge(this, challengeTimestamp)
+                    }
+                    if (targetTimestamp > 0 && nextPrayerName.isNotEmpty()) {
+                        AlarmScheduler.schedulePrayer(this, nextPrayerName, targetTimestamp)
+                    }
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(serviceIntent)
                     } else {
                         startService(serviceIntent)
                     }
                     result.success(true)
+                }
+                "testFajrChallengeAlarm" -> {
+                    val delaySeconds = call.argument<Int>("delay_seconds") ?: 5
+                    // Return the REAL outcome: false when exact alarms are not
+                    // permitted, so the UI never reports a phantom success.
+                    result.success(AlarmScheduler.testChallenge(this, delaySeconds))
+                }
+                "scheduleFajrChallengeAlarm" -> {
+                    val challengeTimestamp =
+                        call.argument<Number>("challenge_timestamp")?.toLong() ?: 0L
+                    AlarmScheduler.cancelChallenge(this)
+                    if (challengeTimestamp > 0) {
+                        result.success(
+                            AlarmScheduler.scheduleChallenge(this, challengeTimestamp)
+                        )
+                    } else {
+                        result.success(true)
+                    }
                 }
                 "checkOverlayPermission" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -215,6 +288,10 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                 }
+                "updatePrayerWidgets" -> {
+                    PrayerWidgetData.updateAll(this)
+                    result.success(true)
+                }
                 "hideNotification" -> {
                     hideNotification()
                     val stopIntent = Intent(this, PrayerTimeService::class.java).apply {
@@ -222,9 +299,17 @@ class MainActivity : FlutterActivity() {
                     }
                     startService(stopIntent)
                     result.success(true)
-                }       
+                }
                 "bringAppToForeground" -> {
                     bringAppToForeground()
+                    result.success(true)
+                }
+                "enableLockScreenMode" -> {
+                    setLockScreenMode(true)
+                    result.success(true)
+                }
+                "disableLockScreenMode" -> {
+                    setLockScreenMode(false)
                     result.success(true)
                 }
                 "testAyatOverlay" -> {
@@ -251,7 +336,28 @@ class MainActivity : FlutterActivity() {
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         startActivity(intent)
     }
-    
+
+    /**
+     * Toggles the ability to render the activity above the keyguard and to
+     * wake the screen. Used ONLY while an alarm / Fajr challenge is active.
+     */
+    @Suppress("DEPRECATION")
+    private fun setLockScreenMode(enable: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(enable)
+            setTurnScreenOn(enable)
+        } else {
+            val flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            if (enable) {
+                window.addFlags(flags)
+            } else {
+                window.clearFlags(flags)
+            }
+        }
+    }
+
     private fun requestBackgroundLocationPermission(result: io.flutter.plugin.common.MethodChannel.Result) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10+ requires separate background location permission
@@ -265,23 +371,23 @@ class MainActivity : FlutterActivity() {
             result.success(true)
         }
     }
-    
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
+
         if (requestCode == BACKGROUND_LOCATION_REQUEST_CODE) {
-            val granted = grantResults.isNotEmpty() && 
+            val granted = grantResults.isNotEmpty() &&
                          grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
             backgroundLocationResult?.success(granted)
             backgroundLocationResult = null
         }
     }
 
-    
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Prayer Time Display"
@@ -295,18 +401,18 @@ class MainActivity : FlutterActivity() {
                 enableVibration(false)
                 enableLights(false)
             }
-            
+
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
+
     private fun showPrayerNotification(hijriDate: String, prayerInfo: String, remainingTime: String) {
         createNotificationChannel()
-        
+
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
+
         val customTime = System.currentTimeMillis()
 
         // Create an Intent for opening the app (bring to front if running, launch if not)
@@ -315,23 +421,23 @@ class MainActivity : FlutterActivity() {
         openAppIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         openAppIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
         openAppIntent.putExtra("screen_to_open", "prayer_times")
-        
+
         val openAppPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         } else {
             PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
-        
+
         // Create an Intent for refreshing GPS
         val refreshGpsIntent = Intent(this, RefreshGpsReceiver::class.java)
         refreshGpsIntent.action = ACTION_REFRESH_GPS
-        
+
         val refreshGpsPendingIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.getBroadcast(this, 1, refreshGpsIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         } else {
             PendingIntent.getBroadcast(this, 1, refreshGpsIntent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
-        
+
         val remainingWithComma = if (remainingTime.isNotEmpty()) "  - $remainingTime" else ""
 
         // Collapsed view (Small - Compact layout to fit all info)
@@ -355,7 +461,7 @@ class MainActivity : FlutterActivity() {
             setOnClickPendingIntent(R.id.open_app_button, openAppPendingIntent)
             setOnClickPendingIntent(R.id.refresh_gps_button, refreshGpsPendingIntent)
         }
-        
+
         // Build notification with custom layouts
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -372,10 +478,10 @@ class MainActivity : FlutterActivity() {
             .setOnlyAlertOnce(true) // Prevent alerting on updates
             .setContentIntent(openAppPendingIntent) // Open app on click
             .build()
-        
+
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
-    
+
     private fun hideNotification() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
@@ -386,11 +492,11 @@ class MainActivity : FlutterActivity() {
             try {
                 // Save original volume
                 originalVolume = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
-                
+
                 // Set to max volume
                 val maxVolume = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
                 am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVolume, 0)
-                
+
                 isVolumeLocked = true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -427,7 +533,7 @@ class MainActivity : FlutterActivity() {
         }
         return super.onKeyDown(keyCode, event)
     }
-    
+
     // Battery Optimization Methods
     private fun isBatteryOptimizationEnabled(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -437,7 +543,7 @@ class MainActivity : FlutterActivity() {
         }
         return false // Pre-M devices don't have battery optimization
     }
-    
+
     private fun openBatteryOptimizationSettings(): Boolean {
         return try {
             val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
@@ -448,7 +554,7 @@ class MainActivity : FlutterActivity() {
             false
         }
     }
-    
+
     private fun requestIgnoreBatteryOptimization(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return try {
@@ -476,9 +582,12 @@ class RefreshGpsReceiver : BroadcastReceiver() {
 
 class StopAdhanReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
+        // Stop native alarm audio first (covers receiver/service playback).
+        AlarmSound.stop()
+
         // Call Flutter method to stop audio
         MainActivity.methodChannel?.invokeMethod("stopAdhan", null)
-        
+
         // Dismiss the notification
         val notificationManager = context?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(9999) // ALARM_NOTIFICATION_ID

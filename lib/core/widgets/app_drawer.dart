@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:simple_icons/simple_icons.dart';
 
-import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/core/utils/url_utils.dart';
+import 'package:small_husn_muslim/features/asmaa_allah/presentation/asmaa_allah_screen.dart';
+import 'package:small_husn_muslim/features/dua/presentation/dua_screen.dart';
+import 'package:small_husn_muslim/features/ruqyah/presentation/ruqyah_screen.dart';
 import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
+import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -37,6 +38,33 @@ class AppDrawer extends StatelessWidget {
           ),
           const Divider(thickness: 0.3),
           ListTile(
+            leading: const Icon(Icons.auto_stories_rounded),
+            title: const Text('دعاء', style: TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const DuaScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
+            leading: const Icon(Icons.all_inclusive_rounded),
+            title: const Text('أسماء الله الحسنى', style: TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const AsmaaAllahScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
+            leading: const Icon(Icons.health_and_safety_rounded),
+            title: const Text('الرقية الشرعية', style: TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const RuqyahScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
             leading: const Icon(Icons.bubble_chart),
             title: const Text('مسبحة', style: TextStyle(fontSize: 18)),
             onTap: () {
@@ -55,104 +83,21 @@ class AppDrawer extends StatelessWidget {
           ),
           const Divider(thickness: 0.3),
           ListTile(
+            leading: const Icon(Icons.map_rounded),
+            title: const Text('خريطة المساجد', style: TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const MosqueMapScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('الإعدادات', style: TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const SettingsScreen());
             },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            onTap: () {
-              Get.dialog(
-                Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Theme(
-                    data: Get.isDarkMode ? ThemeData.dark() : ThemeData.light(),
-                    child: AlertDialog(
-                      backgroundColor: Get.isDarkMode ? bgDark : bgLight,
-                      title: Text(
-                        about,
-                        style: TextStyle(
-                          fontFamily: fontFamily,
-                          color: Get.isDarkMode ? bgLight : bgDark,
-                        ),
-                      ),
-                      content: SizedBox(
-                        height: 450,
-                        child: Column(
-                          children: [
-                            ListTile(
-                              leading: Image.asset(
-                                icLauncher,
-                                scale: 3,
-                              ),
-                              title: Text(aboutVersion),
-                              subtitle: Text(aboutOpenSource),
-                            ),
-                            const Divider(),
-                            ListTile(
-                              title: Text(
-                                do3aa,
-                                style: TextStyle(
-                                    fontFamily: fontFamily,
-                                    fontSize: double.parse(fontSize24)),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const Divider(),
-                            ListTile(
-                              leading: const Icon(SimpleIcons.google),
-                              title: Text(offielWebSite),
-                              subtitle: Text(
-                                offielWebSiteIbnWahf,
-                                style: TextStyle(
-                                  fontFamily: fontFamily,
-                                ),
-                              ),
-                              onTap: () {
-                                openURL(oficialWebSiteLink);
-                              },
-                            ),
-                            const Divider(),
-                            ListTile(
-                              leading: const Icon(SimpleIcons.github),
-                              title: Text(sourceCode),
-                              onTap: () async {
-                                await openURL(githubLink);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Get.back();
-                          },
-                          child: Text(
-                            leave,
-                            style: TextStyle(
-                              fontFamily: fontFamily,
-                              color: Get.isDarkMode ? bgLight : bgDark,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-            leading: const Icon(Icons.info_rounded),
-            title: Text(
-              about,
-              style: TextStyle(
-                fontFamily: fontFamily,
-              ),
-              textAlign: TextAlign.justify,
-            ),
           ),
           const Divider(thickness: 0.3),
         ],

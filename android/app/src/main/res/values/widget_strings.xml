@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_small_desc">مواقيت الصلاة — الصلاة القادمة والعد التنازلي</string>
+    <string name="widget_large_desc">مواقيت الصلاة — كل الصلوات مع الصلاة القادمة</string>
+</resources>
