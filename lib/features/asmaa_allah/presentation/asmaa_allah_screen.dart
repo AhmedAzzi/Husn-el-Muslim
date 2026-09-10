@@ -6,6 +6,7 @@ import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class AsmaaAllahScreen extends StatefulWidget {
   const AsmaaAllahScreen({super.key});
@@ -71,14 +72,14 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
     super.dispose();
   }
 
-  void _copyToClipboard(String text, {String message = 'تم النسخ ✿'}) {
+  void _copyToClipboard(String text, {String? message}) {
     Clipboard.setData(ClipboardData(text: text)).then((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Center(
             child: Text(
-              message,
+              message ?? context.loc.asCopiedDefault,
               style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
             ),
           ),
@@ -136,7 +137,7 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
                 ? SizedBox(
                     height: 30,
                     child: Text(
-                      'أسماء الله الحسنى',
+                      context.loc.navNames,
                       style: TextStyle(
                         fontSize: double.parse(fontSize22),
                         fontFamily: fontFamily,
@@ -256,9 +257,9 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
                 color: IslamicPalette.gold,
               ),
               const SizedBox(width: 6),
-              const Text(
-                'أسماء الله الحسنى',
-                style: TextStyle(
+              Text(
+                context.loc.navNames,
+                style: const TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -298,7 +299,7 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                'اضغط للعرض، اضغط مطولة للنسخ',
+                context.loc.asTapHint,
                 style: TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 12,
@@ -511,7 +512,7 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
                   children: [
                     _buildSoftButton(
                       icon: Icons.copy_rounded,
-                      label: 'نسخ',
+                      label: context.loc.ctCopy,
                       onTap: () {
                         dismiss();
                         _copyToClipboard('يا ${entry.name}',
@@ -522,7 +523,7 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
                     const SizedBox(width: 14),
                     _buildSoftButton(
                       icon: Icons.close,
-                      label: 'إغلاق',
+                      label: context.loc.ctClose,
                       onTap: dismiss,
                       accent: accent,
                     ),
@@ -583,7 +584,7 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'لا توجد نتائج مطابقة للبحث',
+            context.loc.ctNoSearchResults,
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: 18,

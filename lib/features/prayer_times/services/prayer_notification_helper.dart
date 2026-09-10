@@ -135,12 +135,33 @@ class PrayerNotificationHelper {
   }
 
   /// Cancel the Fajr challenge full-screen notification and its exact alarm
-  static Future<bool> cancelAlarmNotification() async {
-    try {
+  static Future<bool> cancelAlarmNotification() async {    try {
       final result = await _channel.invokeMethod('cancelAlarmNotification');
       return result ?? false;
     } catch (e) {
       debugPrint('Error cancelling alarm notification: $e');
+      return false;
+    }
+  }
+
+  /// Play a short preview of the selected alarm sound (native side).
+  static Future<bool> previewAlarmSound() async {
+    try {
+      final result = await _channel.invokeMethod('previewAlarmSound');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error previewing alarm sound: $e');
+      return false;
+    }
+  }
+
+  /// Stop a running sound preview.
+  static Future<bool> stopAlarmPreview() async {
+    try {
+      final result = await _channel.invokeMethod('stopAlarmPreview');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error stopping alarm preview: $e');
       return false;
     }
   }
@@ -236,6 +257,167 @@ class PrayerNotificationHelper {
       return result ?? false;
     } catch (e) {
       debugPrint('Error setting lock screen mode: $e');
+      return false;
+    }
+  }
+
+  /// Suhoor alarm anchored to Fajr. Passing 0 cancels.
+  static Future<bool> scheduleSuhoorAlarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleSuhoorAlarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Suhoor alarm: $e');
+      return false;
+    }
+  }
+
+  /// Pre-Fajr gentle warning anchored to Fajr. Passing 0 cancels.
+  static Future<bool> schedulePreFajrAlarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('schedulePreFajrAlarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Pre-Fajr alarm: $e');
+      return false;
+    }
+  }
+
+  /// Tahajjud night-prayer wake-up (Last-Third auto or fixed time). Passing 0 cancels.
+  static Future<bool> scheduleTahajjudAlarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleTahajjudAlarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Tahajjud alarm: $e');
+      return false;
+    }
+  }
+
+  /// Heavy-sleeper chain: re-fires the Fajr challenge +N min. Passing 0 cancels.
+  static Future<bool> scheduleFajrExtra1Alarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleFajrExtra1Alarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Fajr extra 1 alarm: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> scheduleFajrExtra2Alarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleFajrExtra2Alarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling Fajr extra 2 alarm: $e');
+      return false;
+    }
+  }
+
+  /// Bedtime reminder (exact clock time or Fajr-relative). Passing 0 cancels.
+  static Future<bool> scheduleBedtimeAlarm(int triggerAtMillis) async {
+    try {
+      final result = await _channel.invokeMethod('scheduleBedtimeAlarm', {
+        'trigger_at': triggerAtMillis,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling bedtime alarm: $e');
+      return false;
+    }
+  }
+
+  /// Pre-prayer reminder for [prayerName]. Passing 0 cancels.
+  static Future<bool> schedulePrePrayerAlarm(
+      int triggerAtMillis, String prayerName) async {
+    try {
+      final result = await _channel.invokeMethod('schedulePrePrayerAlarm', {
+        'trigger_at': triggerAtMillis,
+        'prayer_name': prayerName,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling pre-prayer alarm: $e');
+      return false;
+    }
+  }
+
+  /// Post-prayer reminder for [prayerName]. Passing 0 cancels.
+  static Future<bool> schedulePostPrayerAlarm(
+      int triggerAtMillis, String prayerName) async {
+    try {
+      final result = await _channel.invokeMethod('schedulePostPrayerAlarm', {
+        'trigger_at': triggerAtMillis,
+        'prayer_name': prayerName,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error scheduling post-prayer alarm: $e');
+      return false;
+    }
+  }
+
+  /// Re-arm everything from persisted prefs (boot/tz/date/permission flows).
+  static Future<bool> rescheduleAllAlarms() async {
+    try {
+      final result = await _channel.invokeMethod('rescheduleAllAlarms');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('Error rescheduling alarms: $e');
+      return false;
+    }
+  }
+
+  /// Native diagnostics string for Advanced → Diagnostics.
+  static Future<String> getAlarmDiagnostics() async {
+    try {
+      final String? r = await _channel.invokeMethod('getAlarmDiagnostics');
+      return r ?? 'unavailable';
+    } catch (e) {
+      return 'diagnostics unavailable: $e';
+    }
+  }
+
+  /// Check whether Do Not Disturb policy access is granted on Android.
+  static Future<bool> isDndAccessGranted() async {
+    try {
+      final bool? r = await _channel.invokeMethod('isDndAccessGranted');
+      return r ?? false;
+    } catch (e) {
+      debugPrint('Error checking DND policy access: $e');
+      return false;
+    }
+  }
+
+  /// Deep-link to Android's "Do Not Disturb access" settings page.
+  static Future<bool> openDndSettings() async {
+    try {
+      final bool? r = await _channel.invokeMethod('openDndSettings');
+      return r ?? false;
+    } catch (e) {
+      debugPrint('Error opening DND settings: $e');
+      return false;
+    }
+  }
+
+  /// Manually enable or disable Do Not Disturb mode via native policy.
+  static Future<bool> setDndMode(bool enable) async {
+    try {
+      final bool? r = await _channel.invokeMethod('setDndMode', {'enable': enable});
+      return r ?? false;
+    } catch (e) {
+      debugPrint('Error setting DND mode: $e');
       return false;
     }
   }

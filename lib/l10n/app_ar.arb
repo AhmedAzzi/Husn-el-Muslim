@@ -1,0 +1,801 @@
+{
+  "@@locale": "ar",
+  "@@last_modified": "2026-09-03T00:00:00.000",
+  "appTitle": "حصن المسلم",
+  "navAdhkar": "الأذكار",
+  "navDua": "دعاء",
+  "navNames": "أسماء الله الحسنى",
+  "navRuqyah": "الرقية الشرعية",
+  "navMasbaha": "مسبحة",
+  "navPrayerTimes": "مواقيت الصلاة",
+  "navMosqueMap": "خريطة المساجد",
+  "navQibla": "القبلة",
+  "navFajrLog": "تتبع الصلوات",
+  "navSettings": "الإعدادات",
+  "trackCurrent": "السلسلة الحالية",
+  "trackLongest": "أطول سلسلة",
+  "trackToday": "اليوم",
+  "@trackDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "trackDays": "{count, plural, one {{count} يوم} two {{count} يومان} other {{count} أيام}}",
+  "qiblaTitle": "القبلة",
+  "qiblaNorth": "ش",
+  "@qiblaBearing": {
+    "placeholders": {
+      "deg": { "type": "String" }
+    }
+  },
+  "qiblaBearing": "اتجاه القبلة: {deg}°",
+  "@qiblaDistance": {
+    "placeholders": {
+      "km": { "type": "String" }
+    }
+  },
+  "qiblaDistance": "المسافة إلى الكعبة: {km} كم",
+  "qiblaFacing": "أنت متجه نحو القبلة ✓",
+  "@qiblaTurn": {
+    "placeholders": {
+      "deg": { "type": "String" },
+      "direction": { "type": "String" }
+    }
+  },
+  "qiblaTurn": "استدر {deg}° {direction}",
+  "qiblaRight": "يميناً",
+  "qiblaLeft": "يساراً",
+  "qiblaCalibrate": "حرّك الهاتف على شكل 8 لمعايرة البوصلة عند وجود تداخل مغناطيسي. يعمل دون إنترنت.",
+  "qiblaRetry": "إعادة المحاولة",
+  "qiblaNoLocation": "تعذر تحديد الموقع — فعّل GPS أو حدد موقع الصلاة أولاً",
+  "qiblaNoSensor": "البوصلة غير متاحة على هذا الجهاز — اتجاه القبلة محسوب أدناه بدون بوصلة حية",
+  "awakeTitle": "هل أنت مستيقظ؟",
+  "awakeSubtitle": "أكملت التحدي — أكّد استيقاظك لتسجيل الفجر",
+  "iAmAwake": "أنا مستيقظ",
+  "wellDone": "أحسنت",
+  "wokeForFajr": "لقد استيقظت لصلاة الفجر",
+  "continueBtn": "متابعة",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageSubtitle": "لغة واجهة التطبيق",
+  "langArabic": "العربية",
+  "langEnglish": "English",
+  "langFrench": "Français",
+  "diagTitle": "التشخيص المتقدم",
+  "diagPermissions": "حالة الأذونات",
+  "diagExactTitle": "المنبهات الدقيقة",
+  "diagExactOk": "مسموح — منبه الفجر يعمل بدقة",
+  "diagExactDenied": "غير مسموح — المنبهات قد لا ترن في وقتها",
+  "diagOpenSettings": "فتح الإعدادات",
+  "diagBatteryTitle": "تحسين البطارية",
+  "diagBatteryOn": "مفعّل — قد يوقف النظام المنبهات",
+  "diagBatteryOff": "مستثنى — التطبيق يعمل بحرية",
+  "diagRequestExemption": "طلب الاستثناء",
+  "diagOverlayTitle": "الظهور فوق التطبيقات",
+  "diagOverlayOk": "ممنوح — النوافذ العائمة تعمل",
+  "diagOverlayDenied": "غير ممنوح — التنبيهات العائمة معطلة",
+  "diagRequestPermission": "طلب الإذن",
+  "diagScheduled": "المنبهات المجدولة",
+  "diagReadFailed": "تعذر قراءة التشخيص",
+  "diagRescheduleAll": "إعادة جدولة كل المنبهات",
+  "diagRescheduled": "تمت إعادة جدولة كل المنبهات",
+  "diagRescheduleFailed": "تعذرت إعادة الجدولة",
+  "diagTracking": "التتبع",
+  "diagCurrent": "الحالية",
+  "diagLongest": "الأطول",
+  "diagTest": "اختبار",
+  "diagTestDesc": "يجدول منبه تحدي الفجر الحقيقي بعد 5 ثوانٍ (صوت + إشعار + شاشة التحدي).",
+  "diagTestScheduling": "جارٍ الجدولة…",
+  "diagTestButton": "تجربة منبه الفجر (5 ثوانٍ)",
+  "diagTestWillRing": "سيرن منبه التجربة بعد 5 ثوانٍ",
+  "diagTestFailed": "تعذر جدولة التجربة — تحقق من إذن المنبهات الدقيقة",
+  "chTitle": "تحدي صلاة الفجر",
+  "chAnswerToStop": "أجب عن السؤال لإيقاف المنبه",
+  "@chRemaining": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "chRemaining": "المتبقي: {count}",
+  "chWriteCategory": "اكتب اسم الفئة التي ينتمي إليها هذا الذكر:",
+  "chWriteAnswerHint": "اكتب الإجابة هنا",
+  "chVerifyAnswer": "تحقق من الإجابة",
+  "chWrongAnswer": "إجابة خاطئة",
+  "chTryAgain": "حاول مرة أخرى",
+  "chLoadError": "حدث خطأ في تحميل الأسئلة",
+  "chMathSubtitle": "حل المسألة لإيقاف المنبه",
+  "chMathHint": "اكتب الإجابة بالأرقام",
+  "chMemoryTitle": "تحدي الذاكرة",
+  "chMemorySubtitle": "اقلب البطاقات وطابق الأزواج الأربعة",
+  "@chMatched": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "chMatched": "المطابق: {done} / {total}",
+  "chShakeTitle": "هز الهاتف للاستيقاظ",
+  "chShakeSubtitle": "هز الهاتف بقوة حتى يمتلئ الشريط",
+  "chSensorUnavailable": "حساس الحركة غير متاح على هذا الجهاز",
+  "chSwitchToQuestions": "التبديل إلى تحدي الأسئلة",
+  "@chCardHidden": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "chCardHidden": "بطاقة مقلوبة {n}",
+  "@chCardShown": {
+    "placeholders": {
+      "face": { "type": "String" }
+    }
+  },
+  "chCardShown": "بطاقة {face}",
+  "chPreviewBanner": "معاينة — لن يتم تسجيل أي شيء",
+  "sheetExactTitle": "إذن المنبهات الدقيقة مطلوب",
+  "sheetExactBody": "بدون إذن المنبهات والتذكيرات من إعدادات النظام لن يرن منبه تحدي الفجر في موعده. هل تريد فتح الإعدادات لمنحه الآن؟",
+  "sheetLater": "لاحقاً",
+  "sheetTitle": "تحدي الاستيقاظ لصلاة الفجر",
+  "sheetSubtitle": "منبه تفاعلي ذكي لا يتوقف إلا بعد حل الأسئلة",
+  "sheetEnable": "تفعيل المنبه التفاعلي",
+  "sheetEnabledOn": "المنبه مفعل وسيرن في الموعد المحدد",
+  "sheetEnabledOff": "المنبه متوقف حالياً",
+  "sheetWarnTitle": "تنبيه",
+  "sheetWarnBody": "تم التفعيل، لكن المنبه لن يرن قبل منح إذن المنبهات الدقيقة",
+  "sheetRingTime": "موعد رنين المنبه",
+  "sheetLastThird": "الثلث الأخير",
+  "sheetLastThirdSub": "تلقائياً لقيام الليل",
+  "sheetCustom": "وقت مخصص",
+  "sheetCustomSub": "دقائق محددة قبل الفجر",
+  "sheetBeforeFajrBy": "الرنين قبل أذان الفجر بـ:",
+  "@sheetMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "sheetMinutes": "{count, plural, one {{count} دقيقة} two {{count} دقيقتان} other {{count} دقائق}}",
+  "sheetQuestionCount": "عدد أسئلة التحدي",
+  "@sheetQuestions": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "sheetQuestions": "{count, plural, one {{count} سؤال} two {{count} سؤالان} other {{count} أسئلة}}",
+  "sheetTextMode": "كتابة الإجابة نصياً",
+  "sheetTextModeSub": "زيادة مستوى التحدي بالكتابة بدلاً من الاختيار من متعدد",
+  "sheetTestAt": "موعد اختبار الرنين:",
+  "@sheetSeconds": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "sheetSeconds": "{count} ث",
+  "sheetTestScheduled": "تم جدولة اختبار المنبه",
+  "@sheetTestWillRing": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "sheetTestWillRing": "سيرن منبه تحدي الفجر فعلياً خلال {seconds} ثوانٍ",
+  "sheetTestFailedTitle": "تعذر جدولة الاختبار",
+  "sheetTestFailedBody": "تأكد من منح إذن المنبهات الدقيقة في إعدادات النظام",
+  "sheetTestButton": "اختبار الرنين الفعلي (المنبه الحقيقي)",
+  "nsTitle": "إعدادات التنبيهات والأذان",
+  "nsBatteryTitle": "تحسين البطارية مفعل في النظام",
+  "nsBatteryBody": "قد يُوقف النظام إشعارات الأذان والعد التنازلي التلقائي لتوفير الطاقة. يوصى باستثناء التطبيق من تحسين البطارية لضمان دقة التنبيهات.",
+  "nsBatteryButton": "استثناء التطبيق من تحسين البطارية",
+  "nsPersistentSection": "إشعارات النظام الدائمة",
+  "nsPersistent": "إشعار شريط الحالة الدائم",
+  "nsPersistentSub": "عرض التاريخ الهجري وموعد الصلاة القادمة دائماً",
+  "nsFajrEnable": "تفعيل منبه تحدي الفجر",
+  "nsFajrEnableSub": "منبه تفاعلي ذكي لا يتوقف إلا بعد حل أسئلة",
+  "nsChallengeType": "نوع التحدي",
+  "nsTypeQuestions": "أسئلة",
+  "nsTypeQuestionsSub": "أذكار وأدعية",
+  "nsTypeMath": "رياضيات",
+  "nsTypeMathSub": "حساب ذهني",
+  "nsTypeMemory": "ذاكرة",
+  "nsTypeMemorySub": "مطابقة البطاقات",
+  "nsTypeShake": "هز",
+  "nsTypeShakeSub": "هز الهاتف",
+  "nsTypeRandom": "عشوائي",
+  "nsTypeRandomSub": "نوع مفاجئ",
+  "nsRandomPool": "الأنواع المشمولة في العشوائي",
+  "nsShakeSensitivity": "حساسية الهز",
+  "nsLow": "منخفضة",
+  "nsShakeMedium": "متوسطة",
+  "nsHigh": "عالية",
+  "nsDifficulty": "مستوى الصعوبة",
+  "nsEasy": "سهل",
+  "nsDiffMedium": "متوسط",
+  "nsHard": "صعب",
+  "nsHardSub": "كتابة إجبارية",
+  "nsWakeConfirm": "تأكيد الاستيقاظ",
+  "nsWakeConfirmSub": "بعد التحدي: هل أنت مستيقظ؟ ثم تسجيل النجاح",
+  "nsTryNow": "تجربة التحدي الآن",
+  "nsOpenLog": "سجل الفجر والتقدم",
+  "nsAlarmSound": "صوت المنبه",
+  "nsSoundAdhan": "الأذان",
+  "nsSoundAdhanSub": "المرفق مع التطبيق",
+  "nsSoundSystem": "نغمة النظام",
+  "nsSoundSystemSub": "نغمة منبه الهاتف",
+  "nsSoundCustom": "ملف مخصص",
+  "nsSoundCustomSub": "ملف صوتي من جهازك",
+  "nsPickAudio": "اختيار ملف صوتي",
+  "nsChangeAudio": "تم الاختيار — تغيير الملف",
+  "nsPreviewSound": "معاينة الصوت",
+  "nsPreviewPlaying": "تشغيل معاينة الصوت…",
+  "nsStop": "إيقاف",
+  "nsAlarmVolume": "مستوى صوت المنبه",
+  "nsAlarmVibrate": "الاهتزاز أثناء الرنين",
+  "nsAlarmLoop": "تكرار الصوت حتى الإيقاف",
+  "nsGentleWake": "الاستيقاظ اللطيف (تدرج الصوت)",
+  "nsInstant": "فوري",
+  "nsExtraAlarms": "منبهات إضافية",
+  "nsSuhoor": "منبه السحور",
+  "nsSuhoorSub": "وقت السحور قبل الفجر (مستقل عن أذان الفجر)",
+  "nsBeforeFajrBy": "قبل الفجر بـ:",
+  "nsPreFajr": "تنبيه قبل الفجر",
+  "nsPreFajrSub": "تحذير لطيف قبل الأذان (5 / 10 / 15 دقيقة)",
+  "nsTahajjud": "منبه التهجد",
+  "nsTahajjudSub": "استيقاظ ليلي في الثلث الأخير أو وقت ثابت",
+  "nsTahajjudLastThird": "الثلث الأخير (تلقائي)",
+  "nsTahajjudFixed": "وقت ثابت",
+  "nsFajrExtra": "إعادة التنبيه للنوم الثقيل",
+  "nsFajrExtraSub": "إعادة تحدي الفجر بعد الفجر (+دقائق)",
+  "nsPreviewTry": "جرّب التحدي الآن",
+  "nsBedtime": "تذكير النوم",
+  "nsBedtimeSub": "يساعدك على النوم مبكراً لتدرك الفجر",
+  "nsBedtimeRelative": "نسبي إلى الفجر",
+  "@nsBedtimeRelativeSub": {
+    "placeholders": {
+      "h": { "type": "int" }
+    }
+  },
+  "nsBedtimeRelativeSub": "الفجر − {h, plural, one {{h} ساعة} two {{h} ساعتان} other {{h} ساعات}}",
+  "nsSkipTonight": "تخطي الليلة فقط",
+  "nsSkippedTonight": "تم تخطي تذكير الليلة فقط",
+  "nsPrePrayer": "تذكير قبل الصلاة",
+  "nsPrePrayerSub": "تنبيه هادئ قبل كل صلاة مختارة",
+  "nsBeforePrayerBy": "قبل الصلاة بـ:",
+  "nsPostPrayer": "تذكير بعد الصلاة",
+  "nsPostPrayerSub": "تذكير بالأذكار بعد كل صلاة مختارة",
+  "nsAfterPrayerBy": "بعد الصلاة بـ:",
+  "nsAdhkarSection": "تنبيهات أذكار الصباح والمساء",
+  "nsMorning": "تنبيه أذكار الصباح",
+  "nsMorningSub": "تذكير مبارك بعد صلاة الفجر بساعة واحدة",
+  "nsEvening": "تنبيه أذكار المساء",
+  "nsEveningSub": "تذكير مبارك بعد صلاة العصر بساعة واحدة",
+  "nsPrayerFajr": "الفجر",
+  "nsPrayerDhuhr": "الظهر",
+  "nsPrayerAsr": "العصر",
+  "nsPrayerMaghrib": "المغرب",
+  "nsPrayerIsha": "العشاء",
+  "nsPrayerSunrise": "الشروق",
+  "stAppearance": "المظهر والتفضيلات العامة",
+  "stSettingsTitle": "الإعدادات والتفضيلات",
+  "ptFajrChallengeTip": "تحدي استيقاظ الفجر",
+  "ptLocationUpdated": "تم تحديث الموقع بنجاح",
+  "ptLoading": "جاري تحميل مواقيت الصلاة...",
+  "ptLoadFailed": "تعذر جلب مواقيت الصلاة",
+  "ptLoadFailedSub": "تأكد من تفعيل خدمات الموقع والاتصال بالإنترنت",
+  "ptLoadingShort": "يتم التحميل...",
+  "@ptCorresponding": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "ptCorresponding": " الموافق ل {date} م",
+  "ptFajrChallenge": "تحدي الفجر",
+  "ptListFailed": "عذرًا، فشل تحميل المواقيت",
+  "ptSourceTitle": "مصدر المواقيت",
+  "ptSourceSub": "اختر المواقيت المحسوبة أو ابحث عن مسجد قريبك",
+  "ptCalcSub": "حسب حساب فقهي يعتمد على موقعك",
+  "ptNearbyMosques": "المساجد القريبة منك",
+  "@ptAllMosques": {
+    "placeholders": {
+      "country": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "ptAllMosques": "جميع المساجد — {country} ({count})",
+  "ptNoResults": "لا توجد نتائج حالياً",
+  "@ptMosqueAdopted": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "ptMosqueAdopted": "تم اعتماد ({name}) كمسجدك الرئيسي للمواقيت",
+  "ptMosqueFailed": "تعذر تحميل مواقيت هذا المسجد، حاول مجدداً",
+  "@ptMeters": {
+    "placeholders": {
+      "m": { "type": "String" }
+    }
+  },
+  "ptMeters": "{m} م",
+  "@ptKm": {
+    "placeholders": {
+      "km": { "type": "String" }
+    }
+  },
+  "ptKm": "{km} كم",
+  "ptIqamaAfter": "الإقامة بعد",
+  "@ptPrayerAfter": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "ptPrayerAfter": "{name} بعد",
+  "ptAyatOff": "إيقاف نافذة الآية",
+  "ptAyatOn": "تفعيل نافذة الآية",
+  "ctCopied": "تم نسخ النص إلى الحافظة",
+  "ctCopy": "نسخ",
+  "ctCopyAll": "نسخ النص كاملاً",
+  "ctShare": "مشاركة",
+  "ctShareAll": "مشاركة النص كاملاً",
+  "ctClose": "إغلاق",
+  "ctCancel": "إلغاء",
+  "ctNoSearchResults": "لا توجد نتائج مطابقة للبحث",
+  "ctSearch": "بحث",
+  "ctRefresh": "تحديث",
+  "obPermNotif": "الإشعارات",
+  "obPermNotifSub": "لتنبيهك بأوقات الصلاة والأذكار",
+  "obPermLocation": "الموقع الجغرافي",
+  "obPermLocationSub": "لتحديد مواقيت الصلاة بدقة حسب موقعك",
+  "obPermOverlay": "العرض فوق التطبيقات",
+  "obPermOverlaySub": "لعرض الأذكار والآيات تلقائياً على الشاشة",
+  "obWelcome": "مرحباً بك في حصن المسلم",
+  "obSubtitle": "نحتاج إلى بعض الأذونات لتعمل جميع المميزات بشكل صحيح",
+  "obSkip": "تخطي",
+  "azEmpty": "لا توجد نتائج",
+  "duCopied": "تم نسخ الدعاء إلى الحافظة",
+  "duLoadFailed": "تعذر تحميل بيانات الأدعية",
+  "duQuranSection": "أدعية القرآن الكريم",
+  "duSunnahSection": "أدعية السنة النبوية",
+  "duAdabSection": "فضل وآداب الدعاء",
+  "duQuranBadge": "قرآن كريم",
+  "duSunnahBadge": "سنة نبوية",
+  "@duShareSubject": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "duShareSubject": "دعاء رقم {n}",
+  "rqLoadFailed": "تعذر تحميل بيانات الرقية الشرعية",
+  "@rqItems": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "rqItems": "{n, plural, other {# فقرة / رقية}}",
+  "asCopiedDefault": "تم النسخ ✿",
+  "asTapHint": "اضغط للعرض، اضغط مطولة للنسخ",
+  "azSpeedTitle": "سرعة العداد التلقائي",
+  "azSeconds": "الوقت بالثانية",
+  "azAuto": "تلقائي",
+  "azReset": "تصفير",
+  "@azTimes": {
+    "placeholders": {
+      "m": { "type": "int" }
+    }
+  },
+  "azTimes": "{m, plural, one {مرة واحدة} two {{m} مرتان} other {{m} مرات}}",
+  "@azTimesHundred": {
+    "placeholders": {
+      "m": { "type": "int" }
+    }
+  },
+  "azTimesHundred": "{m} مرة",
+  "@azOfTotal": {
+    "placeholders": {
+      "i": { "type": "int" },
+      "n": { "type": "int" }
+    }
+  },
+  "azOfTotal": "الذكر {i} من {n}",
+  "azCopiedDhikr": "تم نسخ الذكر إلى الحافظة",
+  "azSave": "حفظ",
+  "azCopied": "تم النسخ إلى الحافظة",
+  "azSharePrefix": "من أذكار {cat}",
+  "msSaveFolder": "اختر مجلد الحفظ",
+  "@msBackupSaved": {
+    "placeholders": {
+      "f": { "type": "String" }
+    }
+  },
+  "msBackupSaved": "تم حفظ النسخة الاحتياطية: {f}",
+  "@msExportFailed": {
+    "placeholders": {
+      "e": { "type": "String" }
+    }
+  },
+  "msExportFailed": "فشل التصدير: {e}",
+  "msImported": "تم استيراد البيانات بنجاح",
+  "@msImportFailed": {
+    "placeholders": {
+      "e": { "type": "String" }
+    }
+  },
+  "msImportFailed": "فشل الاستيراد: {e}",
+  "msAdded": "تمت إضافة الذكر بنجاح!",
+  "msEdited": "تم تعديل الذكر بنجاح!",
+  "msDeleted": "تم حذف الذكر بنجاح!",
+  "msPickCount": "اختر عدد التسبيحات",
+  "msCountHint": "عدد التسبيحات (افتراضي مفتوح)",
+  "msStart": "ابدأ",
+  "msEdit": "تعديل",
+  "msDelete": "حذف",
+  "msAddNew": "إضافة ذكر جديد",
+  "msRestoreTitle": "استعادة الأذكار الافتراضية؟",
+  "msRestoreBody": "سيتم حذف جميع أذكارك الحالية واستبدالها بالقائمة الافتراضية مع السرعات الجديدة.",
+  "msRestore": "استعادة",
+  "msHideScores": "إخفاء النقاط",
+  "msShowScores": "إظهار النقاط",
+  "msResetDefault": "استعادة الافتراضي",
+  "msExport": "تصدير البيانات",
+  "msImport": "استيراد البيانات",
+  "msAddTitle": "إضافة ذكر",
+  "msEditTitle": "تعديل ذكر",
+  "msFieldDhikr": "الذكر *",
+  "msFieldBenefit": "الفضل",
+  "msFieldSource": "المصدر",
+  "msFieldSpeed": "سرعة العداد التلقائي (بالثانية)",
+  "msCounterTitle": "عداد الذكر",
+  "@msVirtue": {
+    "placeholders": {
+      "t": { "type": "String" }
+    }
+  },
+  "msVirtue": "الفضل: {t}",
+  "@msSource": {
+    "placeholders": {
+      "t": { "type": "String" }
+    }
+  },
+  "msSource": "المصدر: {t}",
+  "msOpen": "مفتوح",
+  "msSave": "حفظ",
+  "stDarkMode": "الوضع الداكن",
+  "stDarkOn": "المظهر الليلي مفعّل لراحة العين",
+  "stDarkOff": "المظهر النهاري الفاتح مفعّل",
+  "stDefaultHome": "الواجهة الافتراضية",
+  "stDefaultHomeSub": "الصفحة التي تظهر عند تشغيل التطبيق",
+  "stHomeAzkarSub": "أذكار اليوم والليلة وحصن المسلم",
+  "stHomeMisbahaSub": "عداد التسبيح والأذكار المخصصة",
+  "stHomePrayerSub": "مواعيد الأذان والتنبيهات والقبلة",
+  "stHomeSet": "تم تعيين الصفحة الرئيسية (تُطبق عند إعادة الفتح)",
+  "stLanguageTitle": "اللغة / Language",
+  "stLanguagePicker": "اللغة / Language / Langue",
+  "stLanguagePickerSub": "اختر لغة واجهة التطبيق",
+  "stLangArSub": "لغة الواجهة الافتراضية",
+  "stLangEnSub": "Application language",
+  "stLangFrSub": "Langue de l'interface",
+  "stInteraction": "المسبحة والتفاعل",
+  "stClickSound": "صوت النقرة",
+  "stClickSoundSub": "تشغيل صوت خفيف عند الضغط على المسبحة",
+  "stHaptic": "الاهتزاز اللمسي",
+  "stHapticSub": "اهتزاز الهاتف عند كل تسبيحة للتأكيد",
+  "stReminder": "التذكير التلقائي بالأذكار",
+  "stFloatingDhikr": "أذكار عائمة دورية",
+  "stFloatingDhikrSub": "ظهور نافذة ذكر قصيرة تلقائياً فوق التطبيقات",
+  "stReminderRate": "وتيرة التذكير",
+  "stReminderRateSub": "الفترة الفاصلة بين كل ذكر وآخر",
+  "stEveryHour": "كل ساعة",
+  "@stEveryMinutes": {
+    "placeholders": {
+      "m": { "type": "int" }
+    }
+  },
+  "stEveryMinutes": "كل {m, plural, one {{m} دقيقة} two {{m} دقيقتان} other {{m} دقائق}}",
+  "stIntervalTitle": "وتيرة التذكير التلقائي",
+  "stIntervalSub": "المدة الزمنية بين كل ذكر عائم وآخر",
+  "stOverlayTitle": "إذن الظهور فوق التطبيقات",
+  "stOverlayBody": "ليتمكن التطبيق من عرض الأذكار القصيرة أثناء تصفحك للتطبيقات الأخرى، يحتاج إلى منح إذن الظهور فوق التطبيقات. هل تود تفعيله الآن؟",
+  "stActivateNow": "تفعيل الآن",
+  "stHomePicker": "الصفحة الرئيسية الافتراضية",
+  "stHomePickerSub": "اختر الواجهة التي تبدأ مع فتح التطبيق",
+  "stPrayerData": "مواقيت الصلاة ومصدر البيانات",
+  "stSourcePicker": "مصدر مواقيت الصلاة",
+  "stSourcePickerSub": "اختر بين مواقيت المسجد المعتمدة أو الحساب الفلكي الدقيق",
+  "stSourceMosque": "مواقيت المسجد (أونلاين مع كاش)",
+  "stSourceMosqueSub": "جلب المواقيت المعتمدة لمسجدك المحدد عبر Mawaqit وحفظها للعمل بدون إنترنت",
+  "stSourceCalc": "مواقيت محسوبة (أوفلاين بالكامل)",
+  "stSourceCalcMode": "مواقيت محسوبة فلكياً (أوفلاين)",
+  "stSourceCalcSub": "حساب مواقيت الصلاة فلكياً بناءً على إحداثيات الموقع والمذهب الفقهي دون الحاجة للإنترنت",
+  "stSourceMosqueSet": "تم تعيين المصدر: مواقيت المسجد",
+  "stSourceCalcSet": "تم تعيين المصدر: مواقيت محسوبة",
+  "stCalcPicker": "طريقة حساب مواقيت الصلاة",
+  "stCalcPickerSub": "اختر الهيئة أو المجمع الفلكي المعتمد في منطقتك",
+  "stCalcSaved": "تم حفظ طريقة الحساب وإعادة ضبط المواقيت",
+  "stAsrPicker": "مذهب صلاة العصر",
+  "stAsrPickerSub": "تحديد وقت دخول صلاة العصر حسب المذاهب الفقهية",
+  "stAsrShafi": "الجمهور (شافعي، مالكي، حنبلي)",
+  "stAsrShafiSub": "عندما يصير ظل كل شيء مثله",
+  "stAsrHanafi": "المذهب الحنفي",
+  "stAsrHanafiSub": "عندما يصير ظل كل شيء مثليه",
+  "stAsrSaved": "تم حفظ مذهب العصر",
+  "stMethodMakkah": "أم القرى (مكة المكرمة)",
+  "stMethodMakkahSub": "المملكة العربية السعودية والخليج العربي",
+  "stMethodEgypt": "الهيئة العامة المصرية للمساحة",
+  "stMethodEgyptSub": "مصر، السودان، وبعض دول إفريقيا",
+  "stMethodMwl": "رابطة العالم الإسلامي",
+  "stMethodMwlSub": "أوروبا والشرق الأقصى وأمريكا",
+  "stMethodKarachi": "جامعة العلوم الإسلامية بكراتشي",
+  "stMethodKarachiSub": "باكستان، الهند، بنغلاديش، وأفغانستان",
+  "stMethodIsna": "الجمعية الإسلامية لأمريكا الشمالية (ISNA)",
+  "stMethodIsnaSub": "الولايات المتحدة وكندا",
+  "stMethodKuwait": "دولة الكويت",
+  "stMethodKuwaitSub": "الكويت (فجر 18، عشاء 17.5)",
+  "stMethodQatar": "دولة قطر",
+  "stMethodQatarSub": "قطر (فجر 18، العشاء بعد المغرب بـ 90 دقيقة)",
+  "stMethodSingapore": "سنغافورة",
+  "stMethodSingaporeSub": "سنغافورة وماليزيا (فجر 20، عشاء 18)",
+  "stMethodTurkey": "رئاسة الشؤون الدينية التركية",
+  "stMethodTurkeySub": "تركيا (ديانة)",
+  "stMethodDubai": "الإمارات والخليج (دبي)",
+  "stMethodDubaiSub": "الإمارات ومنطقة الخليج (18.2)",
+  "stMethodMoon": "لجنة رؤية الهلال",
+  "stMethodMoonSub": "أمريكا الشمالية والمناطق القطبية",
+  "stCalcMethod": "طريقة الحساب",
+  "stCalcMethodSub": "الهيئة الفلكية المعتمدة لزوايا الفجر والعشاء",
+  "stAsrMethod": "مذهب صلاة العصر",
+  "stAsrMethodSub": "معيار تحديد ظل الزوال لدخول وقت العصر",
+  "stDst": "التوقيت الصيفي",
+  "stDstSub": "إضافة ساعة واحدة لمواقيت الصلاة تلقائياً",
+  "stManualTitle": "تعديل مواقيت الصلاة يدوياً",
+  "stManualTileSub": "زيادة أو إنقاص دقائق لتطابق أذان منطقتك",
+  "stReset": "إعادة ضبط",
+  "stManualSub": "يمكنك زيادة أو إنقاص دقائق محددة لكل صلاة لتطابق أذان مسجدك",
+  "stZeroMin": "0 دقيقة",
+  "@stMinDelta": {
+    "placeholders": {
+      "signed": { "type": "String" }
+    }
+  },
+  "stMinDelta": "{signed} د",
+  "stManualSaved": "تم حفظ تعديلات المواقيت بنجاح",
+  "stSaveEdits": "حفظ التعديلات",
+  "stSave": "حفظ",
+  "stIqamaTitle": "هذه الإقامة (دقائق بعد الأذان)",
+  "stIqamaSub": "حدد عدد دقائق الإقامة بعد الأذان لكل صلاة لعرض عد تنازلي دقيق",
+  "stIqamaTile": "هذه الإقامة",
+  "stIqamaTileSub": "تحديد دقائق الإقامة بعد الأذان لكل صلاة",
+  "stNoAdjust": "بدون تعديل",
+  "stNoIqama": "بدون إقامة",
+  "@stIqamaMinutes": {
+    "placeholders": {
+      "m": { "type": "int" }
+    }
+  },
+  "stIqamaMinutes": "+{m} دقيقة",
+  "stIqamaSaved": "تم حفظ إعدادات الإقامة بنجاح",
+  "stHijriTitle": "تعديل التاريخ الهجري",
+  "stHijriSub": "قم بتقديم أو تأخير التاريخ الهجري يوماً أو أكثر لمطابقة الرؤية الشرعية",
+  "stHijriExact": "التاريخ مطابق للحساب الفلكي",
+  "@stHijriAdjusted": {
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
+  "stHijriAdjusted": "معدّل بـ ({text})",
+  "@stHijriDays": {
+    "placeholders": {
+      "d": { "type": "int" }
+    }
+  },
+  "stHijriDays": "{d} يوم",
+  "stAdjust": "تعديل",
+  "stHijriSaved": "تم حفظ تعديل التاريخ الهجري",
+  "stGpsRefreshed": "تم تحديث الموقع ومواقيت الصلاة بنجاح",
+  "stGpsFailed": "تعذر تحديث الموقع، يرجى التحقق من تفعيل الـ GPS",
+  "stGpsTile": "الموقع الجغرافي (GPS)",
+  "stRefresh": "تحديث",
+  "@stCoords": {
+    "placeholders": {
+      "lat": { "type": "String" },
+      "lon": { "type": "String" }
+    }
+  },
+  "stCoords": "الإحداثيات: {lat}, {lon}",
+  "stNoMosque": "لم يتم تحديد مسجد بعد",
+  "stOpenMapChoose": "انقر لفتح الخريطة واختيار مسجدك",
+  "@stCityChange": {
+    "placeholders": {
+      "city": { "type": "String" }
+    }
+  },
+  "stCityChange": "المدينة: {city} • انقر للتغيير",
+  "stChangeMosque": "تغيير المسجد",
+  "stChooseMosque": "اختيار مسجد",
+  "stMosqueBadge": "مواقيت المسجد",
+  "stCalcBadge": "محسوبة",
+  "stNotifHub": "التنبيهات والأذان",
+  "stHubTitle": "تخصيص التنبيهات والأذان",
+  "stHubSub": "الإشعار الدائم، تحدي الفجر، وتنبيهات أذكار الصباح والمساء",
+  "stAdvanced": "متقدم",
+  "stSearchHint": "ابحث في الإعدادات",
+  "stAdvancedMode": "الإعدادات المتقدمة",
+  "stAdvancedModeSub": "إظهار الخيارات التقنية (الفروق، الإقامة، الضبط الدقيق)",
+  "stHiddenAdvanced": "بعض الإعدادات التقنية مخفية",
+  "stDiagTile": "التشخيص المتقدم",
+  "stDiagTileSub": "حالة الأذونات والمنبهات المجدولة والاختبار",
+  "stAbout": "حول التطبيق والمشاركة",
+  "stAboutApp": "عن حصن المسلم والإصدار",
+  "@stAboutAppSub": {
+    "placeholders": {
+      "v": { "type": "String" }
+    }
+  },
+  "stAboutAppSub": "الإصدار {v} • مفتوح المصدر",
+  "stOfficialSite": "الموقع الرسمي للشيخ سعيد بن وهف",
+  "stOfficialSiteSub": "مؤلف كتاب حصن المسلم رحمه الله",
+  "stGithub": "المشروع على GitHub",
+  "stGithubSub": "مساهمة في التطوير وكود المصدر",
+  "stGithubSheetSub": "المستودع البرمجي للتطبيق على GitHub",
+  "@stAboutSheetLine": {
+    "placeholders": {
+      "v": { "type": "String" }
+    }
+  },
+  "stAboutSheetLine": "الإصدار {v} • تطبيق إسلامي مفتوح المصدر",
+  "mmSearchHint": "ابحث باسم المسجد أو المدينة...",
+  "mmTitle": "خريطة المساجد",
+  "mmCloseSearch": "إغلاق البحث",
+  "mmSearch": "بحث",
+  "mmShowMap": "عرض على الخريطة",
+  "mmShowList": "عرض القائمة",
+  "mmChangeCountry": "تغيير الدولة",
+  "@mmMosqueCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mmMosqueCount": "{count, plural, one {{count} مسجد} two {{count} مسجداً} other {{count} مسجد}}",
+  "mmOfflineBanner": "غير متصل بالإنترنت — يتم عرض المساجد المخزنة مسبقاً",
+  "mmLocateMe": "موقعي الحالي",
+  "mmCountryPickerTitle": "اختر الدولة لعرض المساجد",
+  "mmAdoptMosque": "اعتماد كمسجد رئيسي",
+  "mmRetry": "إعادة المحاولة",
+  "mmEmptyNoMosques": "لا توجد مساجد بانتظار التحميل",
+  "mmEmptyNoResults": "لا نتائج مطابقة",
+  "mmRefreshTimes": "تحديث المواقيت",
+  "mmActiveMosqueBadge": "هذا هو المسجد المعتمد حالياً في التطبيق",
+  "mmDistanceKm": "يبعد {d} كم",
+  "mmAdoptedNow": "تم تعيين ({name}) كمسجدك الرئيسي للمواقيت",
+  "mmActiveMosque": "المسجد المعتمد",
+  "mmAdoptThis": "اعتماد هذا المسجد للمواقيت",
+  "mmDirections": "الاتجاهات في الخريطة",
+  "mmDirectionsFailed": "تعذر فتح الاتجاهات. لا يوجد تطبيق خرائط.",
+  "mmShare": "مشاركة المواقيت",
+  "mmJumua": "الجمعة: {t}",
+  "mmFriday": "صلاة الجمعة",
+  "mmAppName": "تطبيق حصن المسلم",
+  "mmPrayerTimesFor": "مواقيت الصلاة لـ {name} ({city}):",
+  "mmErrorNetwork": "تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.",
+  "mmErrorParsing": "خطأ في قراءة بيانات الخادم. تم تحديث بيانات المساجد، يرجى المحاولة لاحقاً.",
+  "mmErrorNotFound": "لم يتم العثور على بيانات المساجد لهذه الدولة.",
+  "mmErrorServer": "خطأ في خادم مواقيت. يرجى المحاولة لاحقاً.",
+  "mmErrorTimeout": "انتهت مهلة الاتصال بالخادم. تحقق من اتصالك وحاول مرة أخرى.",
+  "mmErrorGeneral": "تعذّر تحميل قائمة المساجد. تأكد من الاتصال بالإنترنت.",
+  "mmScheduleErrorNetwork": "تعذر الاتصال بالخادم لتحميل مواقيت المسجد.",
+  "mmScheduleErrorParsing": "خطأ في قراءة مواقيت المسجد. قد يكون تنسيق البيانات قد تغير.",
+  "mmScheduleErrorNotFound": "لم يتم العثور على مواقيت لهذا المسجد.",
+  "mmScheduleErrorServer": "خطأ في خادم مواقيت. يرجى المحاولة لاحقاً.",
+  "mmScheduleErrorTimeout": "انتهت مهلة الاتصال عند تحميل المواقيت.",
+  "mmScheduleErrorGeneral": "تعذّر تحميل مواقيت هذا المسجد.",
+  "nsExtraAdhkarSection": "أذكار إضافية",
+  "nsWakeupAdhkar": "تنبيه أذكار الاستيقاظ",
+  "nsWakeupAdhkarSub": "تذكير مبارك بأذكار الاستيقاظ من النوم عند الفجر",
+  "nsSleepAdhkar": "تنبيه أذكار النوم",
+  "nsSleepAdhkarSub": "تذكير مبارك بأذكار النوم قبل موعد نومك",
+  "nsFridayKahf": "تذكير سورة الكهف يوم الجمعة",
+  "nsFridayKahfSub": "تذكير صباح كل جمعة بقراءة سورة الكهف نوراً بين الجمعتين",
+  "nsFridayKahfTitle": "سورة الكهف",
+  "nsFridayKahfBody": "لا تنس قراءة سورة الكهف اليوم — نور ما بين الجمعتين",
+  "nsDndSection": "الوضع الصامت التلقائي (DND)",
+  "nsDndTitle": "كتم الهاتف أثناء الصلاة",
+  "nsDndSub": "تفعيل عدم الإزعاج تلقائياً عند دخول وقت الصلاة لمنع الرنين في المسجد",
+  "nsDndDuration": "مدة الكتم بعد الأذان",
+  "nsDndPermNeeded": "يتطلب إذن الوصول إلى سياسة عدم الإزعاج",
+  "nsDndPermGrant": "منح إذن عدم الإزعاج",
+  "@nsDndMinutes": {
+    "placeholders": {
+      "m": { "type": "int" }
+    }
+  },
+  "nsDndMinutes": "{m, plural, one {{m} دقيقة} two {{m} دقيقتان} other {{m} دقائق}}",
+  "diagDndTitle": "سياسة عدم الإزعاج (DND)",
+  "diagDndOk": "ممنوح — الكتم التلقائي أثناء الصلاة متاح",
+  "diagDndDenied": "غير ممنوح — التطبيق لا يستطيع كتم الهاتف تلقائياً",
+"ptTrackerTitle": "تتبع الصلوات",
+  "@ptLevelTitle": {
+    "placeholders": {
+      "level": { "type": "int" }
+    }
+  },
+  "ptLevelTitle": "المستوى {level}",
+  "ptDailyGoal": "الهدف اليومي",
+  "ptEdit": "تعديل",
+  "ptGoalToday": "هدف اليوم",
+  "ptOverview": "نظرة عامة على الصلاة",
+  "ptLast30Days": "آخر ٣٠ يوماً",
+  "ptEmptyTitle": "لا توجد بيانات صلاة مسجلة بعد",
+  "ptEmptyHint": "ابدأ بتسجيل صلواتك لرؤية النظرة العامة هنا",
+  "ptGoalDialogTitle": "هدفك اليومي",
+  "ptGoalDialogHint": "عدد الصلوات المطلوبة يومياً",
+  "ptSave": "حفظ",
+  "ptTotalPrayers": "مجموع الصلوات",
+  "ptOnTimeRate": "نسبة الالتزام",
+  "ptTotalPoints": "مجموع النقاط",
+  "ptHowPrayed": "كيف صليت؟",
+  "ptOptTakbeer": "تكبيرة الإحرام",
+  "ptOptMosque": "في المسجد",
+  "ptOptJamaa": "جماعة",
+  "ptOptOnTime": "في الوقت منفرداً",
+  "ptOptLate": "بعد الوقت",
+  "ptOptMissed": "فائتة",
+  "ptClearEntry": "مسح التسجيل",
+  "@ptPointsNum": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
+  "ptPointsNum": "+{points} نقطة",
+  "ptDetails": "التفاصيل",
+  "ptBasedOn30": "بناءً على آخر ٣٠ يومًا",
+  "ptHowItWorks": "كيف يعمل",
+  "ptStages": "المراحل",
+  "ptStagesHint": "النقاط المطلوبة لفتح كل مستوى",
+  "ptContext": "السياق",
+  "ptContextHint": "تختلف أحكام الصلاة وتؤثر على الحساب",
+  "ptMan": "رجل",
+  "ptWoman": "امرأة",
+  "ptPointsInApp": "النقاط في التطبيق",
+  "ptOptionMeanings": "معاني الخيارات",
+  "ptMultipliers": "مضاعف النقاط",
+  "ptMultipliersHint": "جهد أكبر، نقاط أكثر",
+  "@ptPointsCount": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
+  "ptPointsCount": "{points} نقطة",
+  "ptMeanTakbeer": "أدركت تكبيرة الإحرام مع الإمام",
+  "ptMeanMosque": "صليت في المسجد",
+  "ptMeanJamaa": "صليت جماعة خارج المسجد",
+  "ptMeanOnTime": "صليت في وقتها منفردًا",
+  "ptMeanLate": "صليتها بعد خروج الوقت",
+  "ptMeanMissed": "فاتت الصلاة ولم تُصلَّ",
+  "ptOnboardTitle": "تتبع صلواتك",
+  "ptOnboardHint": "حافظ على استمراريتك، وابنِ عادات ذات معنى، واقترب أكثر في عبادتك اليومية",
+  "ptOnboardF1T": "سجل كل صلاة بضغطة",
+  "ptOnboardF1D": "بنقرة بسيطة، سجل صلاتك وابقَ على اطلاع دائم",
+  "ptOnboardF2T": "اختر كيف صليت",
+  "ptOnboardF2D": "حدد كيف صليت — تكبيرة الإحرام، جماعة، أو في الوقت",
+  "ptOnboardF3T": "إشعارات ذكية",
+  "ptOnboardF3D": "لا تفوت صلاة — سنرسل لك تذكيرات حتى لا تنسى تسجيلها",
+  "ptOnboardAccept": "نعم، أنا موافق!",
+  "ptOnboardLater": "ليس الآن",
+  "ptMenuSettings": "إعدادات التتبع",
+  "ptMenuReplay": "الإعداد الأولي",
+  "ptMenuWidget": "إضافة تطبيق مصغر",
+  "ptMenuDisable": "تعطيل التتبع",
+  "ptMenuEnable": "تفعيل التتبع",
+  "ptMenuClear": "مسح بيانات التتبع",
+  "ptClearTitle": "مسح بيانات التتبع؟",
+  "ptClearHint": "سيتم حذف جميع الصلوات المسجلة وسلاسلك. لا يمكن التراجع.",
+  "ptDelete": "حذف",
+  "ptWidgetTitle": "إضافة التطبيق المصغر",
+  "ptWidgetHint": "من الشاشة الرئيسية: اضغط مطولًا على مساحة فارغة، ثم التطبيقات المصغرة، ثم اختر حصن المسلم",
+  "ptPausedTitle": "التتبع متوقف مؤقتًا",
+  "ptPausedHint": "لن تُحتسب الصلوات حتى تُفعّل التتبع مجددًا",
+  "ptResume": "تفعيل",
+  "ptRemindTitle": "تذكير بتسجيل الصلاة",
+  "@ptRemindBody": {
+    "placeholders": {
+      "prayer": { "type": "String" }
+    }
+  },
+  "ptRemindBody": "لم تسجل صلاة {prayer} بعد — سجلها الآن",
+  "ptRemindToggle": "تذكيرات التسجيل",
+  "ptRemindHint": "تذكير عند نسيان تسجيل صلاة",
+  "diagFivePrayer": "تتبع الصلوات الخمس"
+}

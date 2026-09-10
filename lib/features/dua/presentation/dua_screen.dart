@@ -7,6 +7,7 @@ import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class DuaScreen extends StatefulWidget {
   const DuaScreen({super.key});
@@ -55,15 +56,14 @@ class _DuaScreenState extends State<DuaScreen> {
     super.dispose();
   }
 
-  void _copyToClipboard(String text,
-      {String message = 'تم نسخ الدعاء إلى الحافظة'}) {
+  void _copyToClipboard(String text, {String? message}) {
     Clipboard.setData(ClipboardData(text: text)).then((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Center(
             child: Text(
-              message,
+              message ?? context.loc.duCopied,
               style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
             ),
           ),
@@ -112,10 +112,8 @@ class _DuaScreenState extends State<DuaScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          appBar: AppBar(
+      child: Scaffold(
+        appBar: AppBar(
             leading: toggle
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -126,7 +124,7 @@ class _DuaScreenState extends State<DuaScreen> {
                 ? SizedBox(
                     height: 30,
                     child: Text(
-                      'الدعاء',
+                      context.loc.navDua,
                       style: TextStyle(
                         fontSize: double.parse(fontSize22),
                         fontFamily: fontFamily,
@@ -181,14 +179,14 @@ class _DuaScreenState extends State<DuaScreen> {
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _bookData == null
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'تعذر تحميل بيانات الأدعية',
-                        style: TextStyle(fontFamily: 'Amiri', fontSize: 18),
+                        context.loc.duLoadFailed,
+                        style: const TextStyle(
+                            fontFamily: 'Amiri', fontSize: 18),
                       ),
                     )
                   : _buildDuaList(),
-        ),
       ),
     );
   }
@@ -237,28 +235,28 @@ class _DuaScreenState extends State<DuaScreen> {
           children: [
             if (filteredQuranic.isNotEmpty) ...[
               OrnamentalSectionTitle(
-                title: 'أدعية القرآن الكريم',
+                title: context.loc.duQuranSection,
                 accentColor: sectionAccent,
                 compact: true,
               ),
               ...filteredQuranic.map((dua) => _buildDuaCard(
                     number: dua.number,
                     text: dua.text,
-                    categoryBadge: 'قرآن كريم',
+                    categoryBadge: context.loc.duQuranBadge,
                     isQuran: true,
                   )),
               const SizedBox(height: 12),
             ],
             if (filteredSunnah.isNotEmpty) ...[
               OrnamentalSectionTitle(
-                title: 'أدعية السنة النبوية',
+                title: context.loc.duSunnahSection,
                 accentColor: sectionAccent,
                 compact: true,
               ),
               ...filteredSunnah.map((dua) => _buildDuaCard(
                     number: dua.number,
                     text: dua.text,
-                    categoryBadge: 'سنة نبوية',
+                    categoryBadge: context.loc.duSunnahBadge,
                     isQuran: false,
                   )),
               const SizedBox(height: 12),
@@ -267,7 +265,7 @@ class _DuaScreenState extends State<DuaScreen> {
                 filteredAdab.isNotEmpty ||
                 filteredTimes.isNotEmpty) ...[
               OrnamentalSectionTitle(
-                title: 'فضل وآداب الدعاء',
+                title: context.loc.duAdabSection,
                 accentColor: sectionAccent,
                 compact: true,
               ),
@@ -374,7 +372,8 @@ class _DuaScreenState extends State<DuaScreen> {
                 const SizedBox(width: 6),
                 _buildSoftIconButton(
                   Icons.share_rounded,
-                  () => _shareText(text, 'دعاء رقم $number'),
+                  () => _shareText(
+                      text, context.loc.duShareSubject(number)),
                 ),
               ],
             ),
@@ -467,7 +466,7 @@ class _DuaScreenState extends State<DuaScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.copy_rounded, size: 16),
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'نسخ',
+                    tooltip: context.loc.ctCopy,
                     onPressed: () => _copyToClipboard(text),
                     color: isDark ? Colors.white60 : Colors.black54,
                   ),
@@ -492,7 +491,7 @@ class _DuaScreenState extends State<DuaScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'لا توجد نتائج مطابقة للبحث',
+            context.loc.ctNoSearchResults,
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: 18,

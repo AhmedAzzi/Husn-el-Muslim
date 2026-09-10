@@ -10,6 +10,7 @@ import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/masbaha/data/custom_dikr.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class CustomDikrScreen extends StatefulWidget {
   final bool isHomeScreen;
@@ -118,7 +119,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
 
       // Let user choose directory to save the file
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'اختر مجلد الحفظ',
+        dialogTitle: context.loc.msSaveFolder,
       );
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -128,14 +129,14 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تم حفظ النسخة الاحتياطية: $fileName'),
+          content: Text(context.loc.msBackupSaved(fileName)),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل التصدير: $e')),
+        SnackBar(content: Text(context.loc.msExportFailed(e.toString()))),
       );
     }
   }
@@ -157,13 +158,13 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
         saveDikrList();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم استيراد البيانات بنجاح')),
+          SnackBar(content: Text(context.loc.msImported)),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل الاستيراد: $e')),
+        SnackBar(content: Text(context.loc.msImportFailed(e.toString()))),
       );
     }
   }
@@ -175,10 +176,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
     saveDikrList();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Directionality(
+        content: Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تمت إضافة الذكر بنجاح!',
-              style: TextStyle(fontFamily: 'Amiri')),
+          child: Text(context.loc.msAdded,
+              style: const TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
@@ -194,10 +195,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
     saveDikrList();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Directionality(
+        content: Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تم تعديل الذكر بنجاح!',
-              style: TextStyle(fontFamily: 'Amiri')),
+          child: Text(context.loc.msEdited,
+              style: const TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
@@ -213,10 +214,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
     saveDikrList();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Directionality(
+        content: Directionality(
           textDirection: TextDirection.rtl,
-          child: Text('تم حذف الذكر بنجاح!',
-              style: TextStyle(fontFamily: 'Amiri')),
+          child: Text(context.loc.msDeleted,
+              style: const TextStyle(fontFamily: 'Amiri')),
         ),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
@@ -268,11 +269,11 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
         return Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('اختر عدد التسبيحات'),
+            title: Text(context.loc.msPickCount),
             content: TextField(
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  hintText: 'عدد التسبيحات (افتراضي مفتوح)'),
+              decoration: InputDecoration(
+                  hintText: context.loc.msCountHint),
               onChanged: (val) {
                 count = int.tryParse(val) ?? 0;
               },
@@ -302,7 +303,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                     ),
                   ).then((_) => saveDikrList()); // Save when closing
                 },
-                child: const Text('ابدأ'),
+                child: Text(context.loc.msStart),
               ),
             ],
           ),
@@ -326,8 +327,8 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.edit),
-                  title: const Text('تعديل',
-                      style: TextStyle(fontFamily: 'Amiri')),
+                  title: Text(context.loc.msEdit,
+                      style: const TextStyle(fontFamily: 'Amiri')),
                   onTap: () {
                     Navigator.pop(context);
                     showEditDikrDialog(index);
@@ -335,8 +336,8 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete),
-                  title:
-                      const Text('حذف', style: TextStyle(fontFamily: 'Amiri')),
+                  title: Text(context.loc.msDelete,
+                      style: const TextStyle(fontFamily: 'Amiri')),
                   onTap: () {
                     Navigator.pop(context);
                     deleteCustomDikr(index);
@@ -363,7 +364,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
           appBar: AppBar(
             backgroundColor: theme.appBarTheme.backgroundColor,
             iconTheme: IconThemeData(color: theme.appBarTheme.foregroundColor),
-            title: Text('مسبحة',
+            title: Text(context.loc.navMasbaha,
                 style: TextStyle(
                     fontFamily: 'Amiri',
                     color: theme.appBarTheme.foregroundColor)),
@@ -408,20 +409,19 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                       Directionality(
                         textDirection: TextDirection.rtl,
                         child: AlertDialog(
-                          title: const Text('استعادة الأذكار الافتراضية؟'),
-                          content: const Text(
-                              'سيتم حذف جميع أذكارك الحالية واستبدالها بالقائمة الافتراضية مع السرعات الجديدة.'),
+                          title: Text(context.loc.msRestoreTitle),
+                          content: Text(context.loc.msRestoreBody),
                           actions: [
                             TextButton(
                                 onPressed: () => Get.back(),
-                                child: const Text('إلغاء')),
+                                child: Text(context.loc.ctCancel)),
                             TextButton(
                                 onPressed: () {
                                   loadDefaultDikr().then((_) => saveDikrList());
                                   Get.back();
                                 },
-                                child: const Text('استعادة',
-                                    style: TextStyle(color: Colors.red))),
+                                child: Text(context.loc.msRestore,
+                                    style: const TextStyle(color: Colors.red))),
                           ],
                         ),
                       ),
@@ -438,21 +438,23 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                               ? Icons.visibility_off
                               : Icons.visibility),
                           const SizedBox(width: 8),
-                          Text(showScores ? 'إخفاء النقاط' : 'إظهار النقاط'),
+                          Text(showScores
+                              ? context.loc.msHideScores
+                              : context.loc.msShowScores),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'reset',
-                      child: Text('استعادة الافتراضي'),
+                      child: Text(context.loc.msResetDefault),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'export',
-                      child: Text('تصدير البيانات'),
+                      child: Text(context.loc.msExport),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'import',
-                      child: Text('استيراد البيانات'),
+                      child: Text(context.loc.msImport),
                     ),
                   ];
                 },
@@ -473,14 +475,14 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
-                    title: const Row(
+                    title: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, color: Color(0xFF8B3D4D), size: 28),
-                        SizedBox(width: 8),
+                        const Icon(Icons.add, color: Color(0xFF8B3D4D), size: 28),
+                        const SizedBox(width: 8),
                         Text(
-                          'إضافة ذكر جديد',
-                          style: TextStyle(
+                          context.loc.msAddNew,
+                          style: const TextStyle(
                             fontFamily: 'Amiri',
                             fontSize: 20,
                             color: Color(0xFF8B3D4D),
@@ -601,7 +603,9 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              widget.dikr == null ? 'إضافة ذكر' : 'تعديل ذكر',
+              widget.dikr == null
+                  ? context.loc.msAddTitle
+                  : context.loc.msEditTitle,
               style: const TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 22,
@@ -611,8 +615,9 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
             const SizedBox(height: 16),
             TextField(
               controller: dikrController,
-              decoration: const InputDecoration(
-                  labelText: 'الذكر *', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: context.loc.msFieldDhikr,
+                  border: const OutlineInputBorder()),
               textDirection: TextDirection.rtl,
               minLines: 1,
               maxLines: 3,
@@ -620,8 +625,9 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: benefitController,
-              decoration: const InputDecoration(
-                  labelText: 'الفضل', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: context.loc.msFieldBenefit,
+                  border: const OutlineInputBorder()),
               textDirection: TextDirection.rtl,
               minLines: 1,
               maxLines: 2,
@@ -629,8 +635,9 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: referenceController,
-              decoration: const InputDecoration(
-                  labelText: 'المصدر', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: context.loc.msFieldSource,
+                  border: const OutlineInputBorder()),
               textDirection: TextDirection.rtl,
               minLines: 1,
               maxLines: 2,
@@ -638,9 +645,9 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: autoSpeedController,
-              decoration: const InputDecoration(
-                  labelText: 'سرعة العداد التلقائي (بالثانية)',
-                  border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: context.loc.msFieldSpeed,
+                  border: const OutlineInputBorder()),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               textDirection: TextDirection.rtl,
@@ -651,7 +658,7 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('إلغاء'),
+                    child: Text(context.loc.ctCancel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -680,7 +687,7 @@ class _AddEditDikrSheetState extends State<AddEditDikrSheet> {
                       );
                       Navigator.pop(context);
                     },
-                    child: const Text('حفظ'),
+                    child: Text(context.loc.msSave),
                   ),
                 ),
               ],
@@ -775,12 +782,12 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
           child: StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: const Text('سرعة العداد التلقائي',
-                    style: TextStyle(fontFamily: 'Amiri')),
+                title: Text(context.loc.azSpeedTitle,
+                    style: const TextStyle(fontFamily: 'Amiri')),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('الوقت بالثانية'),
+                    Text(context.loc.azSeconds),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -831,15 +838,13 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('إلغاء'),
+                    child: Text(context.loc.ctCancel),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // Update from text field before saving
                       updateFromTextField(intervalController.text);
                       this.setState(() {
                         autoIncrementInterval = tempInterval;
-                        // Update the original dikr speed as well
                         widget.onUpdate(
                             startingMaxScore > sessionMaxCount
                                 ? startingMaxScore
@@ -848,7 +853,6 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                             tempInterval / 1000.0);
 
                         if (isAutoPlaying) {
-                          // Restart timer with new interval
                           _timer?.cancel();
                           _timer = Timer.periodic(
                               Duration(milliseconds: autoIncrementInterval),
@@ -859,7 +863,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                       });
                       Navigator.pop(context);
                     },
-                    child: const Text('حفظ'),
+                    child: Text(context.loc.msSave),
                   ),
                 ],
               );
@@ -942,7 +946,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
         child: Scaffold(
           appBar: AppBar(
             title:
-                const Text('عداد الذكر', style: TextStyle(fontFamily: 'Amiri')),
+                Text(context.loc.msCounterTitle, style: const TextStyle(fontFamily: 'Amiri')),
             flexibleSpace: SizedBox(
               height: 60,
               child: Image.asset(
@@ -1018,7 +1022,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                         ListTile(
                           dense: true,
                           title: Text(
-                            'الفضل: ${widget.dikr.benefit!}',
+                            context.loc.msVirtue(widget.dikr.benefit!),
                             style: const TextStyle(
                                 fontFamily: 'Amiri', fontSize: 14),
                             textAlign: TextAlign.center,
@@ -1028,7 +1032,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                         ListTile(
                           dense: true,
                           title: Text(
-                            'المصدر: ${widget.dikr.reference!}',
+                            context.loc.msSource(widget.dikr.reference!),
                             style: const TextStyle(
                                 fontFamily: 'Amiri', fontSize: 14),
                             textAlign: TextAlign.center,
@@ -1070,9 +1074,9 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text('تلقائي',
+                        Text(context.loc.azAuto,
                             style:
-                                TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                                const TextStyle(fontFamily: 'Amiri', fontSize: 10)),
                       ],
                     ),
                     const SizedBox(width: 40),
@@ -1101,9 +1105,9 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text('تصفير',
+                        Text(context.loc.azReset,
                             style:
-                                TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                                const TextStyle(fontFamily: 'Amiri', fontSize: 10)),
                       ],
                     ),
                   ],
@@ -1127,7 +1131,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            limit == 0 ? 'مفتوح' : '$limit مرة',
+                            limit == 0 ? context.loc.msOpen : context.loc.azTimes(limit),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,

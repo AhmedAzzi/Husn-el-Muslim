@@ -8,6 +8,9 @@ import 'package:small_husn_muslim/features/ruqyah/presentation/ruqyah_screen.dar
 import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
+import 'package:small_husn_muslim/features/qibla/presentation/qibla_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
+import 'package:small_husn_muslim/l10n/app_localizations.dart';
 import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -15,6 +18,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     Size screenSize = MediaQuery.of(context).size;
     return Drawer(
       width: screenSize.width - 100,
@@ -27,7 +31,7 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.list_rounded),
             title: Text(
-              adkar,
+              loc.navAdhkar,
               style: TextStyle(
                 fontSize: double.parse(fontSize18),
                 fontFamily: fontFamily,
@@ -39,7 +43,7 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.auto_stories_rounded),
-            title: const Text('دعاء', style: TextStyle(fontSize: 18)),
+            title: Text(loc.navDua, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const DuaScreen());
@@ -48,7 +52,7 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.all_inclusive_rounded),
-            title: const Text('أسماء الله الحسنى', style: TextStyle(fontSize: 18)),
+            title: Text(loc.navNames, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const AsmaaAllahScreen());
@@ -57,7 +61,7 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.health_and_safety_rounded),
-            title: const Text('الرقية الشرعية', style: TextStyle(fontSize: 18)),
+            title: Text(loc.navRuqyah, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const RuqyahScreen());
@@ -66,7 +70,7 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.bubble_chart),
-            title: const Text('مسبحة', style: TextStyle(fontSize: 18)),
+            title: Text(loc.navMasbaha, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const CustomDikrScreen());
@@ -75,7 +79,8 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.access_time_filled_rounded),
-            title: const Text('مواقيت الصلاة', style: TextStyle(fontSize: 18)),
+            title:
+                Text(loc.navPrayerTimes, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const PrayerTimesScreen());
@@ -84,7 +89,8 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.map_rounded),
-            title: const Text('خريطة المساجد', style: TextStyle(fontSize: 18)),
+            title:
+                Text(loc.navMosqueMap, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const MosqueMapScreen());
@@ -92,8 +98,26 @@ class AppDrawer extends StatelessWidget {
           ),
           const Divider(thickness: 0.3),
           ListTile(
+            leading: const Icon(Icons.explore_rounded),
+            title: Text(loc.navQibla, style: const TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const QiblaScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
+            leading: const Icon(Icons.local_fire_department_rounded),
+            title: Text(loc.navFajrLog, style: const TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const PrayerTrackingScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text('الإعدادات', style: TextStyle(fontSize: 18)),
+            title: Text(loc.navSettings, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
               Get.to(() => const SettingsScreen());

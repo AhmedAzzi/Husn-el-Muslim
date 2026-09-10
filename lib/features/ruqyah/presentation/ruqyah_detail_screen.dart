@@ -6,6 +6,7 @@ import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class RuqyahDetailScreen extends StatefulWidget {
   final RuqyahTreatment treatment;
@@ -26,7 +27,7 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
         SnackBar(
           content: Center(
             child: Text(
-              'تم نسخ النص إلى الحافظة',
+              context.loc.ctCopied,
               style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
             ),
           ),
@@ -92,12 +93,12 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.copy_rounded),
-                tooltip: 'نسخ النص كاملاً',
+                tooltip: context.loc.ctCopyAll,
                 onPressed: _copyAll,
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded),
-                tooltip: 'مشاركة النص كاملاً',
+                tooltip: context.loc.ctShareAll,
                 onPressed: _shareAll,
               ),
             ],

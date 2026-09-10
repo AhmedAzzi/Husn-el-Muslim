@@ -10,6 +10,7 @@ import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_bottom_sheet.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
   final bool isHomeScreen;
@@ -49,12 +50,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: SafeArea(
-        child: Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
             backgroundColor: theme.appBarTheme.backgroundColor,
             elevation: 0,
             leading: widget.isHomeScreen
@@ -65,7 +64,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     onPressed: () => Get.back(),
                   ),
             title: Text(
-              'مواقيت الصلاة',
+              context.loc.navPrayerTimes,
               style: TextStyle(
                 fontFamily: 'Amiri',
                 color: theme.appBarTheme.foregroundColor,
@@ -80,13 +79,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       ? const Color(0xFFD64463)
                       : theme.appBarTheme.foregroundColor,
                 ),
-                tooltip: 'تحدي استيقاظ الفجر',
+                tooltip: context.loc.ptFajrChallengeTip,
                 onPressed: () => showFajrChallengeBottomSheet(context),
               ),
               IconButton(
                 icon: Icon(Icons.map_rounded,
                     color: theme.appBarTheme.foregroundColor),
-                tooltip: 'خريطة المساجد',
+                tooltip: context.loc.navMosqueMap,
                 onPressed: () => Get.to(() => const MosqueMapScreen()),
               ),
               IconButton(
@@ -100,7 +99,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم تحديث الموقع بنجاح')),
+                      SnackBar(
+                          content: Text(context.loc.ptLocationUpdated)),
                     );
                   }
                 },
@@ -119,7 +119,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           drawer: widget.isHomeScreen ? const AppDrawer() : null,
           body: _buildRootBody(),
         ),
-      ),
     );
   }
 
@@ -147,7 +146,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
               SizedBox(height: screenHeight * 0.03),
               Text(
-                'جاري تحميل مواقيت الصلاة...',
+                context.loc.ptLoading,
                 style: TextStyle(
                   fontFamily: 'Amiri',
                   color: Colors.white.withValues(alpha: 0.8),
@@ -182,7 +181,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
                 SizedBox(height: screenHeight * 0.035),
                 Text(
-                  'تعذر جلب مواقيت الصلاة',
+                  context.loc.ptLoadFailed,
                   style: TextStyle(
                     fontFamily: 'Amiri',
                     color: Colors.white,
@@ -193,7 +192,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
                 SizedBox(height: screenHeight * 0.015),
                 Text(
-                  'تأكد من تفعيل خدمات الموقع والاتصال بالإنترنت',
+                  context.loc.ptLoadFailedSub,
                   style: TextStyle(
                     fontFamily: 'Amiri',
                     color: Colors.white.withValues(alpha: 0.6),
@@ -222,7 +221,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   ),
                   icon: Icon(Icons.refresh_rounded, size: screenWidth * 0.055),
                   label: Text(
-                    'إعادة المحاولة',
+                    context.loc.qiblaRetry,
                     style: TextStyle(
                       fontFamily: 'Amiri',
                       fontSize: screenWidth * 0.045,
@@ -260,7 +259,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   return _buildDateHeaderWidget(
                     DayPrayerSummary(
                       prayerTimes: [],
-                      hijriDate: 'يتم التحميل...',
+                      hijriDate: context.loc.ptLoadingShort,
                       gregorianDate: '...',
                     ),
                     isToday: false,
@@ -286,8 +285,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                           _logic.prayerTimeSource == PrayerTimeSource.mosque;
                       final mosque = _logic.selectedMosque;
                       final tagText = isMosque
-                          ? (mosque != null ? mosque.name : 'مواقيت المسجد')
-                          : 'مواقيت محسوبة';
+                          ? (mosque != null
+                              ? mosque.name
+                              : context.loc.stMosqueBadge)
+                          : context.loc.stCalcBadge;
                       final icon = isMosque
                           ? Icons.mosque_rounded
                           : Icons.calculate_outlined;
@@ -346,9 +347,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                               const Icon(Icons.wb_twilight_rounded,
                                   size: 13, color: Color(0xFFD64463)),
                               const SizedBox(width: 4),
-                              const Text(
-                                'تحدي الفجر',
-                                style: TextStyle(
+                              Text(
+                                context.loc.ptFajrChallenge,
+                                style: const TextStyle(
                                   fontFamily: 'Amiri',
                                   fontSize: 12.5,
                                   color: Colors.white,
@@ -416,7 +417,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         if (snapshot.hasError || !snapshot.hasData) {
           return Center(
             child: Text(
-              'عذرًا، فشل تحميل المواقيت',
+              context.loc.ptListFailed,
               style: TextStyle(
                   fontFamily: 'Amiri',
                   color: Colors.white.withValues(alpha: 0.8)),
@@ -488,80 +489,79 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Widget _buildSourceSheet(BuildContext sheetContext) {
+    final loc = sheetContext.loc;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Container(
-        height: screenHeight * 0.66,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F1F26) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+    return Container(
+      height: screenHeight * 0.66,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F1F26) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'مصدر المواقيت',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF3A2B2E),
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            loc.ptSourceTitle,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF3A2B2E),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'اختر المواقيت المحسوبة أو ابحث عن مسجد قريبك',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 13,
-                color: isDark ? Colors.white54 : Colors.grey.shade600,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            loc.ptSourceSub,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 13,
+              color: isDark ? Colors.white54 : Colors.grey.shade600,
             ),
-            const SizedBox(height: 16),
-            // Primary source buttons
-            Obx(() => Column(
-                  children: [
-                    _buildSourceOption(
-                      icon: Icons.calculate_outlined,
-                      title: 'مواقيت محسوبة',
-                      subtitle: 'حسب حساب فقهي يعتمد على موقعك',
-                      active: _logic.prayerTimeSource ==
-                          PrayerTimeSource.calculated,
-                      onTap: () {
-                        _logic.setPrayerTimeSource(PrayerTimeSource.calculated);
+          ),
+          const SizedBox(height: 16),
+          // Primary source buttons
+          Obx(() => Column(
+                children: [
+                  _buildSourceOption(
+                    icon: Icons.calculate_outlined,
+                    title: loc.stCalcBadge,
+                    subtitle: loc.ptCalcSub,
+                    active: _logic.prayerTimeSource ==
+                        PrayerTimeSource.calculated,
+                    onTap: () {
+                      _logic.setPrayerTimeSource(PrayerTimeSource.calculated);
+                      Navigator.of(sheetContext).pop();
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSourceOption(
+                    icon: Icons.mosque_rounded,
+                    title: loc.stMosqueBadge,
+                    subtitle: _logic.selectedMosque != null
+                        ? _logic.selectedMosque!.name
+                        : loc.stNoMosque,
+                    active:
+                        _logic.prayerTimeSource == PrayerTimeSource.mosque,
+                    onTap: () {
+                      if (_logic.selectedMosque != null) {
+                        _logic.setPrayerTimeSource(PrayerTimeSource.mosque);
                         Navigator.of(sheetContext).pop();
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _buildSourceOption(
-                      icon: Icons.mosque_rounded,
-                      title: 'مواقيت المسجد',
-                      subtitle: _logic.selectedMosque != null
-                          ? _logic.selectedMosque!.name
-                          : 'لم يتم اختيار مسجد بعد',
-                      active:
-                          _logic.prayerTimeSource == PrayerTimeSource.mosque,
-                      onTap: () {
-                        if (_logic.selectedMosque != null) {
-                          _logic.setPrayerTimeSource(PrayerTimeSource.mosque);
-                          Navigator.of(sheetContext).pop();
                         } else {
                           // no selected mosque, user should pick from list below
                         }
@@ -573,8 +573,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             // Nearby mosques header
             Obx(() => Text(
                   _logic.nearbyMosqueCountry.isEmpty
-                      ? 'المساجد القريبة منك'
-                      : 'جميع المساجد — ${_logic.nearbyMosqueCountry} (${_logic.nearbyMosques.length})',
+                      ? loc.ptNearbyMosques
+                      : loc.ptAllMosques(_logic.nearbyMosqueCountry,
+                          _logic.nearbyMosques.length),
                   style: TextStyle(
                     fontFamily: 'Amiri',
                     fontSize: 15,
@@ -593,7 +594,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 if (_logic.nearbyMosques.isEmpty) {
                   return Center(
                     child: Text(
-                      'لا توجد نتائج حالياً',
+                      loc.ptNoResults,
                       style: TextStyle(
                         fontFamily: 'Amiri',
                         fontSize: 14,
@@ -677,7 +678,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               }),
             ),
           ],
-        ),
       ),
     );
   }
@@ -756,6 +756,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   /// Selects a mosque from the nearby list: loads its schedule and activates it.
   Future<void> _selectMosqueFromSheet(
       MosquePoint m, BuildContext sheetContext) async {
+    final loc = sheetContext.loc;
     try {
       final api = MawaqitApi();
       final feed = await api.scheduleBySlug(m.slug, forceRefresh: true);
@@ -765,7 +766,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تم اعتماد (${m.name}) كمسجدك الرئيسي للمواقيت',
+              loc.ptMosqueAdopted(m.name),
               textAlign: TextAlign.right,
               style: const TextStyle(fontFamily: 'Amiri'),
             ),
@@ -780,7 +781,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تعذر تحميل مواقيت هذا المسجد، حاول مجدداً',
+              loc.ptMosqueFailed,
               textAlign: TextAlign.right,
               style: const TextStyle(fontFamily: 'Amiri'),
             ),
@@ -793,11 +794,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   String _formatDistance(double meters) {
+    final loc = context.loc;
     if (meters <= 0) return '';
     if (meters < 1000) {
-      return '${meters.toStringAsFixed(0)} م';
+      return loc.ptMeters(meters.toStringAsFixed(0));
     }
-    return '${(meters / 1000).toStringAsFixed(1)} كم';
+    return loc.ptKm((meters / 1000).toStringAsFixed(1));
   }
 
   Widget _buildDateHeaderWidget(DayPrayerSummary summary,
@@ -855,7 +857,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       ),
                     ),
                     TextSpan(
-                      text: ' الموافق ل ${summary.gregorianDate} م',
+                      text: context.loc
+                          .ptCorresponding(summary.gregorianDate),
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
                         color: isDark
@@ -936,8 +939,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   ? iqamaCountdown
                   : adhanCountdown;
               final countdownLabel = hasIqama && iqamaCountdown.isNotEmpty
-                  ? 'الإقامة بعد'
-                  : '${_logic.nextPrayerName} بعد';
+                  ? context.loc.ptIqamaAfter
+                  : context.loc.ptPrayerAfter(_logic.nextPrayerName);
 
               return Row(
                 children: [
@@ -1291,8 +1294,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  tooltip:
-                      isAyatEnabled ? 'إيقاف نافذة الآية' : 'تفعيل نافذة الآية',
+                  tooltip: isAyatEnabled
+                      ? context.loc.ptAyatOff
+                      : context.loc.ptAyatOn,
                   onPressed: () => _logic.toggleAyatHadith(prayer.name),
                 ),
               );

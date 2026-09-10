@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -51,10 +52,11 @@ void main() {
       expect(s.jumuaAsDuhr, isTrue);
     });
 
-    test('throws on non-200', () async {
+    test('throws on non-200 for a country with no bundle and no cache',
+        () async {
       final mock = MockClient((_) async => http.Response('', 500));
       final api = MawaqitApi(client: mock);
-      expect(() => api.mosquesByCountry('DZ'), throwsException);
+      expect(() => api.mosquesByCountry('KE'), throwsException);
     });
 
     test('returns cached list when network fails (offline fallback)', () async {
@@ -119,6 +121,59 @@ void main() {
       expect(loaded, isNotNull);
       expect(loaded!.slug, 'great-mosque-algiers');
       expect(loaded.name, 'جامع الجزائر الكبير');
+    });
+  });
+
+  group('MosqueBundle (offline map data)', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      MosqueBundle.clearMemoryCache();
+    });
+
+    test('parseMosqueBundle reads the compact positional format', () {
+      const text =
+          '{"v":1,"list":[["slug-a","Name A","City",36.7,3.0],'
+          '["", "No Slug","City",1.0,2.0],'
+          '["slug-bad"],'
+          '["slug-zero","Zero","City",0,0],'
+          '["slug-b","Name B","",48.85,2.35]]}';
+      final list = parseMosqueBundle(text);
+      expect(list, hasLength(2));
+      expect(list[0].slug, 'slug-a');
+      expect(list[0].latitude, 36.7);
+      expect(list[1].slug, 'slug-b');
+    });
+
+    test('parseMosqueBundle rejects malformed payloads', () {
+      expect(parseMosqueBundle('[]'), isEmpty);
+      expect(parseMosqueBundle('{}'), isEmpty);
+      expect(parseMosqueBundle('{"v":1}'), isEmpty);
+    });
+
+    test('shipped DZ bundle parses with thousands of mosques', () async {
+      final file = File('assets/mosques/DZ.json');
+      expect(await file.exists(), isTrue,
+          reason: 'run tool/fetch_mosques.py to generate bundles');
+      final list =
+          parseMosqueBundle(await file.readAsString());
+      expect(list.length, greaterThan(1000));
+      expect(list.every((m) => m.slug.isNotEmpty), isTrue);
+    });
+
+    test('mosquesByCountry serves the bundle with zero network', () async {
+      var calls = 0;
+      final mock = MockClient((_) async {
+        calls++;
+        return http.Response('', 500);
+      });
+      final api = MawaqitApi(client: mock);
+      final list = await api.mosquesByCountry('DZ');
+      expect(list.length, greaterThan(1000));
+      expect(calls, 0,
+          reason: 'map list must not hit the network when bundled');
+      // Second call hits the in-memory cache (still zero network).
+      await api.mosquesByCountry('DZ');
+      expect(calls, 0);
     });
   });
 }

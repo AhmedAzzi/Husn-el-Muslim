@@ -5,6 +5,8 @@ import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
+import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
+import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 
 /// Persists today's prayer snapshot for the native home-screen widgets and
 /// asks Android to re-render them.
@@ -75,6 +77,13 @@ class PrayerWidgetSync {
       await prefs.setString('widget_next_time', next['t'] as String);
       await prefs.setInt('widget_target_ts', next['ts'] as int);
       await prefs.setString('widget_day_json', jsonEncode(day));
+
+      // Keep the tracking widget truthful on every prayer sync too (new-day
+      // rollover flips today's state even with no new success).
+      try {
+        await FajrTrackingRepository.instance.syncTrackingWidget(prefs);
+        await PrayerTrackingRepository.instance.syncDayProgress(prefs);
+      } catch (_) {}
 
       await PrayerNotificationHelper.updatePrayerWidgets();
     } catch (e) {

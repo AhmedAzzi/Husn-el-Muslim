@@ -1,7 +1,66 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
+
+/// Parses the compact offline bundle format produced by
+/// `tool/fetch_mosques.py`:
+/// `{"v":1,"list":[[slug,name,city,lat,lng],...]}`.
+/// Pure function (no I/O) so it is cheaply unit-tested.
+List<MosquePoint> parseMosqueBundle(String jsonText) {
+  final dynamic data = jsonDecode(jsonText);
+  final dynamic list = data is Map ? data['list'] : null;
+  if (list is! List) return [];
+  final out = <MosquePoint>[];
+  for (final e in list) {
+    if (e is! List || e.length < 5) continue;
+    final slug = e[0]?.toString() ?? '';
+    if (slug.isEmpty) continue;
+    final lat = (e[3] as num?)?.toDouble() ?? 0;
+    final lng = (e[4] as num?)?.toDouble() ?? 0;
+    if (lat == 0 && lng == 0) continue;
+    out.add(MosquePoint(
+      slug: slug,
+      name: e[1]?.toString() ?? '',
+      city: e[2]?.toString() ?? '',
+      latitude: lat,
+      longitude: lng,
+    ));
+  }
+  return out;
+}
+
+/// Offline mosque bundles shipped in `assets/mosques/{CODE}.json`
+/// (15 countries, ~1.7 MB total for ~15k mosques).
+///
+/// Map screens render instantly from these with zero network: loading only
+/// ever hits the network for a single mosque's prayer schedule, or when the
+/// user taps refresh.
+class MosqueBundle {
+  static final Map<String, List<MosquePoint>> _mem = {};
+
+  /// Country codes shipped in the app bundle.
+  static const Set<String> bundledCodes = {
+    'DZ', 'SA', 'EG', 'MA', 'TN', 'AE', 'FR',
+    'GB', 'TR', 'DE', 'CA', 'US', 'ES', 'BE', 'IT',
+  };
+
+  static Future<List<MosquePoint>> load(String countryCode) async {
+    final code = countryCode.toUpperCase();
+    final hit = _mem[code];
+    if (hit != null) return hit;
+    final text = await rootBundle.loadString('assets/mosques/$code.json');
+    final list = parseMosqueBundle(text);
+    if (list.isEmpty) throw Exception('Empty mosque bundle for $code');
+    _mem[code] = list;
+    return list;
+  }
+
+  /// Test-only hook to reset the in-memory cache.
+  static void clearMemoryCache() => _mem.clear();
+}
 
 /// A mosque returned by the country listing, with lat/lng for the map.
 class MosquePoint {
@@ -373,18 +432,30 @@ class MawaqitApi {
   final http.Client _http;
   MawaqitApi({http.Client? client}) : _http = client ?? http.Client();
 
-  /// Load the mosque list for a country: returns the offline cache if present,
-  /// otherwise (or if [forceRefresh]) fetches from the network and caches it.
+  /// Load the mosque list for a country, fastest source first:
+  /// in-memory → fresh user-refreshed prefs cache → offline asset bundle.
   ///
-  /// When offline and no cache exists, throws so the UI can show a message.
+  /// The network is hit ONLY on explicit [forceRefresh] (or for a country
+  /// with no shipped bundle). Map screens therefore open instantly offline;
+  /// loading only ever requests a single mosque's prayer schedule.
+  ///
+  /// When offline and nothing is cached or bundled, throws so the UI can
+  /// show a message.
   Future<List<MosquePoint>> mosquesByCountry(String countryCode,
       {bool forceRefresh = false}) async {
     if (!forceRefresh) {
       final cached = await OfflineCache.getMosques(countryCode);
       if (cached != null) return cached;
+      try {
+        return await MosqueBundle.load(countryCode);
+      } catch (_) {
+        // No bundle for this code: fall through to the network attempt below.
+      }
     }
-    final r = await _http.get(Uri.parse(
-        '$_base/api/2.0/mosque/map/${countryCode.toUpperCase()}'));
+    final r = await _http
+        .get(Uri.parse(
+            '$_base/api/2.0/mosque/map/${countryCode.toUpperCase()}'))
+        .timeout(const Duration(seconds: 20));
     if (r.statusCode != 200) {
       // Fall back to cache if the network request failed.
       final cached = await OfflineCache.getMosques(countryCode);
@@ -413,7 +484,9 @@ class MawaqitApi {
       final cached = await OfflineCache.getSchedule(slug);
       if (cached != null) return cached;
     }
-    final r = await _http.get(Uri.parse('$_base/fr/$slug'));
+    final r = await _http
+        .get(Uri.parse('$_base/fr/$slug'))
+        .timeout(const Duration(seconds: 25));
     if (r.statusCode != 200) {
       final cached = await OfflineCache.getSchedule(slug);
       if (cached != null) return cached;
@@ -487,8 +560,10 @@ class MawaqitApi {
   /// Search mosques near a coordinate, ordered by proximity.
   /// Returns a list of [MosquePoint] sorted nearest-first.
   Future<List<MosquePoint>> searchNearby(double lat, double lon) async {
-    final r = await _http.get(Uri.parse(
-        '$_base/api/2.0/mosque/search?lat=$lat&lon=$lon&page=0'));
+    final r = await _http
+        .get(Uri.parse(
+            '$_base/api/2.0/mosque/search?lat=$lat&lon=$lon&page=0'))
+        .timeout(const Duration(seconds: 12));
     if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
     final raw = jsonDecode(r.body);
     final list = raw is List ? raw : <dynamic>[];

@@ -1,0 +1,62 @@
+{
+ "DZ": {
+  "count": 6534,
+  "bytes": 799227
+ },
+ "SA": {
+  "count": 117,
+  "bytes": 14221
+ },
+ "EG": {
+  "count": 55,
+  "bytes": 6771
+ },
+ "MA": {
+  "count": 1443,
+  "bytes": 158794
+ },
+ "TN": {
+  "count": 2499,
+  "bytes": 270049
+ },
+ "AE": {
+  "count": 12,
+  "bytes": 1810
+ },
+ "FR": {
+  "count": 1669,
+  "bytes": 148670
+ },
+ "GB": {
+  "count": 239,
+  "bytes": 25895
+ },
+ "TR": {
+  "count": 102,
+  "bytes": 11004
+ },
+ "DE": {
+  "count": 910,
+  "bytes": 92883
+ },
+ "CA": {
+  "count": 240,
+  "bytes": 22214
+ },
+ "US": {
+  "count": 290,
+  "bytes": 30031
+ },
+ "ES": {
+  "count": 722,
+  "bytes": 74872
+ },
+ "BE": {
+  "count": 280,
+  "bytes": 25743
+ },
+ "IT": {
+  "count": 551,
+  "bytes": 57999
+ }
+}

@@ -9,9 +9,11 @@ import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
 import 'package:small_husn_muslim/features/azkar/controllers/azkar_controller.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class MyHomePageScreen extends StatefulWidget {
   final bool isRoot;
@@ -48,23 +50,21 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   Widget build(BuildContext context) {
     // Build the main scaffold content
     Widget scaffoldContent = SafeArea(
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          appBar: AppBar(
-            leading: toggle
-                ? (widget.isHomeScreen
-                    ? null // Let drawer icon show automatically
-                    : IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => Get.back(),
-                      ))
-                : null, // No leading icon during search
-            title: toggle
-                ? SizedBox(
-                    height: 30,
-                    child: Text(
-                      'الأذكار',
+      child: Scaffold(
+        appBar: AppBar(
+          leading: toggle
+              ? (widget.isHomeScreen
+                  ? null // Let drawer icon show automatically
+                  : IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Get.back(),
+                    ))
+              : null, // No leading icon during search
+          title: toggle
+              ? SizedBox(
+                  height: 30,
+                  child: Text(
+                    context.loc.navAdhkar,
                       style: TextStyle(
                         fontSize: double.parse(fontSize22),
                         fontFamily: fontFamily,
@@ -120,7 +120,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
             if (list.isEmpty) {
               return Center(
                 child: Text(
-                  'لا توجد نتائج',
+                  context.loc.azEmpty,
                   style: TextStyle(fontFamily: fontFamily, fontSize: 18),
                 ),
               );
@@ -204,7 +204,6 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
               },
             );
           }),
-        ),
       ),
     );
 
@@ -226,6 +225,8 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
         } else if (pendingPayload == NotificationIds.morningAdhkarPayload ||
             pendingPayload == NotificationIds.eveningAdhkarPayload) {
           NotificationService().handleAdhkarNotification(pendingPayload);
+        } else if (pendingPayload == NotificationIds.trackerLogPayload) {
+          Get.to(() => const PrayerTrackingScreen());
         }
         NotificationService().pendingPayload = null;
       }
@@ -234,6 +235,8 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
       if (pendingScreen != null) {
         if (pendingScreen == 'prayer_times') {
           Get.to(() => const PrayerTimesScreen());
+        } else if (pendingScreen == 'tracking') {
+          Get.to(() => const PrayerTrackingScreen());
         }
       }
     });

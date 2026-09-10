@@ -12,6 +12,7 @@ import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 /// Supported countries for Mawaqit API mapping
 class CountryInfo {
@@ -88,7 +89,12 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
     super.initState();
     _selectedCountryCode = widget.countryCode;
     _searchController.addListener(_onSearchChanged);
-    _loadMosques();
+    // _loadMosques reads localizations (inherited widget): it must run
+    // after the first frame, never synchronously inside initState —
+    // otherwise the framework throws and the map screen dies on open.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadMosques();
+    });
   }
 
   @override
@@ -104,6 +110,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
       );
 
   Future<void> _loadMosques({bool forceRefresh = false}) async {
+    final loc = context.loc;
     setState(() {
       _loading = true;
       _error = null;
@@ -112,6 +119,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
     try {
       final mosques = await _api.mosquesByCountry(_selectedCountryCode,
           forceRefresh: forceRefresh);
+      if (!mounted) return;
       final valid = mosques
           .where((m) => m.latitude != 0 || m.longitude != 0)
           .toList();
@@ -129,6 +137,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
     } on http.ClientException {
       // Network-level error (DNS, connection refused, timeout)
       final cached = await OfflineCache.getMosques(_selectedCountryCode);
+      if (!mounted) return;
       if (cached != null) {
         final valid = cached
             .where((m) => m.latitude != 0 || m.longitude != 0)
@@ -143,12 +152,13 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
         return;
       }
       setState(() {
-        _error = 'تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.';
+        _error = loc.mmErrorNetwork;
         _loading = false;
       });
     } on FormatException {
       // JSON parsing error - likely API format changed
       final cached = await OfflineCache.getMosques(_selectedCountryCode);
+      if (!mounted) return;
       if (cached != null) {
         final valid = cached
             .where((m) => m.latitude != 0 || m.longitude != 0)
@@ -163,12 +173,13 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
         return;
       }
       setState(() {
-        _error = 'خطأ في قراءة بيانات الخادم. تم تحديث بيانات المساجد، يرجى المحاولة لاحقاً.';
+        _error = loc.mmErrorParsing;
         _loading = false;
       });
     } catch (e) {
       // Other errors (including HTTP status errors thrown by API)
       final cached = await OfflineCache.getMosques(_selectedCountryCode);
+      if (!mounted) return;
       if (cached != null) {
         final valid = cached
             .where((m) => m.latitude != 0 || m.longitude != 0)
@@ -185,13 +196,13 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
       String message;
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('404') || errorStr.contains('not found')) {
-        message = 'لم يتم العثور على بيانات المساجد لهذه الدولة.';
+        message = loc.mmErrorNotFound;
       } else if (errorStr.contains('500') || errorStr.contains('server error')) {
-        message = 'خطأ في خادم مواقيت. يرجى المحاولة لاحقاً.';
+        message = loc.mmErrorServer;
       } else if (errorStr.contains('timeout') || errorStr.contains('timed out')) {
-        message = 'انتهت مهلة الاتصال بالخادم. تحقق من اتصالك وحاول مرة أخرى.';
+        message = loc.mmErrorTimeout;
       } else {
-        message = 'تعذّر تحميل قائمة المساجد. تأكد من الاتصال بالإنترنت.';
+        message = loc.mmErrorGeneral;
       }
       setState(() {
         _error = message;
@@ -276,6 +287,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
   }
 
   Future<void> _selectMosque(MosquePoint m, {bool forceRefresh = false}) async {
+    final loc = context.loc;
     setState(() {
       _selectedMosque = m;
       _selectedSchedule = null;
@@ -305,7 +317,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
         return;
       }
       setState(() {
-        _scheduleError = 'تعذر الاتصال بالخادم لتحميل مواقيت المسجد.';
+        _scheduleError = loc.mmScheduleErrorNetwork;
         _scheduleLoading = false;
       });
     } on FormatException {
@@ -320,7 +332,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
         return;
       }
       setState(() {
-        _scheduleError = 'خطأ في قراءة مواقيت المسجد. قد يكون تنسيق البيانات قد تغير.';
+        _scheduleError = loc.mmScheduleErrorParsing;
         _scheduleLoading = false;
       });
     } catch (e) {
@@ -337,13 +349,13 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
       String message;
       final errorStr = e.toString().toLowerCase();
       if (errorStr.contains('404') || errorStr.contains('not found')) {
-        message = 'لم يتم العثور على مواقيت لهذا المسجد.';
+        message = loc.mmScheduleErrorNotFound;
       } else if (errorStr.contains('500') || errorStr.contains('server error')) {
-        message = 'خطأ في خادم مواقيت. يرجى المحاولة لاحقاً.';
+        message = loc.mmScheduleErrorServer;
       } else if (errorStr.contains('timeout') || errorStr.contains('timed out')) {
-        message = 'انتهت مهلة الاتصال عند تحميل المواقيت.';
+        message = loc.mmScheduleErrorTimeout;
       } else {
-        message = 'تعذّر تحميل مواقيت هذا المسجد.';
+        message = loc.mmScheduleErrorGeneral;
       }
       setState(() {
         _scheduleError = message;
@@ -401,7 +413,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                   const Icon(Icons.public_rounded, color: Color(0xFFD64463)),
                   const SizedBox(width: 10),
                   Text(
-                    'اختر الدولة لعرض المساجد',
+                    context.loc.mmCountryPickerTitle,
                     style: TextStyle(
                       fontFamily: 'Amiri',
                       fontWeight: FontWeight.bold,
@@ -482,7 +494,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     style: const TextStyle(
                         color: Colors.white, fontFamily: 'Amiri', fontSize: 18),
                     decoration: InputDecoration(
-                      hintText: 'ابحث باسم المسجد أو المدينة...',
+                      hintText: context.loc.mmSearchHint,
                       hintStyle: TextStyle(
                           color: Colors.white.withValues(alpha: 0.6),
                           fontFamily: 'Amiri'),
@@ -490,7 +502,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     ),
                   )
                 : Text(
-                    'خريطة المساجد',
+                    context.loc.mmTitle,
                     style: TextStyle(
                       fontFamily: 'Amiri',
                       color: theme.appBarTheme.foregroundColor,
@@ -500,7 +512,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                   ),
             actions: [
               IconButton(
-                tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+                tooltip: _isSearching ? context.loc.mmCloseSearch : context.loc.mmSearch,
                 icon: Icon(_isSearching ? Icons.close : Icons.search_rounded,
                     color: theme.appBarTheme.foregroundColor),
                 onPressed: () {
@@ -515,7 +527,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                 },
               ),
               IconButton(
-                tooltip: _showListView ? 'عرض على الخريطة' : 'عرض القائمة',
+                tooltip: _showListView ? context.loc.mmShowMap : context.loc.mmShowList,
                 icon: Icon(_showListView
                         ? Icons.map_rounded
                         : Icons.list_rounded,
@@ -525,12 +537,12 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                 },
               ),
               IconButton(
-                tooltip: 'تغيير الدولة',
+                tooltip: context.loc.mmChangeCountry,
                 icon: Text(_currentCountry.flag, style: const TextStyle(fontSize: 20)),
                 onPressed: _showCountryPicker,
               ),
               IconButton(
-                tooltip: 'تحديث',
+                tooltip: context.loc.ctRefresh,
                 onPressed: _loading ? null : () => _loadMosques(forceRefresh: true),
                 icon: Icon(Icons.refresh_rounded,
                     color: theme.appBarTheme.foregroundColor),
@@ -621,7 +633,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                               size: 16, color: Color(0xFFD64463)),
                           const SizedBox(width: 6),
                           Text(
-                            '${_filteredMosques.length} مسجد',
+                            context.loc.mmMosqueCount(_filteredMosques.length),
                             style: TextStyle(
                               fontFamily: 'Amiri',
                               fontWeight: FontWeight.bold,
@@ -646,17 +658,17 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     color: Colors.amber.shade700,
                     borderRadius: BorderRadius.circular(12),
                     elevation: 4,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Icon(Icons.cloud_off_rounded,
+                          const Icon(Icons.cloud_off_rounded,
                               color: Colors.white, size: 18),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'غير متصل بالإنترنت — يتم عرض المساجد المخزنة مسبقاً',
-                              style: TextStyle(
+                              context.loc.mmOfflineBanner,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Amiri',
                                 fontSize: 13,
@@ -709,8 +721,8 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                             ),
                             onPressed: () => _loadMosques(forceRefresh: true),
                             icon: const Icon(Icons.refresh),
-                            label: const Text('إعادة المحاولة',
-                                style: TextStyle(fontFamily: 'Amiri')),
+                            label: Text(context.loc.mmRetry,
+                                style: const TextStyle(fontFamily: 'Amiri')),
                           ),
                         ],
                       ),
@@ -731,7 +743,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     foregroundColor: const Color(0xFFD64463),
                     elevation: 4,
                     onPressed: _centerOnUserLocation,
-                    tooltip: 'موقعي الحالي',
+                    tooltip: context.loc.mmLocateMe,
                     child: const Icon(Icons.my_location_rounded),
                   ),
                 ),
@@ -809,7 +821,9 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
     if (mosques.isEmpty) {
       return Center(
         child: Text(
-          _allMosques.isEmpty ? 'لا توجد مساجد بانتظار التحميل' : 'لا نتائج مطابقة',
+          _allMosques.isEmpty
+              ? context.loc.mmEmptyNoMosques
+              : context.loc.mmEmptyNoResults,
           style: TextStyle(
               fontFamily: 'Amiri',
               fontSize: 15,
@@ -1001,7 +1015,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                                           : Colors.black38)),
                               const SizedBox(width: 8),
                               Text(
-                                'يبعد ${distance.toStringAsFixed(1)} كم',
+                                context.loc.mmDistanceKm(distance.toStringAsFixed(1)),
                                 style: const TextStyle(
                                   fontFamily: 'Amiri',
                                   fontSize: 13,
@@ -1017,7 +1031,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    tooltip: 'تحديث المواقيت',
+                    tooltip: context.loc.mmRefreshTimes,
                     onPressed: _selectedMosque != null && !_scheduleLoading
                         ? () => _selectMosque(_selectedMosque!, forceRefresh: true)
                         : null,
@@ -1042,15 +1056,15 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_rounded,
+                      const Icon(Icons.check_circle_rounded,
                           color: Colors.green, size: 18),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'هذا هو المسجد المعتمد حالياً في التطبيق',
-                        style: TextStyle(
+                        context.loc.mmActiveMosqueBadge,
+                        style: const TextStyle(
                           fontFamily: 'Amiri',
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
@@ -1113,7 +1127,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'تم تعيين (${m.name}) كمسجدك الرئيسي للمواقيت',
+                                context.loc.mmAdoptedNow(m.name),
                                 textAlign: TextAlign.right,
                                 style: const TextStyle(fontFamily: 'Amiri'),
                               ),
@@ -1129,7 +1143,9 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                               : Icons.playlist_add_check_rounded,
                           size: 20),
                       label: Text(
-                        isActive ? 'المسجد المعتمد' : 'اعتماد هذا المسجد للمواقيت',
+                        isActive
+                            ? context.loc.mmActiveMosque
+                            : context.loc.mmAdoptThis,
                         style: const TextStyle(
                           fontFamily: 'Amiri',
                           fontWeight: FontWeight.bold,
@@ -1142,7 +1158,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
 
                   // Directions Button
                   IconButton.filledTonal(
-                    tooltip: 'الاتجاهات في الخريطة',
+                    tooltip: context.loc.mmDirections,
                     style: IconButton.styleFrom(
                       backgroundColor: isDark
                           ? const Color(0xFF2C2C35)
@@ -1151,10 +1167,38 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                       padding: const EdgeInsets.all(12),
                     ),
                     onPressed: () async {
-                      final url = Uri.parse(
-                          'https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}');
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      // Native turn-by-turn first (Google Maps app), then the
+                      // browser URL. Never fails silently: the manifest
+                      // declares the needed <queries> for Android 11+.
+                      final candidates = [
+                        Uri.parse(
+                            'google.navigation:q=${m.latitude},${m.longitude}'),
+                        Uri.parse(
+                            'https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}'),
+                      ];
+                      for (final url in candidates) {
+                        try {
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url,
+                                mode: LaunchMode.externalApplication);
+                            return;
+                          }
+                        } catch (_) {
+                          // Try the next candidate.
+                        }
+                      }
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              context.loc.mmDirectionsFailed,
+                              textAlign: TextAlign.right,
+                              style:
+                                  const TextStyle(fontFamily: 'Amiri'),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       }
                     },
                     icon: const Icon(Icons.directions_rounded),
@@ -1162,7 +1206,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
 
                   // Share Button
                   IconButton.filledTonal(
-                    tooltip: 'مشاركة المواقيت',
+                    tooltip: context.loc.mmShare,
                     style: IconButton.styleFrom(
                       backgroundColor: isDark
                           ? const Color(0xFF2C2C35)
@@ -1173,20 +1217,20 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                     onPressed: s != null
                         ? () {
                             final shareText = '''
-مواقيت الصلاة لـ ${m.name} (${m.city}):
-الفجر: ${s.fajr}
-الشروق: ${s.sunrise}
-الظهر: ${s.dhuhr}
-العصر: ${s.asr}
-المغرب: ${s.maghrib}
-العشاء: ${s.isha}
-${s.jumua != null && s.jumua!.isNotEmpty ? 'الجمعة: ${s.jumua}' : ''}
-تطبيق حصن المسلم
+${context.loc.mmPrayerTimesFor(m.name, m.city)}
+${context.loc.nsPrayerFajr}: ${s.fajr}
+${context.loc.nsPrayerSunrise}: ${s.sunrise}
+${context.loc.nsPrayerDhuhr}: ${s.dhuhr}
+${context.loc.nsPrayerAsr}: ${s.asr}
+${context.loc.nsPrayerMaghrib}: ${s.maghrib}
+${context.loc.nsPrayerIsha}: ${s.isha}
+${s.jumua != null && s.jumua!.isNotEmpty ? context.loc.mmJumua(s.jumua!) : ''}
+${context.loc.mmAppName}
 ''';
                             SharePlus.instance.share(
                               ShareParams(
                                 text: shareText,
-                                subject: 'مواقيت الصلاة - ${m.name}',
+                                subject: context.loc.mmPrayerTimesFor(m.name, m.city),
                               ),
                             );
                           }
@@ -1213,12 +1257,12 @@ class _ScheduleGrid extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final prayers = <(String, String, IconData)>[
-      ('الفجر', schedule.fajr, Icons.wb_twilight_rounded),
-      ('الشروق', schedule.sunrise, Icons.wb_sunny_rounded),
-      ('الظهر', schedule.dhuhr, Icons.sunny),
-      ('العصر', schedule.asr, Icons.sunny_snowing),
-      ('المغرب', schedule.maghrib, Icons.wb_twilight_rounded),
-      ('العشاء', schedule.isha, Icons.bedtime_rounded),
+      (context.loc.nsPrayerFajr, schedule.fajr, Icons.wb_twilight_rounded),
+      (context.loc.nsPrayerSunrise, schedule.sunrise, Icons.wb_sunny_rounded),
+      (context.loc.nsPrayerDhuhr, schedule.dhuhr, Icons.sunny),
+      (context.loc.nsPrayerAsr, schedule.asr, Icons.sunny_snowing),
+      (context.loc.nsPrayerMaghrib, schedule.maghrib, Icons.wb_twilight_rounded),
+      (context.loc.nsPrayerIsha, schedule.isha, Icons.bedtime_rounded),
     ];
 
     return Column(
@@ -1291,14 +1335,14 @@ class _ScheduleGrid extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.event_available_rounded,
+                    const Icon(Icons.event_available_rounded,
                         color: Color(0xFF693B42), size: 18),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
-                      'صلاة الجمعة',
-                      style: TextStyle(
+                      context.loc.mmFriday,
+                      style: const TextStyle(
                         fontFamily: 'Amiri',
                         fontWeight: FontWeight.bold,
                         fontSize: 14,

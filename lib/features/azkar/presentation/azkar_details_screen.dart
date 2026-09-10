@@ -9,6 +9,7 @@ import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 
@@ -91,17 +92,15 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
           }
         }
 
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: StatefulBuilder(
-            builder: (context, setState) {
-              return AlertDialog(
-                title: const Text('سرعة العداد التلقائي',
-                    style: TextStyle(fontFamily: 'Amiri')),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+                title: Text(context.loc.azSpeedTitle,
+                    style: const TextStyle(fontFamily: 'Amiri')),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('الوقت بالثانية'),
+                    Text(context.loc.azSeconds),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -152,16 +151,14 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('إلغاء'),
+                    child: Text(context.loc.ctCancel),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // Update from text field before saving
                       updateFromTextField(intervalController.text);
                       this.setState(() {
                         autoIncrementInterval = tempInterval;
                         if (isAutoPlaying) {
-                          // Restart timer with new interval
                           _timer?.cancel();
                           _timer = Timer.periodic(
                               Duration(milliseconds: autoIncrementInterval),
@@ -172,13 +169,12 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                       });
                       Navigator.pop(context);
                     },
-                    child: const Text('حفظ'),
+                    child: Text(context.loc.azSave),
                   ),
                 ],
               );
             },
-          ),
-        );
+          );
       },
     );
   }
@@ -221,23 +217,23 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
         child: Scaffold(
           appBar: AppBar(
             actions: <Widget>[
-              PopupMenuButton(
+              PopupMenuButton<String>(
                   onSelected: (value) async {
                     switch (value) {
-                      case 'نسخ':
+                      case 'copy':
                         Clipboard.setData(ClipboardData(
                                 text: widget
                                     .azkarInfo.array[currentPageIndex].text))
                             .then((_) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                   content: Center(
                                       child:
-                                          Text('تم نسخ الذكر إلى الحافظة'))));
+                                          Text(context.loc.azCopied))));
                         });
                         break;
-                      case 'مشاركة':
+                      case 'share':
                         screenshotControllers[currentPageIndex]
                             .capture(delay: const Duration(milliseconds: 10))
                             .then((capturedImage) async {
@@ -251,7 +247,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                           if (!context.mounted) return;
                           await SharePlus.instance.share(
                             ShareParams(
-                              text: "من أذكار ${widget.azkarInfo.category}",
+                              text: context.loc.azSharePrefix(widget.azkarInfo.category),
                               files: [XFile(file.path)],
                             ),
                           );
@@ -263,13 +259,16 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                         break;
                     }
                   },
-                  itemBuilder: (BuildContext itemBuilder) => {'نسخ', 'مشاركة'}
-                      .map((value) => PopupMenuItem(
-                             value: value,
-                             child:
-                                 Text(value, textDirection: TextDirection.rtl),
-                           ))
-                      .toList())
+                  itemBuilder: (BuildContext itemBuilder) => [
+                    PopupMenuItem(
+                      value: 'copy',
+                      child: Text(context.loc.ctCopy),
+                    ),
+                    PopupMenuItem(
+                      value: 'share',
+                      child: Text(context.loc.ctShare),
+                    ),
+                  ])
             ],
             iconTheme: IconThemeData(color: bgLight),
             flexibleSpace: SizedBox(
@@ -350,9 +349,9 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text('تلقائي',
+                          Text(context.loc.azAuto,
                               style:
-                                  TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                                  const TextStyle(fontFamily: 'Amiri', fontSize: 10)),
                         ],
                       ),
                       const SizedBox(width: 40),
@@ -381,9 +380,9 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text('تصفير',
+                          Text(context.loc.azReset,
                               style:
-                                  TextStyle(fontFamily: 'Amiri', fontSize: 10)),
+                                  const TextStyle(fontFamily: 'Amiri', fontSize: 10)),
                         ],
                       ),
                     ],
@@ -407,11 +406,9 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              (marrat == 100
-                                  ? '$marrat مرة'
-                                  : (marrat > 1
-                                      ? '$marrat مرات'
-                                      : 'مرة واحدة')),
+                              marrat == 100
+                                  ? context.loc.azTimesHundred(marrat)
+                                  : context.loc.azTimes(marrat),
                               style: TextStyle(
                                 fontSize: double.parse(fontSize18),
                                 color: bgLight,
@@ -436,7 +433,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                           ),
                           Expanded(
                             child: Text(
-                              'الذكر ${currentPageIndex + 1} من ${widget.azkarInfo.array.length}',
+                              context.loc.azOfTotal(currentPageIndex + 1, widget.azkarInfo.array.length),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: double.parse(fontSize18),

@@ -6,6 +6,7 @@ import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
 import 'package:small_husn_muslim/features/ruqyah/presentation/ruqyah_detail_screen.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class RuqyahScreen extends StatefulWidget {
   const RuqyahScreen({super.key});
@@ -136,7 +137,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
                 ? SizedBox(
                     height: 30,
                     child: Text(
-                      'الرقية الشرعية',
+                      context.loc.navRuqyah,
                       style: TextStyle(
                         fontSize: double.parse(fontSize22),
                         fontFamily: fontFamily,
@@ -191,10 +192,11 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _bookData == null
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'تعذر تحميل بيانات الرقية الشرعية',
-                        style: TextStyle(fontFamily: 'Amiri', fontSize: 18),
+                        context.loc.rqLoadFailed,
+                        style: const TextStyle(
+                            fontFamily: 'Amiri', fontSize: 18),
                       ),
                     )
                   : _buildTreatmentsList(),
@@ -225,7 +227,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'لا توجد نتائج مطابقة للبحث',
+              context.loc.ctNoSearchResults,
               style: TextStyle(
                 fontFamily: fontFamily,
                 fontSize: 18,
@@ -330,7 +332,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${treatment.items.length} فقرة / رقية',
+                            context.loc.rqItems(treatment.items.length),
                             style: const TextStyle(
                               fontFamily: 'Amiri',
                               fontSize: 13,

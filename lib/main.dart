@@ -55,7 +55,6 @@ void main() {
     isDarkMode: true,
     showOnboarding: true,
   ));
-
   // Defers all heavy initialization until after the first frame has rendered
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (kDebugMode) {
@@ -81,6 +80,11 @@ Future<void> _initializeAppAsync(Stopwatch stopwatch) async {
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
   final savedHomeScreen = prefs.getString('home_screen') ?? homeScreenAzkar;
   final savedIsDarkMode = prefs.getBool('dark_mode') ?? true;
+  final savedLanguage = prefs.getString('app_language') ?? 'ar';
+
+  if (savedLanguage != 'ar') {
+    Get.updateLocale(Locale(savedLanguage));
+  }
 
   if (!savedIsDarkMode) {
     Get.changeThemeMode(ThemeMode.light);

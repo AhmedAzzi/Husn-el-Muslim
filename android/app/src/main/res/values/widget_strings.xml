@@ -2,4 +2,5 @@
 <resources>
     <string name="widget_small_desc">مواقيت الصلاة — الصلاة القادمة والعد التنازلي</string>
     <string name="widget_large_desc">مواقيت الصلاة — كل الصلوات مع الصلاة القادمة</string>
+    <string name="widget_tracking_desc">تتبع الصلوات — تقدم صلوات اليوم والسلسلة</string>
 </resources>

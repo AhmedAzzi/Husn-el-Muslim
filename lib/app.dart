@@ -6,17 +6,20 @@ import 'package:small_husn_muslim/features/azkar/presentation/home_page.dart';
 import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
 import 'package:small_husn_muslim/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
+import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
 class MyApp extends StatelessWidget {
   final String initialHomeScreen;
   final bool isDarkMode;
   final bool showOnboarding;
+  final Locale initialLocale;
 
   const MyApp({
     super.key,
     required this.initialHomeScreen,
     required this.isDarkMode,
     this.showOnboarding = false,
+    this.initialLocale = const Locale('ar'),
   });
 
   @override
@@ -45,6 +48,10 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      locale: initialLocale,
+      fallbackLocale: const Locale('ar'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: homeWidget,
     );
   }

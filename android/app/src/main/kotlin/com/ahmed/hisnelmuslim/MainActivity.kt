@@ -189,6 +189,14 @@ class MainActivity : FlutterActivity() {
                     AlarmScheduler.cancelChallenge(this)
                     result.success(true)
                 }
+                "previewAlarmSound" -> {
+                    AlarmSound.preview(this)
+                    result.success(true)
+                }
+                "stopAlarmPreview" -> {
+                    AlarmSound.stop()
+                    result.success(true)
+                }
                 "showPrayerNotification" -> {
                     val hijriDate = call.argument<String>("hijri_date") ?: ""
                     val prayerInfo = call.argument<String>("prayer_info") ?: ""
@@ -269,6 +277,63 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                 }
+                "scheduleSuhoorAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelSuhoor(this)
+                    result.success(if (ts > 0) AlarmScheduler.scheduleSuhoor(this, ts) else true)
+                }
+                "schedulePreFajrAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelPreFajr(this)
+                    result.success(if (ts > 0) AlarmScheduler.schedulePreFajr(this, ts) else true)
+                }
+                "scheduleTahajjudAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelTahajjud(this)
+                    result.success(if (ts > 0) AlarmScheduler.scheduleTahajjud(this, ts) else true)
+                }
+                "scheduleFajrExtra1Alarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelFajrExtra1(this)
+                    result.success(if (ts > 0) AlarmScheduler.scheduleFajrExtra1(this, ts) else true)
+                }
+                "scheduleFajrExtra2Alarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelFajrExtra2(this)
+                    result.success(if (ts > 0) AlarmScheduler.scheduleFajrExtra2(this, ts) else true)
+                }
+                "scheduleBedtimeAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    AlarmScheduler.cancelBedtime(this)
+                    result.success(if (ts > 0) AlarmScheduler.scheduleBedtime(this, ts) else true)
+                }
+                "schedulePrePrayerAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    val name = call.argument<String>("prayer_name") ?: ""
+                    AlarmScheduler.cancelPrePrayer(this)
+                    result.success(if (ts > 0 && name.isNotEmpty()) AlarmScheduler.schedulePrePrayer(this, name, ts) else true)
+                }
+                "schedulePostPrayerAlarm" -> {
+                    val ts = call.argument<Number>("trigger_at")?.toLong() ?: 0L
+                    val name = call.argument<String>("prayer_name") ?: ""
+                    AlarmScheduler.cancelPostPrayer(this)
+                    result.success(if (ts > 0 && name.isNotEmpty()) AlarmScheduler.schedulePostPrayer(this, name, ts) else true)
+                }
+                "rescheduleAllAlarms" -> {
+                    try {
+                        AlarmScheduler.scheduleAllFromPrefs(this)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
+                "getAlarmDiagnostics" -> {
+                    try {
+                        result.success(AlarmScheduler.diagnostics(this))
+                    } catch (e: Exception) {
+                        result.success("diagnostics failed: ${e.message}")
+                    }
+                }
                 "checkOverlayPermission" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         result.success(Settings.canDrawOverlays(this))
@@ -322,6 +387,51 @@ class MainActivity : FlutterActivity() {
                         startService(intent)
                     }
                     result.success(true)
+                }
+                "isDndAccessGranted" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        result.success(nm.isNotificationPolicyAccessGranted)
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "openDndSettings" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            result.success(true)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        result.success(false)
+                    }
+                }
+                "setDndMode" -> {
+                    val enable = call.argument<Boolean>("enable") ?: false
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                        if (nm.isNotificationPolicyAccessGranted) {
+                            try {
+                                if (enable) {
+                                    nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+                                } else {
+                                    nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+                                }
+                                result.success(true)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                result.success(false)
+                            }
+                        } else {
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(true)
+                    }
                 }
                 else -> {
                     result.notImplemented()

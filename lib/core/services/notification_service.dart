@@ -9,6 +9,7 @@ import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/features/azkar/data/azkar_info.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
 
 
 class NotificationService {
@@ -23,9 +24,15 @@ class NotificationService {
   String? pendingPayload;
 
   Future<void> handleAdhkarNotification(String payload) async {
-    final String category = payload == NotificationIds.morningAdhkarPayload
-        ? 'أذكار الصباح'
-        : 'أذكار المساء';
+    final String category = switch (payload) {
+      NotificationIds.morningAdhkarPayload => 'أذكار الصباح',
+      NotificationIds.eveningAdhkarPayload => 'أذكار المساء',
+      NotificationIds.wakeupAdhkarPayload => 'أذكار الاستيقاظ من النوم',
+      NotificationIds.sleepAdhkarPayload => 'أذكار النوم',
+      _ => '',
+    };
+
+    if (category.isEmpty) return;
 
     if (Get.context != null) {
       // Load azkar data to find the matching category
@@ -37,7 +44,7 @@ class NotificationService {
 
       try {
         final targetAzkar =
-            azkarList.firstWhere((element) => element.category == category);
+            azkarList.firstWhere((element) => element.category.contains(category) || category.contains(element.category));
         Get.to(() => AzkarDetailsScreen(azkarInfo: targetAzkar));
       } catch (e) {
         if (kDebugMode) print('Error finding azkar category: $e');
@@ -79,8 +86,16 @@ class NotificationService {
               pendingPayload = response.payload;
             }
           } else if (response.payload == NotificationIds.morningAdhkarPayload ||
-              response.payload == NotificationIds.eveningAdhkarPayload) {
+              response.payload == NotificationIds.eveningAdhkarPayload ||
+              response.payload == NotificationIds.wakeupAdhkarPayload ||
+              response.payload == NotificationIds.sleepAdhkarPayload) {
             handleAdhkarNotification(response.payload!);
+          } else if (response.payload == NotificationIds.trackerLogPayload) {
+            if (Get.context != null) {
+              Get.to(() => const PrayerTrackingScreen());
+            } else {
+              pendingPayload = response.payload;
+            }
           }
         }
       },
@@ -100,10 +115,19 @@ class NotificationService {
 
   Future<void> showNotification(int id, String title, String body,
       DateTime scheduledDate, bool soundEnabled,
-      {String? payload, bool isAlarm = true}) async {
+      {String? payload, bool isAlarm = true, String? channel}) async {
+    final resolved = channel ?? (isAlarm ? 'prayer_times_channel' : 'adhkar_channel');
+    final resolvedName = switch (resolved) {
+      'fajr_wakeup_channel' => 'منبه الفجر',
+      'suhoor_channel' => 'منبه السحور',
+      'bedtime_channel' => 'تذكير النوم',
+      'tracking_channel' => 'التتبع',
+      'adhkar_channel' => 'تنبيهات الأذكار',
+      _ => 'مواقيت الصلاة',
+    };
     final androidDetails = AndroidNotificationDetails(
-      isAlarm ? 'prayer_times_channel' : 'adhkar_channel',
-      isAlarm ? 'مواقيت الصلاة' : 'تنبيهات الأذكار',
+      resolved,
+      resolvedName,
       channelDescription:
           isAlarm ? 'تنبيهات أوقات الصلاة' : 'تنبيهات أذكار الصباح والمساء',
       importance: Importance.max,
@@ -133,7 +157,79 @@ class NotificationService {
     );
   }
 
+  Future<void> showWeeklyNotification(int id, String title, String body,
+      DateTime scheduledDate, bool soundEnabled,
+      {String? payload, String? channel}) async {
+    final resolved = channel ?? 'adhkar_channel';
+    final androidDetails = AndroidNotificationDetails(
+      resolved,
+      'تنبيهات الأذكار',
+      channelDescription: 'تذكير سورة الكهف والأذكار الأسبوعية',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: soundEnabled,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      styleInformation: BigTextStyleInformation(body),
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      autoCancel: true,
+    );
 
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: NotificationDetails(android: androidDetails),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      payload: payload,
+    );
+  }
+
+  /// One-shot exact schedule (fires once, never repeats). Used by the
+  /// prayer-tracker logging reminders, which are recomputed daily and must
+  /// NOT use the daily-repeating [showNotification].
+  Future<void> scheduleOneShotNotification(
+    int id,
+    String title,
+    String body,
+    DateTime scheduledDate,
+    bool soundEnabled, {
+    String? payload,
+  }) async {
+    final androidDetails = AndroidNotificationDetails(
+      'tracking_channel',
+      'التتبع',
+      channelDescription: 'تذكيرات تسجيل الصلوات',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: soundEnabled,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      styleInformation: BigTextStyleInformation(body),
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      autoCancel: true,
+    );
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: NotificationDetails(android: androidDetails),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: payload,
+    );
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await flutterLocalNotificationsPlugin.cancel(id: id);
+  }
 
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();

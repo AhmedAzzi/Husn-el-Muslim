@@ -12,13 +12,14 @@ import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_time
 import 'package:small_husn_muslim/core/config/app_config.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
+import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// Data model for a single permission item
 /// ─────────────────────────────────────────────────────────────
 class _PermissionItem {
-  final String title;
-  final String subtitle;
+  String title;
+  String subtitle;
   final IconData icon;
   bool isGranted = false;
 
@@ -54,18 +55,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     _permissions = [
       _PermissionItem(
-        title: 'الإشعارات',
-        subtitle: 'لتنبيهك بأوقات الصلاة والأذكار',
+        title: '',
+        subtitle: '',
         icon: Icons.notifications_active_rounded,
       ),
       _PermissionItem(
-        title: 'الموقع الجغرافي',
-        subtitle: 'لتحديد مواقيت الصلاة بدقة حسب موقعك',
+        title: '',
+        subtitle: '',
         icon: Icons.location_on_rounded,
       ),
       _PermissionItem(
-        title: 'العرض فوق التطبيقات',
-        subtitle: 'لعرض الأذكار والآيات تلقائياً على الشاشة',
+        title: '',
+        subtitle: '',
         icon: Icons.layers_rounded,
       ),
     ];
@@ -221,16 +222,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Refresh human-readable titles every build so a language change
+    // applies instantly; grant state lives on the same objects.
+    final loc = context.loc;
+    _permissions[0].title = loc.obPermNotif;
+    _permissions[0].subtitle = loc.obPermNotifSub;
+    _permissions[1].title = loc.obPermLocation;
+    _permissions[1].subtitle = loc.obPermLocationSub;
+    _permissions[2].title = loc.obPermOverlay;
+    _permissions[2].subtitle = loc.obPermOverlaySub;
+
     // Find the first un-granted index (to pulse it)
     int nextIndex = _permissions.indexWhere((p) => !p.isGranted);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: const Color(0xFF111118),
-          body: Container(
+      child: Scaffold(
+        backgroundColor: const Color(0xFF111118),
+        body: Container(
             width: double.infinity,
             height: double.infinity,
             decoration: const BoxDecoration(
@@ -282,7 +291,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -361,10 +369,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'مرحباً بك في حصن المسلم',
+          Text(
+            context.loc.obWelcome,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'Amiri',
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -388,7 +396,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         return Opacity(opacity: t, child: child);
       },
       child: Text(
-        'نحتاج إلى بعض الأذونات لتعمل جميع المميزات بشكل صحيح',
+        context.loc.obSubtitle,
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: 'Amiri',
@@ -648,7 +656,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               onTap: enabled ? _completeOnboarding : null,
               child: Center(
                 child: Text(
-                  'متابعة',
+                  context.loc.continueBtn,
                   style: TextStyle(
                     fontFamily: 'Amiri',
                     fontSize: 20,
@@ -679,7 +687,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       child: TextButton(
         onPressed: _completeOnboarding,
         child: Text(
-          'تخطي',
+          context.loc.obSkip,
           style: TextStyle(
             fontFamily: 'Amiri',
             fontSize: 15,

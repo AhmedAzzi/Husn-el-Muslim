@@ -197,9 +197,9 @@ class PrayerTimeService : Service() {
     private fun updateNotification() {
         val now = System.currentTimeMillis()
 
-        // Keep home-screen widgets live (countdown recomputed natively).
-        // 30s cadence: smooth enough for a minute-precision countdown,
-        // cheap enough to never matter for battery.
+        // Keep home-screen widgets live. Per-second ticking is handled
+        // natively by the Chronometer countdown; this 30s re-render only
+        // advances prayer transitions and the static texts around them.
         if (now - lastWidgetUpdate >= 30_000L) {
             lastWidgetUpdate = now
             try {
