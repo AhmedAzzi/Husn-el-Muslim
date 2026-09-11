@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Large widget: full prayer-screen replica (4x4). Updates are pushed
-     manually from the app/service, so the period is 0. -->
+<!-- Large widget: header + spotlight + all six prayers grid (4x3, wraps
+      content height). Updates are pushed manually, so the period is 0. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/widget_prayer_large"
     android:previewLayout="@layout/widget_prayer_large"
     android:description="@string/widget_large_desc"
     android:minWidth="250dp"
-    android:minHeight="320dp"
+    android:minHeight="300dp"
     android:minResizeWidth="180dp"
-    android:minResizeHeight="200dp"
+    android:minResizeHeight="180dp"
     android:targetCellWidth="4"
-    android:targetCellHeight="4"
+    android:targetCellHeight="3"
     android:updatePeriodMillis="0"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen">

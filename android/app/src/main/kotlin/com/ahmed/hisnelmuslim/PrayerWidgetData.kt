@@ -50,7 +50,7 @@ object PrayerWidgetData {
     private const val LIGHT_FOOTER = 0xFF9A9AA5.toInt()
     private const val LIGHT_DIVIDER = 0xFFD8C99A.toInt()
 
-    private const val COUNTDOWN_TEXT = 0xFFFFFFFF.toInt()
+    private const val COUNTDOWN_TEXT = 0xFF4E2A30.toInt()
 
     private val ORDER = listOf("Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha")
 
@@ -150,7 +150,7 @@ object PrayerWidgetData {
         val h = totalSec / 3600
         val m = (totalSec % 3600) / 60
         val s = totalSec % 60
-        return "- %02d:%02d:%02d".format(h, m, s)
+        return "%02d:%02d:%02d".format(h, m, s)
     }
 
     /**
@@ -171,7 +171,7 @@ object PrayerWidgetData {
         val remaining = targetTs - now
         if (remaining > 0 && Build.VERSION.SDK_INT >= 24) {
             val base = SystemClock.elapsedRealtime() + remaining
-            views.setChronometer(viewId, base, "- %s", true)
+            views.setChronometer(viewId, base, "%s", true)
             views.setChronometerCountDown(viewId, true)
         } else {
             // Static fallback: at/past time, or old platform.
@@ -228,6 +228,9 @@ object PrayerWidgetData {
 
         val title = if (night) DARK_TITLE else LIGHT_TITLE
         val hijriC = if (night) DARK_HIJRI else LIGHT_HIJRI
+        val nextC = if (night) DARK_NEXT else LIGHT_NEXT
+
+        val byName = snap.entries.associateBy { it.en }
 
         return RemoteViews(context.packageName, R.layout.prayer_widget).apply {
             setInt(
@@ -253,12 +256,38 @@ object PrayerWidgetData {
                 setTextViewText(R.id.widget_small_countdown, "…")
             }
             setTextColor(R.id.widget_small_countdown, COUNTDOWN_TEXT)
+
+            for (i in ORDER.indices) {
+                val en = ORDER[i]
+                val t = byName[en]?.time ?: "--:--"
+                setTextViewText(SMALL_PTIME_IDS[i], t)
+                if (next?.en == en) {
+                    setInt(
+                        SMALL_COL_IDS[i], "setBackgroundResource",
+                        if (night) R.drawable.widget_col_next_dark
+                        else R.drawable.widget_col_next_light
+                    )
+                    setTextColor(SMALL_PTIME_IDS[i], nextC)
+                } else {
+                    setTextColor(SMALL_PTIME_IDS[i], title)
+                }
+            }
+
             setOnClickPendingIntent(
                 R.id.widget_small_root,
                 openAppIntent(context, 10001)
             )
         }
     }
+
+    private val SMALL_COL_IDS = intArrayOf(
+        R.id.widget_small_col_0, R.id.widget_small_col_1, R.id.widget_small_col_2,
+        R.id.widget_small_col_3, R.id.widget_small_col_4, R.id.widget_small_col_5
+    )
+    private val SMALL_PTIME_IDS = intArrayOf(
+        R.id.widget_small_ptime_0, R.id.widget_small_ptime_1, R.id.widget_small_ptime_2,
+        R.id.widget_small_ptime_3, R.id.widget_small_ptime_4, R.id.widget_small_ptime_5
+    )
 
     private val ROW_IDS = intArrayOf(
         R.id.widget_row_0, R.id.widget_row_1, R.id.widget_row_2,
@@ -327,7 +356,11 @@ object PrayerWidgetData {
                 setTextViewText(TIME_IDS[i], t)
                 val isNext = next?.en == en
                 if (isNext) {
-                    setInt(ROW_IDS[i], "setBackgroundResource", R.drawable.widget_row_next)
+                    setInt(
+                        ROW_IDS[i], "setBackgroundResource",
+                        if (night) R.drawable.widget_col_next_dark
+                        else R.drawable.widget_col_next_light
+                    )
                     setTextColor(NAME_IDS[i], nextC)
                     setTextColor(TIME_IDS[i], nextC)
                 } else {

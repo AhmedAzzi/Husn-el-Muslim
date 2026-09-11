@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Small widget: full-width single row (4x1). Updates are pushed
-     manually from the app/service, so the period is 0. -->
+<!-- Small widget: full-width header + all six prayers grid (4x2, wraps
+      content height). Updates are pushed manually, so the period is 0. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/prayer_widget"
     android:previewLayout="@layout/prayer_widget"
     android:description="@string/widget_small_desc"
     android:minWidth="250dp"
-    android:minHeight="110dp"
+    android:minHeight="190dp"
     android:minResizeWidth="180dp"
     android:minResizeHeight="110dp"
     android:targetCellWidth="4"
-    android:targetCellHeight="1"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
-    android:resizeMode="horizontal"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen">
 </appwidget-provider>

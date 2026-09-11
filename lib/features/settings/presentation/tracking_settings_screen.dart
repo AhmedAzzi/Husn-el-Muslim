@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/tracking_settings_section.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
 class TrackingSettingsScreen extends StatelessWidget {
@@ -47,7 +47,7 @@ class TrackingSettingsScreen extends StatelessWidget {
                   color: isDark ? Colors.white : Colors.black87,
                 ),
                 onPressed: () =>
-                    Get.to(() => const PrayerTrackingScreen()),
+                    Get.to(() => const TrackingHomeScreen()),
               ),
             ],
             flexibleSpace: Container(

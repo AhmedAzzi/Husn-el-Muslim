@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Default (dark) widget card: deep-night gradient + soft gold rim.
-     Matches the app's dark prayer screen. -->
+<!-- Default (dark) widget card: Husn burgundy gradient + gold rim. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
-        android:startColor="#2B2140"
-        android:endColor="#14141C"
+        android:startColor="#7C414D"
+        android:endColor="#4E2A30"
         android:angle="135" />
     <corners android:radius="24dp" />
-    <stroke android:width="1dp" android:color="#59C2A36B" />
+    <stroke android:width="1dp" android:color="#59C9A227" />
 </shape>

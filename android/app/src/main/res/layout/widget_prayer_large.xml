@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Large widget (4x4): full prayer-screen replica.
-     Header + next-prayer spotlight + all six prayers.
-     Tapping anywhere opens the prayer screen. -->
+<!-- Large widget (4x3, wraps content height):
+      header + next-prayer spotlight + all six prayers grid + footer.
+      RTL: first column (right) = Fajr. The next prayer column is
+      highlighted. Tapping anywhere opens the prayer screen. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_large_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:layoutDirection="rtl"
     android:padding="14dp"
@@ -19,8 +20,8 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:src="@mipmap/ic_launcher"
             android:contentDescription="@string/widget_large_desc" />
 
@@ -35,7 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="مواقيت الصلاة"
-                android:textSize="17sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF" />
 
@@ -109,10 +110,10 @@
                 android:paddingEnd="12dp"
                 android:paddingTop="5dp"
                 android:paddingBottom="5dp"
-                android:text="- 01:23:45"
+                android:text="01:23:45"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF" />
+                android:textColor="#4E2A30" />
         </LinearLayout>
     </LinearLayout>
 
@@ -126,209 +127,227 @@
         android:orientation="horizontal"
         android:background="#26FFFFFF" />
 
-    <!-- Prayer rows: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha -->
+    <!-- All prayers grid: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha -->
     <LinearLayout
-        android:id="@+id/widget_row_0"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/widget_name_0"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="الفجر"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
-
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_0"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_time_0"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌙"
+                android:textSize="22sp" />
 
-    <LinearLayout
-        android:id="@+id/widget_row_1"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+            <TextView
+                android:id="@+id/widget_name_0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="الفجر"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
 
-        <TextView
-            android:id="@+id/widget_name_1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="الشروق"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
+            <TextView
+                android:id="@+id/widget_time_0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_1"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_time_1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌅"
+                android:textSize="22sp" />
 
-    <LinearLayout
-        android:id="@+id/widget_row_2"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+            <TextView
+                android:id="@+id/widget_name_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="الشروق"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
 
-        <TextView
-            android:id="@+id/widget_name_2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="الظهر"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
+            <TextView
+                android:id="@+id/widget_time_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_2"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_time_2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="☀️"
+                android:textSize="22sp" />
 
-    <LinearLayout
-        android:id="@+id/widget_row_3"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+            <TextView
+                android:id="@+id/widget_name_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="الظهر"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
 
-        <TextView
-            android:id="@+id/widget_name_3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="العصر"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
+            <TextView
+                android:id="@+id/widget_time_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_3"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_time_3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌤️"
+                android:textSize="22sp" />
 
-    <LinearLayout
-        android:id="@+id/widget_row_4"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+            <TextView
+                android:id="@+id/widget_name_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="العصر"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
 
-        <TextView
-            android:id="@+id/widget_name_4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="المغرب"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
+            <TextView
+                android:id="@+id/widget_time_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_4"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <TextView
-            android:id="@+id/widget_time_4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌇"
+                android:textSize="22sp" />
 
-    <LinearLayout
-        android:id="@+id/widget_row_5"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
+            <TextView
+                android:id="@+id/widget_name_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="المغرب"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
 
-        <TextView
-            android:id="@+id/widget_name_5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="العشاء"
-            android:textSize="15sp"
-            android:textColor="#EDEDED" />
+            <TextView
+                android:id="@+id/widget_time_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
-        <!-- Weighted spacer -->
         <LinearLayout
+            android:id="@+id/widget_row_5"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="horizontal" />
-
-        <TextView
-            android:id="@+id/widget_time_5"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--:--"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌃"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/widget_name_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="العشاء"
+                android:textSize="14sp"
+                android:textColor="#EDEDED" />
+
+            <TextView
+                android:id="@+id/widget_time_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="--:--"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
     </LinearLayout>
 
     <TextView

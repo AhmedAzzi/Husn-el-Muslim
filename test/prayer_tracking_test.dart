@@ -112,8 +112,11 @@ void main() {
 
     test('full-goal day counts, partial day breaks the streak', () async {
       final repo = PrayerTrackingRepository.instance;
-      final today = DateTime(2026, 9, 4);
-      final yesterday = DateTime(2026, 9, 3);
+      // Anchored to the real today: the longest-streak refresh walks back
+      // from DateTime.now(), so fixed historic dates would leave it at 0.
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
       for (var p = 0; p < 5; p++) {
         await repo.logPrayer(
             date: yesterday, prayerIndex: p, status: PrayerStatus.onTimeAlone);
@@ -244,7 +247,9 @@ void main() {
 
     test('diagnosticsSnapshot reflects seeded state', () async {
       final repo = PrayerTrackingRepository.instance;
-      final today = DateTime(2026, 9, 4);
+      // Anchored to the real today (see the streak test above).
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
       for (var p = 0; p < 5; p++) {
         await repo.logPrayer(
             date: today, prayerIndex: p, status: PrayerStatus.onTimeAlone);

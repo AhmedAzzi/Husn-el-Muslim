@@ -160,6 +160,36 @@ abstract class AppLocalizations {
   /// **'تتبع الصلوات'**
   String get navFajrLog;
 
+  /// No description provided for @navTracking.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الطاعات'**
+  String get navTracking;
+
+  /// No description provided for @navMushaf.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصحف'**
+  String get navMushaf;
+
+  /// No description provided for @navKhatma.
+  ///
+  /// In ar, this message translates to:
+  /// **'الختمة'**
+  String get navKhatma;
+
+  /// No description provided for @stQuran.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصحف والختمة'**
+  String get stQuran;
+
+  /// No description provided for @stQuranSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات التلاوة والتجويد والهدف اليومي'**
+  String get stQuranSub;
+
   /// No description provided for @navSettings.
   ///
   /// In ar, this message translates to:
@@ -2812,6 +2842,24 @@ abstract class AppLocalizations {
   /// **'اعتماد كمسجد رئيسي'**
   String get mmAdoptMosque;
 
+  /// No description provided for @mmSuggestTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسجد قريب منك'**
+  String get mmSuggestTitle;
+
+  /// No description provided for @mmSuggestBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار هذا المسجد سيعتمده كمسجدك الرئيسي لمواقيت الصلاة.'**
+  String get mmSuggestBody;
+
+  /// No description provided for @mmSuggestSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين كافتراضي'**
+  String get mmSuggestSet;
+
   /// No description provided for @mmRetry.
   ///
   /// In ar, this message translates to:
@@ -3531,6 +3579,504 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تتبع الصلوات الخمس'**
   String get diagFivePrayer;
+
+  /// No description provided for @navSunnah.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع السنن'**
+  String get navSunnah;
+
+  /// No description provided for @snTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع السنن'**
+  String get snTitle;
+
+  /// No description provided for @snSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرواتب • الضحى • الوتر • قيام الليل'**
+  String get snSubtitle;
+
+  /// No description provided for @snRawatibSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنن الرواتب (12 ركعة)'**
+  String get snRawatibSection;
+
+  /// No description provided for @snExtraSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضحى والوتر وقيام الليل'**
+  String get snExtraSection;
+
+  /// No description provided for @snDailyGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف اليومي'**
+  String get snDailyGoal;
+
+  /// No description provided for @snWeekOverview.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 7 أيام'**
+  String get snWeekOverview;
+
+  /// No description provided for @snTotal30.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط آخر 30 يومًا'**
+  String get snTotal30;
+
+  /// No description provided for @snEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد سنن مسجلة اليوم'**
+  String get snEmptyTitle;
+
+  /// No description provided for @snEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بسنة الفجر ركعتين — اضغط على أي سنة لتسجيلها'**
+  String get snEmptyHint;
+
+  /// No description provided for @snRawatibBonus.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافأة إتمام الرواتب الخمس: +10'**
+  String get snRawatibBonus;
+
+  /// No description provided for @snOpenSunnah.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع السنن: رواتب • ضحى • وتر'**
+  String get snOpenSunnah;
+
+  /// No description provided for @snClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بيانات السنن'**
+  String get snClear;
+
+  /// No description provided for @snClearTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بيانات السنن؟'**
+  String get snClearTitle;
+
+  /// No description provided for @snClearHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم حذف جميع السنن المسجلة وسلاسلها. لا يمكن التراجع.'**
+  String get snClearHint;
+
+  /// No description provided for @snFajrSunnah.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة الفجر'**
+  String get snFajrSunnah;
+
+  /// No description provided for @snFajrSunnahSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعتان قبل الفجر'**
+  String get snFajrSunnahSub;
+
+  /// No description provided for @snDhuhrBefore.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة القبلية للظهر'**
+  String get snDhuhrBefore;
+
+  /// No description provided for @snDhuhrBeforeSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'4 ركعات قبل الظهر'**
+  String get snDhuhrBeforeSub;
+
+  /// No description provided for @snDhuhrAfter.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة البعدية للظهر'**
+  String get snDhuhrAfter;
+
+  /// No description provided for @snDhuhrAfterSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعتان بعد الظهر'**
+  String get snDhuhrAfterSub;
+
+  /// No description provided for @snMaghribAfter.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة المغرب'**
+  String get snMaghribAfter;
+
+  /// No description provided for @snMaghribAfterSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعتان بعد المغرب'**
+  String get snMaghribAfterSub;
+
+  /// No description provided for @snIshaAfter.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة العشاء'**
+  String get snIshaAfter;
+
+  /// No description provided for @snIshaAfterSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعتان بعد العشاء'**
+  String get snIshaAfterSub;
+
+  /// No description provided for @snDuha.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاة الضحى'**
+  String get snDuha;
+
+  /// No description provided for @snDuhaSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعتان فأكثر بعد الشروق'**
+  String get snDuhaSub;
+
+  /// No description provided for @snWitr.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوتر'**
+  String get snWitr;
+
+  /// No description provided for @snWitrSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعة أو ثلاث بعد العشاء'**
+  String get snWitrSub;
+
+  /// No description provided for @snQiyam.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيام الليل'**
+  String get snQiyam;
+
+  /// No description provided for @snQiyamSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ركعات الليل المباركة'**
+  String get snQiyamSub;
+
+  /// No description provided for @snProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {goal}'**
+  String snProgress(int done, int goal);
+
+  /// No description provided for @diagSunnah.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع السنن'**
+  String get diagSunnah;
+
+  /// No description provided for @navWorship.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الصيام والورد'**
+  String get navWorship;
+
+  /// No description provided for @wtTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الصيام والورد'**
+  String get wtTitle;
+
+  /// No description provided for @wtSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيام • الورد • أعمال صالحة'**
+  String get wtSubtitle;
+
+  /// No description provided for @wtFastingSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيام التطوع'**
+  String get wtFastingSection;
+
+  /// No description provided for @wtWeekHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاثنين والخميس من الأسبوع المعروض'**
+  String get wtWeekHint;
+
+  /// No description provided for @wtMonday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاثنين'**
+  String get wtMonday;
+
+  /// No description provided for @wtThursday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخميس'**
+  String get wtThursday;
+
+  /// No description provided for @wtLogOtherFast.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل صوم آخر'**
+  String get wtLogOtherFast;
+
+  /// No description provided for @wtFastSheetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما نوع الصوم؟'**
+  String get wtFastSheetTitle;
+
+  /// No description provided for @wtKindMonday.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيام الاثنين'**
+  String get wtKindMonday;
+
+  /// No description provided for @wtKindThursday.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيام الخميس'**
+  String get wtKindThursday;
+
+  /// No description provided for @wtKindWhite.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام البيض (13-15)'**
+  String get wtKindWhite;
+
+  /// No description provided for @wtKindArafah.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم عرفة'**
+  String get wtKindArafah;
+
+  /// No description provided for @wtKindAshura.
+  ///
+  /// In ar, this message translates to:
+  /// **'عاشوراء / تاسوعاء'**
+  String get wtKindAshura;
+
+  /// No description provided for @wtKindShawwal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الست من شوال'**
+  String get wtKindShawwal;
+
+  /// No description provided for @wtKindQadaa.
+  ///
+  /// In ar, this message translates to:
+  /// **'قضاء'**
+  String get wtKindQadaa;
+
+  /// No description provided for @wtKindNafl.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفل مطلق'**
+  String get wtKindNafl;
+
+  /// No description provided for @wtWeeksStreak.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسابيع الصيام'**
+  String get wtWeeksStreak;
+
+  /// No description provided for @wtTotalFasts.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيام الصيام (30 يومًا)'**
+  String get wtTotalFasts;
+
+  /// No description provided for @wtWeeksOverview.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 8 أسابيع'**
+  String get wtWeeksOverview;
+
+  /// No description provided for @wtWhiteHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم من الأيام البيض — يستحب صيامه'**
+  String get wtWhiteHint;
+
+  /// No description provided for @wtArafahHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم يوم عرفة — صيامه يكفّر سنتين'**
+  String get wtArafahHint;
+
+  /// No description provided for @wtAshuraHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم عاشوراء — يستحب صيامه'**
+  String get wtAshuraHint;
+
+  /// No description provided for @wtMondayHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم الاثنين — ترفع فيه الأعمال'**
+  String get wtMondayHint;
+
+  /// No description provided for @wtThursdayHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم الخميس — ترفع فيه الأعمال'**
+  String get wtThursdayHint;
+
+  /// No description provided for @wtWirdSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الورد اليومي'**
+  String get wtWirdSection;
+
+  /// No description provided for @wtDeedsSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعمال صالحة'**
+  String get wtDeedsSection;
+
+  /// No description provided for @wtQuran.
+  ///
+  /// In ar, this message translates to:
+  /// **'ورد القرآن'**
+  String get wtQuran;
+
+  /// No description provided for @wtQuranSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الورد اليومي'**
+  String get wtQuranSub;
+
+  /// No description provided for @wtMorning.
+  ///
+  /// In ar, this message translates to:
+  /// **'أذكار الصباح'**
+  String get wtMorning;
+
+  /// No description provided for @wtMorningSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد الفجر'**
+  String get wtMorningSub;
+
+  /// No description provided for @wtEvening.
+  ///
+  /// In ar, this message translates to:
+  /// **'أذكار المساء'**
+  String get wtEvening;
+
+  /// No description provided for @wtEveningSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد العصر'**
+  String get wtEveningSub;
+
+  /// No description provided for @wtIstighfar.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستغفار (100 مرة)'**
+  String get wtIstighfar;
+
+  /// No description provided for @wtIstighfarSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أستغفر الله'**
+  String get wtIstighfarSub;
+
+  /// No description provided for @wtSalawat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاة على النبي (100 مرة)'**
+  String get wtSalawat;
+
+  /// No description provided for @wtSalawatSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلى الله عليه وسلم'**
+  String get wtSalawatSub;
+
+  /// No description provided for @wtSadaqah.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدقة'**
+  String get wtSadaqah;
+
+  /// No description provided for @wtSadaqahSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولو بالقليل'**
+  String get wtSadaqahSub;
+
+  /// No description provided for @wtSilah.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلة رحم'**
+  String get wtSilah;
+
+  /// No description provided for @wtSilahSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصال أو زيارة'**
+  String get wtSilahSub;
+
+  /// No description provided for @wtBirr.
+  ///
+  /// In ar, this message translates to:
+  /// **'بر الوالدين'**
+  String get wtBirr;
+
+  /// No description provided for @wtBirrSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'قول أو فعل حسن'**
+  String get wtBirrSub;
+
+  /// No description provided for @wtDailyGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف اليومي'**
+  String get wtDailyGoal;
+
+  /// No description provided for @wtTotal30.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط آخر 30 يومًا'**
+  String get wtTotal30;
+
+  /// No description provided for @wtClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بيانات العبادات'**
+  String get wtClear;
+
+  /// No description provided for @wtClearTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بيانات العبادات؟'**
+  String get wtClearTitle;
+
+  /// No description provided for @wtClearHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم حذف الورد والصيام المسجل وسلاسلهما. لا يمكن التراجع.'**
+  String get wtClearHint;
+
+  /// No description provided for @wtOpenWorship.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيام والورد: اثنين وخميس • ورد • صدقة'**
+  String get wtOpenWorship;
+
+  /// No description provided for @diagWorship.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الصيام والورد'**
+  String get diagWorship;
 }
 
 class _AppLocalizationsDelegate

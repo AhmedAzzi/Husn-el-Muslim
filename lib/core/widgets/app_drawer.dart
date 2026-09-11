@@ -9,7 +9,10 @@ import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_scre
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
 import 'package:small_husn_muslim/features/qibla/presentation/qibla_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
+import 'package:small_husn_muslim/features/quran/presentation/screens/home_screen.dart'
+    as quran_home;
+import 'package:small_husn_muslim/features/nakhtem/presentation/screens/khatma_home_screen.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
 
@@ -108,10 +111,28 @@ class AppDrawer extends StatelessWidget {
           const Divider(thickness: 0.3),
           ListTile(
             leading: const Icon(Icons.local_fire_department_rounded),
-            title: Text(loc.navFajrLog, style: const TextStyle(fontSize: 18)),
+            title: Text(loc.navTracking, style: const TextStyle(fontSize: 18)),
             onTap: () {
               Get.back(); // Close drawer
-              Get.to(() => const PrayerTrackingScreen());
+              Get.to(() => const TrackingHomeScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
+            leading: const Icon(Icons.auto_stories_rounded),
+            title: Text(loc.navMushaf, style: const TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const quran_home.HomeScreen());
+            },
+          ),
+          const Divider(thickness: 0.3),
+          ListTile(
+            leading: const Icon(Icons.menu_book_rounded),
+            title: Text(loc.navKhatma, style: const TextStyle(fontSize: 18)),
+            onTap: () {
+              Get.back(); // Close drawer
+              Get.to(() => const KhatmaHomeScreen());
             },
           ),
           const Divider(thickness: 0.3),

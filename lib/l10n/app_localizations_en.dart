@@ -39,6 +39,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navFajrLog => 'Prayer Tracker';
 
   @override
+  String get navTracking => 'Tracking';
+
+  @override
+  String get navMushaf => 'Mushaf';
+
+  @override
+  String get navKhatma => 'Khatma';
+
+  @override
+  String get stQuran => 'Quran & Khatma';
+
+  @override
+  String get stQuranSub => 'Recitation, tajweed and daily goal settings';
+
+  @override
   String get navSettings => 'Settings';
 
   @override
@@ -1535,6 +1550,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mmAdoptMosque => 'Adopt as main mosque';
 
   @override
+  String get mmSuggestTitle => 'A mosque near you';
+
+  @override
+  String get mmSuggestBody =>
+      'Selecting this mosque will set it as your default mosque for prayer times.';
+
+  @override
+  String get mmSuggestSet => 'Set as Default';
+
+  @override
   String get mmRetry => 'Retry';
 
   @override
@@ -1939,4 +1964,258 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagFivePrayer => 'Five-prayer tracking';
+
+  @override
+  String get navSunnah => 'Sunnah Tracker';
+
+  @override
+  String get snTitle => 'Sunnah Tracker';
+
+  @override
+  String get snSubtitle => 'Rawatib • Duha • Witr • Night prayer';
+
+  @override
+  String get snRawatibSection => 'Rawatib Sunan (12 rak\'as)';
+
+  @override
+  String get snExtraSection => 'Duha, Witr & night prayer';
+
+  @override
+  String get snDailyGoal => 'Daily goal';
+
+  @override
+  String get snWeekOverview => 'Last 7 days';
+
+  @override
+  String get snTotal30 => 'Last 30 days\' points';
+
+  @override
+  String get snEmptyTitle => 'No sunan logged today';
+
+  @override
+  String get snEmptyHint =>
+      'Start with the 2 Fajr sunnah rak\'as — tap any sunnah to log it';
+
+  @override
+  String get snRawatibBonus => 'Full-Rawatib bonus: +10';
+
+  @override
+  String get snOpenSunnah => 'Sunnah tracker: Rawatib • Duha • Witr';
+
+  @override
+  String get snClear => 'Clear sunnah data';
+
+  @override
+  String get snClearTitle => 'Clear sunnah data?';
+
+  @override
+  String get snClearHint =>
+      'All logged sunan and streaks will be deleted. This cannot be undone.';
+
+  @override
+  String get snFajrSunnah => 'Fajr sunnah';
+
+  @override
+  String get snFajrSunnahSub => '2 rak\'as before Fajr';
+
+  @override
+  String get snDhuhrBefore => 'Pre-Dhuhr sunnah';
+
+  @override
+  String get snDhuhrBeforeSub => '4 rak\'as before Dhuhr';
+
+  @override
+  String get snDhuhrAfter => 'Post-Dhuhr sunnah';
+
+  @override
+  String get snDhuhrAfterSub => '2 rak\'as after Dhuhr';
+
+  @override
+  String get snMaghribAfter => 'Maghrib sunnah';
+
+  @override
+  String get snMaghribAfterSub => '2 rak\'as after Maghrib';
+
+  @override
+  String get snIshaAfter => 'Isha sunnah';
+
+  @override
+  String get snIshaAfterSub => '2 rak\'as after Isha';
+
+  @override
+  String get snDuha => 'Duha prayer';
+
+  @override
+  String get snDuhaSub => '2+ rak\'as after sunrise';
+
+  @override
+  String get snWitr => 'Witr';
+
+  @override
+  String get snWitrSub => '1 or 3 rak\'as after Isha';
+
+  @override
+  String get snQiyam => 'Night prayer';
+
+  @override
+  String get snQiyamSub => 'Blessed night rak\'as';
+
+  @override
+  String snProgress(int done, int goal) {
+    return '$done of $goal';
+  }
+
+  @override
+  String get diagSunnah => 'Sunnah tracking';
+
+  @override
+  String get navWorship => 'Fasting & Wird Tracker';
+
+  @override
+  String get wtTitle => 'Fasting & Wird Tracker';
+
+  @override
+  String get wtSubtitle => 'Fasting • Wird • Good deeds';
+
+  @override
+  String get wtFastingSection => 'Voluntary fasting';
+
+  @override
+  String get wtWeekHint => 'Monday & Thursday of the shown week';
+
+  @override
+  String get wtMonday => 'Monday';
+
+  @override
+  String get wtThursday => 'Thursday';
+
+  @override
+  String get wtLogOtherFast => 'Log another fast';
+
+  @override
+  String get wtFastSheetTitle => 'What kind of fast?';
+
+  @override
+  String get wtKindMonday => 'Monday fast';
+
+  @override
+  String get wtKindThursday => 'Thursday fast';
+
+  @override
+  String get wtKindWhite => 'White days (13th–15th)';
+
+  @override
+  String get wtKindArafah => 'Day of Arafah';
+
+  @override
+  String get wtKindAshura => 'Ashura / Tasua';
+
+  @override
+  String get wtKindShawwal => 'Six of Shawwal';
+
+  @override
+  String get wtKindQadaa => 'Make-up (qadaa)';
+
+  @override
+  String get wtKindNafl => 'General voluntary fast';
+
+  @override
+  String get wtWeeksStreak => 'Fasting weeks';
+
+  @override
+  String get wtTotalFasts => 'Fast days (30 days)';
+
+  @override
+  String get wtWeeksOverview => 'Last 8 weeks';
+
+  @override
+  String get wtWhiteHint => 'Today is a White day — fasting is recommended';
+
+  @override
+  String get wtArafahHint => 'Today is Arafah — its fast expiates two years';
+
+  @override
+  String get wtAshuraHint => 'Today is Ashura — fasting is recommended';
+
+  @override
+  String get wtMondayHint => 'Today is Monday — deeds are raised';
+
+  @override
+  String get wtThursdayHint => 'Today is Thursday — deeds are raised';
+
+  @override
+  String get wtWirdSection => 'Daily wird';
+
+  @override
+  String get wtDeedsSection => 'Good deeds';
+
+  @override
+  String get wtQuran => 'Quran portion';
+
+  @override
+  String get wtQuranSub => 'Daily recitation';
+
+  @override
+  String get wtMorning => 'Morning adhkar';
+
+  @override
+  String get wtMorningSub => 'After Fajr';
+
+  @override
+  String get wtEvening => 'Evening adhkar';
+
+  @override
+  String get wtEveningSub => 'After Asr';
+
+  @override
+  String get wtIstighfar => 'Istighfar (100 times)';
+
+  @override
+  String get wtIstighfarSub => 'Astaghfirullah';
+
+  @override
+  String get wtSalawat => 'Salawat (100 times)';
+
+  @override
+  String get wtSalawatSub => 'Upon the Prophet';
+
+  @override
+  String get wtSadaqah => 'Charity';
+
+  @override
+  String get wtSadaqahSub => 'Even a little';
+
+  @override
+  String get wtSilah => 'Family ties';
+
+  @override
+  String get wtSilahSub => 'A call or visit';
+
+  @override
+  String get wtBirr => 'Kindness to parents';
+
+  @override
+  String get wtBirrSub => 'A kind word or act';
+
+  @override
+  String get wtDailyGoal => 'Daily goal';
+
+  @override
+  String get wtTotal30 => 'Last 30 days\' points';
+
+  @override
+  String get wtClear => 'Clear worship data';
+
+  @override
+  String get wtClearTitle => 'Clear worship data?';
+
+  @override
+  String get wtClearHint =>
+      'All logged wird, fasts and streaks will be deleted. This cannot be undone.';
+
+  @override
+  String get wtOpenWorship => 'Fasting & wird: Mon & Thu • wird • charity';
+
+  @override
+  String get diagWorship => 'Fasting & wird tracking';
 }

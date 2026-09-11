@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import 'package:small_husn_muslim/core/constants/strings.dart';
@@ -9,6 +10,7 @@ import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
+import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_suggest_dialog.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_bottom_sheet.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
@@ -27,6 +29,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   final Map<int, Future<DayPrayerSummary>> _pageFutures = {};
   final RxInt _currentSwipeDiff = 0.obs;
 
+  /// Re-entrancy guard so the suggestion dialog never stacks.
+  bool _suggestingMosque = false;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +43,44 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     await _logic.loadNotificationPreference();
     await _logic.ensureDataLoaded();
     _logic.displayDate();
+    await _maybeSuggestNearestMosque();
+  }
+
+  /// After location access is available, automatically detect nearby
+  /// mosques and suggest the nearest one as the default mosque.
+  ///
+  /// Shows nothing when permission is not granted, when no mosque is
+  /// found, or when the nearest one was already accepted/dismissed
+  /// (persisted per slug, so the same suggestion never repeats).
+  Future<void> _maybeSuggestNearestMosque() async {
+    if (_suggestingMosque || !mounted) return;
+    bool granted = false;
+    try {
+      final permission = await Geolocator.checkPermission();
+      granted = permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+    } catch (_) {
+      return;
+    }
+    if (!granted || !mounted) return;
+    _suggestingMosque = true;
+    try {
+      await _logic.searchNearbyMosques();
+      if (!mounted) return;
+      final nearest = await _logic.nearestSuggestedMosque();
+      if (nearest == null || !mounted) return;
+      final adopt = await showMosqueSuggestDialog(
+        context: context,
+        mosqueName: nearest.name,
+        distanceText: _formatDistance(nearest.proximityMeters),
+      );
+      await _logic.markMosqueSuggestionDismissed(nearest.slug);
+      if (adopt == true && mounted) {
+        await _adoptMosque(nearest);
+      }
+    } finally {
+      _suggestingMosque = false;
+    }
   }
 
   @override
@@ -103,6 +146,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                           content: Text(context.loc.ptLocationUpdated)),
                     );
                   }
+                  await _maybeSuggestNearestMosque();
                 },
               ),
               const SizedBox(width: 8),
@@ -757,39 +801,53 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Future<void> _selectMosqueFromSheet(
       MosquePoint m, BuildContext sheetContext) async {
     final loc = sheetContext.loc;
+    final ok = await _fetchAndAdopt(m);
+    if (mounted && sheetContext.mounted) {
+      Navigator.of(sheetContext).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontFamily: 'Amiri'),
+          ),
+          backgroundColor: const Color(0xFF693B42),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Adopts the suggested nearest mosque as the default one (no pop —
+  /// the suggestion dialog already returned). Shows the same feedback
+  /// snackbar as the manual sheet flow.
+  Future<void> _adoptMosque(MosquePoint m) async {
+    final ok = await _fetchAndAdopt(m);
+    if (!mounted) return;
+    final loc = context.loc;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
+          textAlign: TextAlign.right,
+          style: const TextStyle(fontFamily: 'Amiri'),
+        ),
+        backgroundColor: const Color(0xFF693B42),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Shared adopt step: fetches the mosque schedule and sets it as the
+  /// default. Returns true on success, false when the schedule fails.
+  Future<bool> _fetchAndAdopt(MosquePoint m) async {
     try {
       final api = MawaqitApi();
       final feed = await api.scheduleBySlug(m.slug, forceRefresh: true);
       await _logic.setSelectedMosque(m, schedule: feed);
-      if (mounted && sheetContext.mounted) {
-        Navigator.of(sheetContext).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              loc.ptMosqueAdopted(m.name),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontFamily: 'Amiri'),
-            ),
-            backgroundColor: const Color(0xFF693B42),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted && sheetContext.mounted) {
-        Navigator.of(sheetContext).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              loc.ptMosqueFailed,
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontFamily: 'Amiri'),
-            ),
-            backgroundColor: const Color(0xFF693B42),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

@@ -39,6 +39,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navFajrLog => 'Suivi des prières';
 
   @override
+  String get navTracking => 'Suivi';
+
+  @override
+  String get navMushaf => 'Moushaf';
+
+  @override
+  String get navKhatma => 'Khatma';
+
+  @override
+  String get stQuran => 'Coran & Khatma';
+
+  @override
+  String get stQuranSub =>
+      'Paramètres de récitation, tajwid et objectif quotidien';
+
+  @override
   String get navSettings => 'Paramètres';
 
   @override
@@ -1544,6 +1560,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mmAdoptMosque => 'Définir comme mosquée principale';
 
   @override
+  String get mmSuggestTitle => 'Une mosquée proche de vous';
+
+  @override
+  String get mmSuggestBody =>
+      'Choisir cette mosquée en fera votre mosquée par défaut pour les horaires de prière.';
+
+  @override
+  String get mmSuggestSet => 'Définir par défaut';
+
+  @override
   String get mmRetry => 'Réessayer';
 
   @override
@@ -1950,4 +1976,263 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get diagFivePrayer => 'Suivi des cinq prières';
+
+  @override
+  String get navSunnah => 'Suivi des sunan';
+
+  @override
+  String get snTitle => 'Suivi des sunan';
+
+  @override
+  String get snSubtitle => 'Rawatib • Douha • Witr • Prière nocturne';
+
+  @override
+  String get snRawatibSection => 'Sunan Rawatib (12 rak\'as)';
+
+  @override
+  String get snExtraSection => 'Douha, Witr et prière nocturne';
+
+  @override
+  String get snDailyGoal => 'Objectif quotidien';
+
+  @override
+  String get snWeekOverview => '7 derniers jours';
+
+  @override
+  String get snTotal30 => 'Points des 30 derniers jours';
+
+  @override
+  String get snEmptyTitle => 'Aucune sunna enregistrée aujourd’hui';
+
+  @override
+  String get snEmptyHint =>
+      'Commencez par les 2 rak\'as du Fajr — touchez une sunna pour l’enregistrer';
+
+  @override
+  String get snRawatibBonus => 'Bonus Rawatib complet : +10';
+
+  @override
+  String get snOpenSunnah => 'Suivi des sunan : Rawatib • Douha • Witr';
+
+  @override
+  String get snClear => 'Effacer les données des sunan';
+
+  @override
+  String get snClearTitle => 'Effacer les données des sunan ?';
+
+  @override
+  String get snClearHint =>
+      'Toutes les sunan et séries seront supprimées. Irréversible.';
+
+  @override
+  String get snFajrSunnah => 'Sunna du Fajr';
+
+  @override
+  String get snFajrSunnahSub => '2 rak\'as avant le Fajr';
+
+  @override
+  String get snDhuhrBefore => 'Sunna avant le Dhuhr';
+
+  @override
+  String get snDhuhrBeforeSub => '4 rak\'as avant le Dhuhr';
+
+  @override
+  String get snDhuhrAfter => 'Sunna après le Dhuhr';
+
+  @override
+  String get snDhuhrAfterSub => '2 rak\'as après le Dhuhr';
+
+  @override
+  String get snMaghribAfter => 'Sunna du Maghrib';
+
+  @override
+  String get snMaghribAfterSub => '2 rak\'as après le Maghrib';
+
+  @override
+  String get snIshaAfter => 'Sunna de l’Icha';
+
+  @override
+  String get snIshaAfterSub => '2 rak\'as après l’Icha';
+
+  @override
+  String get snDuha => 'Prière de Douha';
+
+  @override
+  String get snDuhaSub => '2 rak\'as ou plus après le lever du soleil';
+
+  @override
+  String get snWitr => 'Witr';
+
+  @override
+  String get snWitrSub => '1 ou 3 rak\'as après l’Icha';
+
+  @override
+  String get snQiyam => 'Prière nocturne';
+
+  @override
+  String get snQiyamSub => 'Rak\'as bénies de la nuit';
+
+  @override
+  String snProgress(int done, int goal) {
+    return '$done sur $goal';
+  }
+
+  @override
+  String get diagSunnah => 'Suivi des sunan';
+
+  @override
+  String get navWorship => 'Suivi du jeûne et du wird';
+
+  @override
+  String get wtTitle => 'Suivi du jeûne et du wird';
+
+  @override
+  String get wtSubtitle => 'Jeûne • Wird • Bonnes œuvres';
+
+  @override
+  String get wtFastingSection => 'Jeûne surérogatoire';
+
+  @override
+  String get wtWeekHint => 'Lundi et jeudi de la semaine affichée';
+
+  @override
+  String get wtMonday => 'Lundi';
+
+  @override
+  String get wtThursday => 'Jeudi';
+
+  @override
+  String get wtLogOtherFast => 'Enregistrer un autre jeûne';
+
+  @override
+  String get wtFastSheetTitle => 'Quel type de jeûne ?';
+
+  @override
+  String get wtKindMonday => 'Jeûne du lundi';
+
+  @override
+  String get wtKindThursday => 'Jeûne du jeudi';
+
+  @override
+  String get wtKindWhite => 'Jours blancs (13–15)';
+
+  @override
+  String get wtKindArafah => 'Jour de Arafah';
+
+  @override
+  String get wtKindAshura => 'Achoura / Tasoua';
+
+  @override
+  String get wtKindShawwal => 'Six de Chawwal';
+
+  @override
+  String get wtKindQadaa => 'Rattrapage (qadaa)';
+
+  @override
+  String get wtKindNafl => 'Jeûne surérogatoire libre';
+
+  @override
+  String get wtWeeksStreak => 'Semaines de jeûne';
+
+  @override
+  String get wtTotalFasts => 'Jours jeûnés (30 jours)';
+
+  @override
+  String get wtWeeksOverview => '8 dernières semaines';
+
+  @override
+  String get wtWhiteHint =>
+      'Aujourd’hui est un jour blanc — le jeûne est recommandé';
+
+  @override
+  String get wtArafahHint =>
+      'Aujourd’hui c’est Arafah — son jeûne expie deux ans';
+
+  @override
+  String get wtAshuraHint =>
+      'Aujourd’hui c’est Achoura — le jeûne est recommandé';
+
+  @override
+  String get wtMondayHint =>
+      'Aujourd’hui c’est lundi — les œuvres sont élevées';
+
+  @override
+  String get wtThursdayHint =>
+      'Aujourd’hui c’est jeudi — les œuvres sont élevées';
+
+  @override
+  String get wtWirdSection => 'Wird quotidien';
+
+  @override
+  String get wtDeedsSection => 'Bonnes œuvres';
+
+  @override
+  String get wtQuran => 'Partie du Coran';
+
+  @override
+  String get wtQuranSub => 'Lecture quotidienne';
+
+  @override
+  String get wtMorning => 'Adhkar du matin';
+
+  @override
+  String get wtMorningSub => 'Après le Fajr';
+
+  @override
+  String get wtEvening => 'Adhkar du soir';
+
+  @override
+  String get wtEveningSub => 'Après le Asr';
+
+  @override
+  String get wtIstighfar => 'Istighfar (100 fois)';
+
+  @override
+  String get wtIstighfarSub => 'Astaghfiroullah';
+
+  @override
+  String get wtSalawat => 'Salawat (100 fois)';
+
+  @override
+  String get wtSalawatSub => 'Sur le Prophète';
+
+  @override
+  String get wtSadaqah => 'Aumône';
+
+  @override
+  String get wtSadaqahSub => 'Même petite';
+
+  @override
+  String get wtSilah => 'Liens familiaux';
+
+  @override
+  String get wtSilahSub => 'Un appel ou une visite';
+
+  @override
+  String get wtBirr => 'Bonté envers les parents';
+
+  @override
+  String get wtBirrSub => 'Une parole ou un geste';
+
+  @override
+  String get wtDailyGoal => 'Objectif quotidien';
+
+  @override
+  String get wtTotal30 => 'Points des 30 derniers jours';
+
+  @override
+  String get wtClear => 'Effacer les données d’adoration';
+
+  @override
+  String get wtClearTitle => 'Effacer les données d’adoration ?';
+
+  @override
+  String get wtClearHint =>
+      'Wird, jeûnes et séries seront supprimés. Irréversible.';
+
+  @override
+  String get wtOpenWorship => 'Jeûne et wird : lun. & jeu. • wird • aumône';
+
+  @override
+  String get diagWorship => 'Suivi du jeûne et du wird';
 }

@@ -13,6 +13,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 import android.view.WindowManager
@@ -40,6 +41,14 @@ class MainActivity : FlutterActivity() {
     private var isVolumeLocked = false
     private var backgroundLocationResult: io.flutter.plugin.common.MethodChannel.Result? = null
 
+    // Khatma (mushaf) floating-ayah overlay bridge. Ported from the
+    // colorful-quran app: same `khatmah/phone_experience` channel so the
+    // Dart PhoneExperienceService works unchanged.
+    private val KHATMAH_CHANNEL = "khatmah/phone_experience"
+    private val KHATMAH_NOTIFICATION_ID = 2001
+    private val KHATMAH_NOTIFICATIONS_REQUEST = 1003
+    private var khatmahNotificationResult: io.flutter.plugin.common.MethodChannel.Result? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,6 +67,10 @@ class MainActivity : FlutterActivity() {
         setLockScreenMode(false)
 
         handleIntent(intent)
+
+        // Process-scoped unlock detection for the khatma floating ayah
+        // (idempotent; survives activity recreation, dies with the process).
+        ScreenUnlockReceiver.register(this)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -438,6 +451,237 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+
+        // Khatma floating-ayah overlay bridge (`khatmah/phone_experience`).
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            KHATMAH_CHANNEL
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getAndroidVersion" -> result.success(Build.VERSION.SDK_INT)
+                "checkPhoneUseCapability" ->
+                    result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                "isOverlayPermissionGranted" ->
+                    result.success(Settings.canDrawOverlays(this))
+                "requestOverlayPermission" -> {
+                    if (Settings.canDrawOverlays(this)) {
+                        result.success(true)
+                    } else {
+                        openKhatmahOverlaySettings()
+                        result.success(false)
+                    }
+                }
+                "openOverlaySettings" -> {
+                    openKhatmahOverlaySettings()
+                    result.success(null)
+                }
+                "requestNotificationPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (khatmahNotificationResult != null) {
+                            result.error("busy", "request in progress", null)
+                        } else {
+                            khatmahNotificationResult = result
+                            requestPermissions(
+                                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                                KHATMAH_NOTIFICATIONS_REQUEST
+                            )
+                        }
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "showAyahOverlay" -> {
+                    val title = call.argument<String>("title") ?: "القرآن"
+                    val body = call.argument<String>("body") ?: ""
+                    val meta = call.argument<String>("meta") ?: ""
+                    val tafsir = call.argument<String>("tafsir") ?: ""
+                    val globalAyah = call.argument<Int>("globalAyah") ?: 0
+                    val surah = call.argument<Int>("surah") ?: 0
+                    val ayah = call.argument<Int>("ayah") ?: 0
+                    val audioUrl = call.argument<String>("audioUrl") ?: ""
+                    // Never start AyahOverlayService: startForegroundService()
+                    // requires startForeground() within seconds, but on
+                    // low-end devices (e.g. Galaxy M11) the main thread is
+                    // routinely blocked 10-20s at startup, so onStartCommand
+                    // dispatch misses the timeout and the whole process dies
+                    // with ForegroundServiceDidNotStartInTimeException. The
+                    // SYSTEM_ALERT_WINDOW fallback below draws the IDENTICAL
+                    // card with no service and zero crash risk.
+                    if (body.isBlank() || !Settings.canDrawOverlays(this)) {
+                        result.success(false)
+                    } else {
+                        val center = OverlayData(
+                            title = title,
+                            body = body,
+                            meta = meta,
+                            tafsir = tafsir,
+                            globalAyah = globalAyah,
+                            surah = surah,
+                            ayah = ayah,
+                            audioUrl = audioUrl,
+                        )
+                        val prev = khatmahSideData(call.argument<Map<*, *>>("prev"))
+                        val next = khatmahSideData(call.argument<Map<*, *>>("next"))
+                        try {
+                            stopService(Intent(this, AyahOverlayService::class.java))
+                        } catch (_: Exception) {
+                        }
+                        AyahOverlayUi.removeFallback()
+                        val shown = try {
+                            AyahOverlayUi.showFallback(this, center, prev, next)
+                        } catch (_: Exception) {
+                            false
+                        }
+                        result.success(shown)
+                    }
+                }
+                "dismissAyahOverlay" -> {
+                    stopService(Intent(this, AyahOverlayService::class.java))
+                    AyahOverlayUi.removeFallback()
+                    result.success(null)
+                }
+                // Cache written by Flutter so the unlock receiver can draw the
+                // overlay while the Dart isolate is paused (screen off).
+                "cacheOverlayAyah" -> {
+                    val p = OverlayPrefs.prefs(this)
+                    val enabled = call.argument<Boolean>("enabled") ?: false
+                    if (!enabled) {
+                        p.edit().putBoolean(OverlayPrefs.KEY_ENABLED, false).apply()
+                    } else {
+                        val ed = p.edit()
+                            .putBoolean(OverlayPrefs.KEY_ENABLED, true)
+                            .putString(OverlayPrefs.KEY_TITLE, call.argument<String>("title") ?: "القرآن")
+                            .putString(OverlayPrefs.KEY_BODY, call.argument<String>("body") ?: "")
+                            .putString(OverlayPrefs.KEY_META, call.argument<String>("meta") ?: "")
+                            .putString(OverlayPrefs.KEY_TAFSIR, call.argument<String>("tafsir") ?: "")
+                            .putString(OverlayPrefs.KEY_AUDIO_URL, call.argument<String>("audioUrl") ?: "")
+                            .putInt(OverlayPrefs.KEY_GLOBAL, call.argument<Int>("globalAyah") ?: 0)
+                            .putInt(OverlayPrefs.KEY_SURAH, call.argument<Int>("surah") ?: 0)
+                            .putInt(OverlayPrefs.KEY_AYAH, call.argument<Int>("ayah") ?: 0)
+                        putKhatmahSideCache(ed, "prev", call.argument<Map<*, *>>("prev"))
+                        putKhatmahSideCache(ed, "next", call.argument<Map<*, *>>("next"))
+                        ed.apply()
+                    }
+                    result.success(true)
+                }
+                // Single-consume pending ✓ completion written natively.
+                "consumePendingCompletion" -> {
+                    result.success(OverlayPrefs.consumePending(this))
+                }
+                "showAyahNotification" -> {
+                    val title = call.argument<String>("title") ?: "القرآن"
+                    val body = call.argument<String>("body") ?: ""
+                    result.success(showKhatmahNotification(title, body))
+                }
+                "dismissAyahExperience" -> {
+                    val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    nm.cancel(KHATMAH_NOTIFICATION_ID)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Stream of overlay actions (✔️ completed / ✕ later) emitted by the
+        // native overlay back to the Flutter app.
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AyahOverlayService.CHANNEL_ACTIONS
+        ).setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                AyahOverlayService.actionsSink = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                AyahOverlayService.actionsSink = null
+            }
+        })
+    }
+
+    /** Builds an [OverlayData] side bundle for the direct-draw fallback. */
+    private fun khatmahSideData(map: Map<*, *>?): OverlayData? {
+        val body = map?.get("body") as? String ?: ""
+        if (body.isBlank()) return null
+        return OverlayData(
+            title = map?.get("title") as? String ?: "",
+            body = body,
+            meta = map?.get("meta") as? String ?: "",
+            tafsir = map?.get("tafsir") as? String ?: "",
+            globalAyah = (map?.get("globalAyah") as? Number)?.toInt() ?: 0,
+            surah = (map?.get("surah") as? Number)?.toInt() ?: 0,
+            ayah = (map?.get("ayah") as? Number)?.toInt() ?: 0,
+            audioUrl = map?.get("audioUrl") as? String ?: "",
+        )
+    }
+
+    /** Copies an optional neighbour bundle into the native overlay cache. */
+    private fun putKhatmahSideCache(
+        ed: android.content.SharedPreferences.Editor,
+        prefix: String,
+        map: Map<*, *>?,
+    ) {
+        // Clear stale neighbours first so a missing side stays missing.
+        ed.remove("${prefix}_title")
+            .remove("${prefix}_body")
+            .remove("${prefix}_meta")
+            .remove("${prefix}_tafsir")
+            .remove("${prefix}_audioUrl")
+            .remove("${prefix}_globalAyah")
+            .remove("${prefix}_surah")
+            .remove("${prefix}_ayah")
+        val body = map?.get("body") as? String ?: ""
+        if (body.isBlank()) return
+        ed.putString("${prefix}_title", map?.get("title") as? String ?: "")
+            .putString("${prefix}_body", body)
+            .putString("${prefix}_meta", map?.get("meta") as? String ?: "")
+            .putString("${prefix}_tafsir", map?.get("tafsir") as? String ?: "")
+            .putString("${prefix}_audioUrl", map?.get("audioUrl") as? String ?: "")
+            .putInt("${prefix}_globalAyah", (map?.get("globalAyah") as? Number)?.toInt() ?: 0)
+            .putInt("${prefix}_surah", (map?.get("surah") as? Number)?.toInt() ?: 0)
+            .putInt("${prefix}_ayah", (map?.get("ayah") as? Number)?.toInt() ?: 0)
+    }
+
+    private fun openKhatmahOverlaySettings() {
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun showKhatmahNotification(title: String, body: String): Boolean {
+        return try {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channelId = "khatmah_reminders"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "تذكير القرآن",
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                nm.createNotificationChannel(channel)
+            }
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            if (launchIntent == null) return false
+            val pending = androidx.core.app.TaskStackBuilder.create(this)
+                .addNextIntentWithParentStack(launchIntent)
+                .getPendingIntent(0, android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                    android.app.PendingIntent.FLAG_IMMUTABLE)
+            val notification = NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(android.R.drawable.ic_popup_sync)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setContentIntent(pending)
+                .setAutoCancel(true)
+                .build()
+            nm.notify(KHATMAH_NOTIFICATION_ID, notification)
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun bringAppToForeground() {
@@ -491,10 +735,23 @@ class MainActivity : FlutterActivity() {
 
         if (requestCode == BACKGROUND_LOCATION_REQUEST_CODE) {
             val granted = grantResults.isNotEmpty() &&
-                         grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+                          grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
             backgroundLocationResult?.success(granted)
             backgroundLocationResult = null
         }
+
+        if (requestCode == KHATMAH_NOTIFICATIONS_REQUEST) {
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+            khatmahNotificationResult?.success(granted)
+            khatmahNotificationResult = null
+        }
+    }
+
+    override fun onDestroy() {
+        khatmahNotificationResult?.error("destroyed", "activity destroyed", null)
+        khatmahNotificationResult = null
+        super.onDestroy()
     }
 
 

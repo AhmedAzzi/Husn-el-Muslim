@@ -39,6 +39,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navFajrLog => 'تتبع الصلوات';
 
   @override
+  String get navTracking => 'تتبع الطاعات';
+
+  @override
+  String get navMushaf => 'المصحف';
+
+  @override
+  String get navKhatma => 'الختمة';
+
+  @override
+  String get stQuran => 'المصحف والختمة';
+
+  @override
+  String get stQuranSub => 'إعدادات التلاوة والتجويد والهدف اليومي';
+
+  @override
   String get navSettings => 'الإعدادات';
 
   @override
@@ -1524,6 +1539,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mmAdoptMosque => 'اعتماد كمسجد رئيسي';
 
   @override
+  String get mmSuggestTitle => 'مسجد قريب منك';
+
+  @override
+  String get mmSuggestBody =>
+      'اختيار هذا المسجد سيعتمده كمسجدك الرئيسي لمواقيت الصلاة.';
+
+  @override
+  String get mmSuggestSet => 'تعيين كافتراضي';
+
+  @override
   String get mmRetry => 'إعادة المحاولة';
 
   @override
@@ -1924,4 +1949,257 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get diagFivePrayer => 'تتبع الصلوات الخمس';
+
+  @override
+  String get navSunnah => 'تتبع السنن';
+
+  @override
+  String get snTitle => 'تتبع السنن';
+
+  @override
+  String get snSubtitle => 'الرواتب • الضحى • الوتر • قيام الليل';
+
+  @override
+  String get snRawatibSection => 'السنن الرواتب (12 ركعة)';
+
+  @override
+  String get snExtraSection => 'الضحى والوتر وقيام الليل';
+
+  @override
+  String get snDailyGoal => 'الهدف اليومي';
+
+  @override
+  String get snWeekOverview => 'آخر 7 أيام';
+
+  @override
+  String get snTotal30 => 'نقاط آخر 30 يومًا';
+
+  @override
+  String get snEmptyTitle => 'لا توجد سنن مسجلة اليوم';
+
+  @override
+  String get snEmptyHint => 'ابدأ بسنة الفجر ركعتين — اضغط على أي سنة لتسجيلها';
+
+  @override
+  String get snRawatibBonus => 'مكافأة إتمام الرواتب الخمس: +10';
+
+  @override
+  String get snOpenSunnah => 'تتبع السنن: رواتب • ضحى • وتر';
+
+  @override
+  String get snClear => 'مسح بيانات السنن';
+
+  @override
+  String get snClearTitle => 'مسح بيانات السنن؟';
+
+  @override
+  String get snClearHint =>
+      'سيتم حذف جميع السنن المسجلة وسلاسلها. لا يمكن التراجع.';
+
+  @override
+  String get snFajrSunnah => 'سنة الفجر';
+
+  @override
+  String get snFajrSunnahSub => 'ركعتان قبل الفجر';
+
+  @override
+  String get snDhuhrBefore => 'السنة القبلية للظهر';
+
+  @override
+  String get snDhuhrBeforeSub => '4 ركعات قبل الظهر';
+
+  @override
+  String get snDhuhrAfter => 'السنة البعدية للظهر';
+
+  @override
+  String get snDhuhrAfterSub => 'ركعتان بعد الظهر';
+
+  @override
+  String get snMaghribAfter => 'سنة المغرب';
+
+  @override
+  String get snMaghribAfterSub => 'ركعتان بعد المغرب';
+
+  @override
+  String get snIshaAfter => 'سنة العشاء';
+
+  @override
+  String get snIshaAfterSub => 'ركعتان بعد العشاء';
+
+  @override
+  String get snDuha => 'صلاة الضحى';
+
+  @override
+  String get snDuhaSub => 'ركعتان فأكثر بعد الشروق';
+
+  @override
+  String get snWitr => 'الوتر';
+
+  @override
+  String get snWitrSub => 'ركعة أو ثلاث بعد العشاء';
+
+  @override
+  String get snQiyam => 'قيام الليل';
+
+  @override
+  String get snQiyamSub => 'ركعات الليل المباركة';
+
+  @override
+  String snProgress(int done, int goal) {
+    return '$done من $goal';
+  }
+
+  @override
+  String get diagSunnah => 'تتبع السنن';
+
+  @override
+  String get navWorship => 'تتبع الصيام والورد';
+
+  @override
+  String get wtTitle => 'تتبع الصيام والورد';
+
+  @override
+  String get wtSubtitle => 'الصيام • الورد • أعمال صالحة';
+
+  @override
+  String get wtFastingSection => 'صيام التطوع';
+
+  @override
+  String get wtWeekHint => 'الاثنين والخميس من الأسبوع المعروض';
+
+  @override
+  String get wtMonday => 'الاثنين';
+
+  @override
+  String get wtThursday => 'الخميس';
+
+  @override
+  String get wtLogOtherFast => 'تسجيل صوم آخر';
+
+  @override
+  String get wtFastSheetTitle => 'ما نوع الصوم؟';
+
+  @override
+  String get wtKindMonday => 'صيام الاثنين';
+
+  @override
+  String get wtKindThursday => 'صيام الخميس';
+
+  @override
+  String get wtKindWhite => 'الأيام البيض (13-15)';
+
+  @override
+  String get wtKindArafah => 'يوم عرفة';
+
+  @override
+  String get wtKindAshura => 'عاشوراء / تاسوعاء';
+
+  @override
+  String get wtKindShawwal => 'الست من شوال';
+
+  @override
+  String get wtKindQadaa => 'قضاء';
+
+  @override
+  String get wtKindNafl => 'نفل مطلق';
+
+  @override
+  String get wtWeeksStreak => 'أسابيع الصيام';
+
+  @override
+  String get wtTotalFasts => 'أيام الصيام (30 يومًا)';
+
+  @override
+  String get wtWeeksOverview => 'آخر 8 أسابيع';
+
+  @override
+  String get wtWhiteHint => 'اليوم من الأيام البيض — يستحب صيامه';
+
+  @override
+  String get wtArafahHint => 'اليوم يوم عرفة — صيامه يكفّر سنتين';
+
+  @override
+  String get wtAshuraHint => 'اليوم عاشوراء — يستحب صيامه';
+
+  @override
+  String get wtMondayHint => 'اليوم الاثنين — ترفع فيه الأعمال';
+
+  @override
+  String get wtThursdayHint => 'اليوم الخميس — ترفع فيه الأعمال';
+
+  @override
+  String get wtWirdSection => 'الورد اليومي';
+
+  @override
+  String get wtDeedsSection => 'أعمال صالحة';
+
+  @override
+  String get wtQuran => 'ورد القرآن';
+
+  @override
+  String get wtQuranSub => 'قراءة الورد اليومي';
+
+  @override
+  String get wtMorning => 'أذكار الصباح';
+
+  @override
+  String get wtMorningSub => 'بعد الفجر';
+
+  @override
+  String get wtEvening => 'أذكار المساء';
+
+  @override
+  String get wtEveningSub => 'بعد العصر';
+
+  @override
+  String get wtIstighfar => 'الاستغفار (100 مرة)';
+
+  @override
+  String get wtIstighfarSub => 'أستغفر الله';
+
+  @override
+  String get wtSalawat => 'الصلاة على النبي (100 مرة)';
+
+  @override
+  String get wtSalawatSub => 'صلى الله عليه وسلم';
+
+  @override
+  String get wtSadaqah => 'صدقة';
+
+  @override
+  String get wtSadaqahSub => 'ولو بالقليل';
+
+  @override
+  String get wtSilah => 'صلة رحم';
+
+  @override
+  String get wtSilahSub => 'اتصال أو زيارة';
+
+  @override
+  String get wtBirr => 'بر الوالدين';
+
+  @override
+  String get wtBirrSub => 'قول أو فعل حسن';
+
+  @override
+  String get wtDailyGoal => 'الهدف اليومي';
+
+  @override
+  String get wtTotal30 => 'نقاط آخر 30 يومًا';
+
+  @override
+  String get wtClear => 'مسح بيانات العبادات';
+
+  @override
+  String get wtClearTitle => 'مسح بيانات العبادات؟';
+
+  @override
+  String get wtClearHint =>
+      'سيتم حذف الورد والصيام المسجل وسلاسلهما. لا يمكن التراجع.';
+
+  @override
+  String get wtOpenWorship => 'الصيام والورد: اثنين وخميس • ورد • صدقة';
+
+  @override
+  String get diagWorship => 'تتبع الصيام والورد';
 }

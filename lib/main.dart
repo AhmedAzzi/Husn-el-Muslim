@@ -1,19 +1,35 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'package:small_husn_muslim/app.dart';
 import 'package:small_husn_muslim/core/config/app_config.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/core/storage/app_database.dart';
+import 'package:small_husn_muslim/core/platform/phone_experience_service.dart';
 import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/home_page.dart';
+import 'package:small_husn_muslim/features/quran/data/repositories/quran_repository.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/quran_providers.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/asbab_providers.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/irab_providers.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/tafsir_providers.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/translation_providers.dart';
+import 'package:small_husn_muslim/features/quran/presentation/providers/word_meaning_providers.dart';
+import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/ayah_overlay_lifecycle.dart';
+import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/nakhtem_providers.dart';
+import 'package:small_husn_muslim/features/settings/settings_provider.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -70,6 +86,36 @@ Future<void> _initializeAppAsync(Stopwatch stopwatch) async {
   SharedPrefsCache.init(prefs);
   if (kDebugMode) {
     print('⏱ SharedPrefs loaded in ${stopwatch.elapsedMilliseconds}ms');
+  }
+
+  // 1b. Quran + Khatma dependencies (mushaf reader, tafsir, khatma tracker).
+  // sqflite only ships a factory on Android/iOS/macOS; on Windows/Linux
+  // (and flutter test) route it through the ffi implementation.
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+  if (!Get.isRegistered<SettingsController>()) {
+    Get.put<SettingsController>(SettingsController(prefs), permanent: true);
+  }
+  initQuranDependencies(QuranRepository(rootBundle));
+  initWordMeaningDependencies();
+  initTafsirDependencies();
+  initIrabDependencies();
+  initAsbabDependencies();
+  initTranslationDependencies();
+  try {
+    final database = await AppDatabase.open();
+    initNakhtemDependencies(database, makeNakhtemSettingsController(database));
+    final overlayObserver = AyahOverlayLifecycleObserver();
+    if (Get.isRegistered<PhoneExperienceService>()) {
+      overlayObserver.wire(Get.find<PhoneExperienceService>());
+    } else {
+      overlayObserver.wire(PhoneExperienceService());
+    }
+    WidgetsBinding.instance.addObserver(overlayObserver);
+  } catch (e) {
+    if (kDebugMode) print('⚠ Quran init failed: $e');
   }
 
   // 2. We already put the Logic in main() so the UI can build safely.

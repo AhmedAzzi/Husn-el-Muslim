@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
@@ -12,16 +11,20 @@ import 'package:small_husn_muslim/features/tracking/data/prayer_reminder_service
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
 /// 5-prayer tracker ("تتبع الصلوات") in the Husn app visual language
-/// (Amiri, deep-night cards, rose accents): level pill + gem strip, اليوم
-/// 5-prayer day card, الهدف اليومي stats, Hijri/Gregorian month calendar,
-/// 30-day overview.
+/// (Amiri, deep-night cards, rose accents): compact single-screen layout
+/// with level pill + gem strip, اليوم 5-prayer day card, الهدف اليومي
+/// stats and 30-day overview — no scrolling needed.
 ///
 /// Tapping a prayer circle opens the "how did you pray" picker sheet
 /// (takbeer/mosque/jamaa/on-time/late/missed with per-option points).
 /// Future days are viewable but not loggable. All tracking settings live
 /// in the app Settings screen — this page is settings-free.
 class PrayerTrackingScreen extends StatefulWidget {
-  const PrayerTrackingScreen({super.key});
+  /// When true, renders only the page content (no Scaffold/AppBar) for
+  /// embedding as a tab in [TrackingHomeScreen].
+  final bool embedded;
+
+  const PrayerTrackingScreen({super.key, this.embedded = false});
 
   @override
   State<PrayerTrackingScreen> createState() => _PrayerTrackingScreenState();
@@ -49,7 +52,6 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
       );
 
   late DateTime _viewingDate;
-  late DateTime _viewMonth;
   bool _loading = true;
 
   List<PrayerLogEntry?> _day = const [];
@@ -59,12 +61,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   int _points30 = 0;
   int _level = 1;
   double _progress = 0.0;
-  int _hijriOffset = 0;
   bool _disabled = false;
-
-  /// 42 ascending calendar cells (newest-first storage reversed).
-  List<List<PrayerLogEntry?>> _grid = const [];
-  late DateTime _gridStart;
 
   /// Last 30 days ending today, for the overview card.
   int _totalPerformed = 0;
@@ -75,8 +72,6 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     super.initState();
     final now = DateTime.now();
     _viewingDate = DateTime(now.year, now.month, now.day);
-    _viewMonth = DateTime(now.year, now.month);
-    _gridStart = _viewingDate;
     _load();
   }
 
@@ -87,16 +82,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final longest = await repo.longestStreak();
     final goal = await repo.dailyGoal();
     final points = await repo.rolling30DayPoints();
-    final offset = await repo.hijriOffsetDays();
     final disabled = await repo.isDisabled();
-
-    // Calendar grid: 6 weeks ascending ending at the grid's last cell.
-    final first = DateTime(_viewMonth.year, _viewMonth.month);
-    final leading = (first.weekday + 1) % 7; // Saturday-first.
-    final start = first.subtract(Duration(days: leading));
-    final end = start.add(const Duration(days: 41));
-    final range = await repo.entriesForRange(42, end: end);
-    final grid = range.reversed.toList();
 
     // Overview: last 30 days ending today.
     final last30 = await repo.entriesForRange(30);
@@ -119,10 +105,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
       _points30 = points;
       _level = PointsEngine.levelForPoints(points);
       _progress = PointsEngine.progressToNextLevel(points);
-      _hijriOffset = offset;
       _disabled = disabled;
-      _grid = grid;
-      _gridStart = start;
       _totalPerformed = performed;
       _onTimeRate = performed == 0 ? 0.0 : onTime / performed;
       _loading = false;
@@ -151,14 +134,6 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   void _shiftDay(int delta) {
     setState(() {
       _viewingDate = _viewingDate.add(Duration(days: delta));
-      _viewMonth = DateTime(_viewingDate.year, _viewingDate.month);
-    });
-    _load();
-  }
-
-  void _shiftMonth(int delta) {
-    setState(() {
-      _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + delta, 1);
     });
     _load();
   }
@@ -167,7 +142,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
 
   Widget _pausedBanner(AppLocalizations loc, Color card, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.amber.withValues(alpha: isDark ? 0.12 : 0.2),
         borderRadius: BorderRadius.circular(20),
@@ -212,7 +187,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA);
-    final card = isDark ? const Color(0xFF20202B) : Colors.white;
+    if (widget.embedded) return _buildBody();
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -235,29 +210,41 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
           onPressed: () => Get.back(),
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (_disabled) _pausedBanner(loc, card, isDark),
-                  if (_disabled) const SizedBox(height: 12),
-                  _levelPill(loc, card, isDark),
-                  const SizedBox(height: 12),
-                  _gemStrip(card, isDark),
-                  const SizedBox(height: 12),
-                  _dayCard(loc, card, isDark),
-                  const SizedBox(height: 12),
-                  _goalCard(loc, card, isDark),
-                  const SizedBox(height: 12),
-                  _calendarCard(loc, card, isDark),
-                  const SizedBox(height: 12),
-                  _overviewCard(loc, card, isDark),
-                ],
-              ),
-            ),
+      body: _buildBody(),
+    );
+  }
+
+  /// Page content without Scaffold/AppBar, shared by the standalone screen
+  /// and the embedded tab in [TrackingHomeScreen].
+  Widget _buildBody() {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final card = isDark ? const Color(0xFF20202B) : Colors.white;
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    // Compact single-screen layout: tight padding/gaps so the whole page
+    // fits without scrolling on a regular phone. The ListView stays as the
+    // Scrollable for pull-to-refresh (and tests) but has nothing to scroll.
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          if (_disabled) _pausedBanner(loc, card, isDark),
+          if (_disabled) const SizedBox(height: 8),
+          _levelPill(loc, card, isDark),
+          const SizedBox(height: 8),
+          _gemStrip(card, isDark),
+          const SizedBox(height: 8),
+          _dayCard(loc, card, isDark),
+          const SizedBox(height: 8),
+          _goalCard(loc, card, isDark),
+          const SizedBox(height: 8),
+          _overviewCard(loc, card, isDark),
+        ],
+      ),
     );
   }
 
@@ -271,7 +258,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
         if (changed) await _load();
       },
       child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: _cardDeco(isDark),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -284,16 +271,16 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
                 Text(loc.ptLevelTitle(_level),
                     style: const TextStyle(
                         fontFamily: 'Amiri',
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 SizedBox(
-                  width: 160,
+                  width: 140,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: _progress,
-                      minHeight: 6,
+                      minHeight: 5,
                       backgroundColor:
                           isDark ? Colors.white12 : Colors.black12,
                       valueColor:
@@ -312,7 +299,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
 
   Widget _gemStrip(Color card, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: _cardDeco(isDark),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -323,8 +310,8 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: unlocked
@@ -333,16 +320,16 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
                 ),
                 child: Icon(
                   unlocked ? Icons.diamond_rounded : Icons.lock_rounded,
-                  size: 18,
+                  size: 16,
                   color: unlocked
                       ? _accent
                       : (isDark ? Colors.white38 : Colors.black38),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text('$threshold',
                   style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: isDark ? Colors.white54 : Colors.black54)),
             ],
           );
@@ -365,29 +352,32 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final names = _prayerNames(loc);
     final label = _dayLabel(loc);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: _cardDeco(isDark),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                 onPressed: () => _shiftDay(1),
               ),
               Text(label,
                   style: const TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold)),
               IconButton(
-                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                 onPressed: () => _shiftDay(-1),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(5, (i) {
@@ -403,8 +393,8 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 46,
-                      height: 46,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: !logged
@@ -430,10 +420,10 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
                         color: missed ? Colors.red : _accent,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(names[i],
                         style: const TextStyle(
-                            fontFamily: 'Amiri', fontSize: 13)),
+                            fontFamily: 'Amiri', fontSize: 12)),
                   ],
                 ),
               );
@@ -462,9 +452,10 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     }
     final sub = isDark ? Colors.white54 : Colors.black54;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: _cardDeco(isDark),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -476,11 +467,11 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
               Text(loc.ptDailyGoal,
                   style: const TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -522,157 +513,16 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
       children: [
         Text(value,
             style: TextStyle(
-                fontSize: 20,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: highlight ? _accent : null)),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Amiri', fontSize: 13)),
+            style: const TextStyle(fontFamily: 'Amiri', fontSize: 12)),
         if (subtitle != null)
-          Text(subtitle, style: TextStyle(fontSize: 11, color: sub)),
+          Text(subtitle, style: TextStyle(fontSize: 10, color: sub)),
       ],
-    );
-  }
-
-  // ---------- calendar ----------
-
-  List<String> _weekdayLetters(String code) {
-    if (code == 'ar') return const ['س', 'ح', 'ن', 'ث', 'ر', 'خ', 'ج'];
-    // Narrow-ish initials starting from a known Saturday (2026-09-05).
-    final sat = DateTime(2026, 9, 5);
-    return List.generate(
-        7,
-        (i) => DateFormat('E', code)
-            .format(sat.add(Duration(days: i)))
-            .characters
-            .first);
-  }
-
-  String _hijriMonthLabel(String code) {
-    try {
-      HijriCalendar.setLocal(code == 'ar' ? 'ar' : 'en');
-    } catch (_) {
-      // Fall back to whatever locale the package already has.
-    }
-    final first = DateTime(_viewMonth.year, _viewMonth.month)
-        .add(Duration(days: _hijriOffset));
-    final h = HijriCalendar.fromDate(first);
-    return '${h.longMonthName} ${h.hYear}';
-  }
-
-  Widget _calendarCard(AppLocalizations loc, Color card, bool isDark) {
-    final code = Localizations.localeOf(context).languageCode;
-    final greg = DateFormat('MMMM yyyy', code).format(_viewMonth);
-    final hijri = _hijriMonthLabel(code);
-    final letters = _weekdayLetters(code);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final sub = isDark ? Colors.white54 : Colors.black54;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDeco(isDark),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                onPressed: () => _shiftMonth(1),
-              ),
-              Column(
-                children: [
-                  Text(greg,
-                      style: const TextStyle(
-                          fontFamily: 'Amiri',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold)),
-                  Text(hijri,
-                      style: TextStyle(
-                          fontFamily: 'Amiri', fontSize: 13, color: sub)),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
-                onPressed: () => _shiftMonth(-1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: letters
-                .map((w) => Expanded(
-                      child: Center(
-                          child: Text(w,
-                              style:
-                                  TextStyle(color: sub, fontSize: 13))),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 4),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-            ),
-            itemCount: 42,
-            itemBuilder: (ctx, i) {
-              final date = _gridStart.add(Duration(days: i));
-              final inMonth = date.month == _viewMonth.month;
-              final dayData =
-                  _grid.length == 42 ? _grid[i] : const <PrayerLogEntry?>[];
-              var performed = 0;
-              for (final e in dayData) {
-                if (e != null && e.countsTowardGoal) performed++;
-              }
-              final isFuture = date.isAfter(today);
-              final selected = date == _viewingDate;
-              final full = performed >= 5;
-              final partial = performed > 0 && !full;
-              Color? fill;
-              Color fg = inMonth
-                  ? (isDark ? Colors.white : Colors.black87)
-                  : sub;
-              if (full && !isFuture) {
-                fill = _accent.withValues(alpha: 0.3);
-                fg = isDark ? Colors.white : Colors.black87;
-              }
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _viewingDate = date;
-                    _viewMonth = DateTime(date.year, date.month);
-                  });
-                  _load();
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: fill,
-                    shape: BoxShape.circle,
-                    border: selected
-                        ? Border.all(color: _accent, width: 2)
-                        : partial && !isFuture
-                            ? Border.all(
-                                color: Colors.amber.withValues(alpha: 0.7),
-                                width: 1.5)
-                            : null,
-                  ),
-                  child: Center(
-                    child: Text('${date.day}',
-                        style: TextStyle(
-                            color: isFuture ? sub.withValues(alpha: 0.5) : fg,
-                            fontWeight:
-                                full ? FontWeight.bold : FontWeight.normal)),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -681,45 +531,47 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   Widget _overviewCard(AppLocalizations loc, Color card, bool isDark) {
     final sub = isDark ? Colors.white54 : Colors.black54;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: _cardDeco(isDark),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: _accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(loc.ptLast30Days,
-                    style: const TextStyle(fontSize: 12)),
+                    style: const TextStyle(fontSize: 11)),
               ),
               Text(loc.ptOverview,
                   style: const TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           if (_totalPerformed == 0)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(loc.ptEmptyTitle,
                       style: const TextStyle(
                           fontFamily: 'Amiri',
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(loc.ptEmptyHint,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: sub, fontSize: 13)),
+                      style: TextStyle(color: sub, fontSize: 12)),
                 ],
               ),
             )

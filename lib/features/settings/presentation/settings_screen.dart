@@ -9,6 +9,7 @@ import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/features/settings/presentation/general_settings_screen.dart';
+import 'package:small_husn_muslim/features/settings/presentation/quran_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/prayer_data_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/tracking_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
@@ -250,6 +251,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.auto_awesome_rounded,
               color: const Color(0xFF10B981),
               open: () => _openSub(const GeneralSettingsScreen()),
+            ),
+            (
+              title: loc.stQuran,
+              sub: loc.stQuranSub,
+              icon: Icons.auto_stories_outlined,
+              color: const Color(0xFFC9A227),
+              open: () => _openSub(const QuranSettingsScreen()),
+            ),
+            (
+              title: loc.navMushaf,
+              sub: loc.stQuranSub,
+              icon: Icons.menu_book_outlined,
+              color: const Color(0xFFC9A227),
+              open: () => _openSub(const QuranSettingsScreen()),
+            ),
+            (
+              title: loc.navKhatma,
+              sub: loc.stQuranSub,
+              icon: Icons.menu_book_rounded,
+              color: const Color(0xFFC9A227),
+              open: () => _openSub(const QuranSettingsScreen()),
             ),
             (
               title: loc.stDiagTile,
@@ -733,6 +755,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: const Color(0xFF8B5CF6),
                                   page:
                                       const GeneralSettingsScreen(),
+                                ),
+                                SettingsWidgets.buildDivider(context),
+                                _menuRow(
+                                  loc: loc,
+                                  title: loc.stQuran,
+                                  subtitle: loc.stQuranSub,
+                                  icon: Icons.auto_stories_outlined,
+                                  color: const Color(0xFFC9A227),
+                                  page:
+                                      const QuranSettingsScreen(),
                                 ),
                                 SettingsWidgets.buildDivider(context),
                                 _menuRow(

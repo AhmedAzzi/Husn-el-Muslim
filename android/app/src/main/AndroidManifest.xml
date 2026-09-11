@@ -113,6 +113,15 @@
         <service android:name=".PrayerTimeService"
                  android:exported="false"
                  android:foregroundServiceType="location" />
+        <service android:name=".AyahOverlayService"
+                 android:exported="false"
+                 android:foregroundServiceType="specialUse">
+            <!-- Required on Android 14+ for specialUse FGS: without this
+                 property, startForeground() throws SecurityException. -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Displays the current Quran verse as a floating overlay on unlock with audio playback." />
+        </service>
         <service android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
                 android:exported="false" />
         <meta-data android:name="flutter_foreground_task_icon"

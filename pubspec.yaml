@@ -41,6 +41,9 @@ dependencies:
   latlong2: ^0.9.1
   flutter_map_marker_cluster: ^1.4.0
   sensors_plus: ^7.1.0
+  sqflite: ^2.4.2+1
+  path: ^1.9.1
+  sqflite_common_ffi: ^2.4.0+3
 
 
 dev_dependencies:
@@ -65,8 +68,24 @@ flutter:
     - assets/ic_launcher.png
     - assets/click.wav
     - assets/adan.mp3
+    - assets/images/
+    - assets/data/kemenag/list.json
+    - assets/data/mushaf/meta.json
+    - assets/data/mushaf/pages/
+    - assets/data/mushaf/taj/
+    - assets/data/earab.json
+    - assets/data/nozool-wahidy.json
+    - assets/data/trans/en/
+    - assets/data/words/word_meaning.db
+    - assets/data/tafsir/tafsir.db
 
   fonts:
+    - family: KemenagLPMQ
+      fonts:
+        - asset: fonts/LPMQ.ttf
+    - family: Poppins
+      fonts:
+        - asset: fonts/poppins.ttf
     - family: AmiriQuran
       fonts:
         - asset: fonts/AmiriQuran-Regular.ttf

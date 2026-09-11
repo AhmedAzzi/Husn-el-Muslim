@@ -19,7 +19,7 @@ import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
+import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_widget_sync.dart';
@@ -409,7 +409,7 @@ class PrayerTimesLogic extends GetxController {
           }
         } else if (screenName == 'tracking') {
           if (Get.context != null) {
-            Get.to(() => const PrayerTrackingScreen());
+            Get.to(() => const TrackingHomeScreen());
           }
         }
       },
@@ -427,7 +427,7 @@ class PrayerTimesLogic extends GetxController {
         }
       } else if (pendingScreen == 'tracking') {
         if (Get.context != null) {
-          Get.to(() => const PrayerTrackingScreen());
+          Get.to(() => const TrackingHomeScreen());
         }
       }
     }
@@ -1420,6 +1420,54 @@ class PrayerTimesLogic extends GetxController {
     if (persistentNotificationEnabled) {
       updatePersistentNotification();
     }
+  }
+
+  /// Slugs the user already answered (accepted or dismissed) for the
+  /// nearest-mosque suggestion — never suggest them again.
+  static const String _kMosqueSuggestDismissed = 'mosque_suggest_dismissed';
+
+  Future<List<String>> dismissedMosqueSuggestions() async {
+    final prefs = SharedPrefsCache.instance;
+    return prefs.getStringList(_kMosqueSuggestDismissed) ?? [];
+  }
+
+  Future<void> markMosqueSuggestionDismissed(String slug) async {
+    if (slug.isEmpty) return;
+    final prefs = SharedPrefsCache.instance;
+    final current = prefs.getStringList(_kMosqueSuggestDismissed) ?? [];
+    if (!current.contains(slug)) {
+      await prefs.setStringList(_kMosqueSuggestDismissed, [...current, slug]);
+    }
+  }
+
+  /// Pure decision helper: suggest [nearest] only when it exists, is not
+  /// already the default mosque, and was never answered before.
+  static bool shouldSuggestMosque({
+    required MosquePoint? nearest,
+    required MosquePoint? selected,
+    required List<String> dismissedSlugs,
+  }) {
+    if (nearest == null || nearest.slug.isEmpty) return false;
+    if (selected != null && selected.slug == nearest.slug) return false;
+    if (dismissedSlugs.contains(nearest.slug)) return false;
+    return true;
+  }
+
+  /// Nearest mosque eligible for the suggestion dialog, or null when there
+  /// is nothing to suggest (empty list, already default, already answered).
+  /// Call after [searchNearbyMosques] so [nearbyMosques] is fresh.
+  Future<MosquePoint?> nearestSuggestedMosque() async {
+    if (nearbyMosquesRx.isEmpty) return null;
+    final nearest = nearbyMosquesRx.first;
+    final dismissed = await dismissedMosqueSuggestions();
+    if (!shouldSuggestMosque(
+      nearest: nearest,
+      selected: selectedMosque,
+      dismissedSlugs: dismissed,
+    )) {
+      return null;
+    }
+    return nearest;
   }
 
   /// Loads ALL mosques for the user's country (not just nearby ones),
