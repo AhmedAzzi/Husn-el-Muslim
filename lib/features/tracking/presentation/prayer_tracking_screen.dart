@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/log_prayer_sheet.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/tracking_details_sheet.dart';
-import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_reminder_service.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
@@ -33,23 +35,6 @@ class PrayerTrackingScreen extends StatefulWidget {
 class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   static const _accent = Color(0xFFD64463);
 
-  /// App card decoration (mirrors SettingsWidgets.buildCardContainer).
-  static BoxDecoration _cardDeco(bool isDark) => BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E28) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      );
 
   late DateTime _viewingDate;
   bool _loading = true;
@@ -185,31 +170,10 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA);
     if (widget.embedded) return _buildBody();
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-        elevation: 0,
-        title: Text(loc.ptTrackerTitle,
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              color: isDark ? Colors.white : Colors.black87,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            )),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : Colors.black87,
-            size: 20,
-          ),
-          onPressed: () => Get.back(),
-        ),
-      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: HusnAppBar.back(title: loc.ptTrackerTitle),
       body: _buildBody(),
     );
   }
@@ -222,7 +186,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final card = isDark ? const Color(0xFF20202B) : Colors.white;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const HusnLoading();
     }
     // Compact single-screen layout: tight padding/gaps so the whole page
     // fits without scrolling on a regular phone. The ListView stays as the
@@ -259,7 +223,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
       },
       child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +264,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
   Widget _gemStrip(Color card, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(PointsEngine.maxLevel, (i) {
@@ -353,7 +317,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final label = _dayLabel(loc);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -453,7 +417,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final sub = isDark ? Colors.white54 : Colors.black54;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -461,7 +425,9 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               FilledButton.tonal(
-                onPressed: () => Get.to(() => const SettingsScreen()),
+                // Goal settings live in the Settings main section: switch
+                // the shell instead of pushing a duplicate route.
+                onPressed: () => MainNavHelper.goToSettings(),
                 child: Text(loc.ptEdit),
               ),
               Text(loc.ptDailyGoal,
@@ -532,7 +498,7 @@ class _PrayerTrackingScreenState extends State<PrayerTrackingScreen> {
     final sub = isDark ? Colors.white54 : Colors.black54;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

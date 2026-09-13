@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Husn-el-Muslim identity palette for the floating ayah overlay. -->
+    <color name="overlay_burgundy">#693B42</color>
+    <color name="overlay_gold">#C9A227</color>
+    <color name="overlay_gold_light">#E7C65A</color>
+    <color name="overlay_surface">#2E1E06</color>
+    <color name="overlay_ivory">#FFFDF5</color>
+    <color name="overlay_sand">#EDE3C8</color>
+    <color name="overlay_muted">#A89B7C</color>
+    <color name="overlay_on_gold">#3A2410</color>
+
+    <!-- Dim backdrop gradient (translucent so the app stays faintly visible). -->
+    <color name="overlay_backdrop_top">#D90B0714</color>
+    <color name="overlay_backdrop_bottom">#B31A0E2E</color>
+
+    <!-- Hairlines, fills and the faint help-button ring. -->
+    <color name="overlay_gold_faint">#59C9A227</color>
+    <color name="overlay_tafsir_fill">#1FC9A227</color>
+    <color name="overlay_ring_faint">#33000000</color>
+</resources>

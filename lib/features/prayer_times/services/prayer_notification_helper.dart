@@ -1,10 +1,11 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
 
 /// Helper class to communicate with native Android notification
 class PrayerNotificationHelper {
   static const MethodChannel _channel =
-      MethodChannel('com.ahmed.hisnelmuslim/prayer_notification');
+      PlatformChannels.prayerNotification;
 
   /// Set callback for when refresh GPS button is pressed in notification
   static void setMethodCallHandler({

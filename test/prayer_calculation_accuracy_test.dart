@@ -9,7 +9,8 @@ import 'package:small_husn_muslim/features/prayer_times/data/prayer_calculation_
 ///
 /// Machine zone == location zone (Algiers, UTC+1, no DST) keeps the
 /// comparison anchor-exact; the engine resolves both sides against the
-/// device zone for the date.
+/// device zone for the date. Wall-clock comparison keeps this green on any
+/// host zone (instant comparison would inject the host UTC offset).
 Map<String, dynamic> _params({
   required int year,
   required int month,
@@ -38,8 +39,15 @@ Map<String, dynamic> _params({
 
 int _deltaSeconds(
     Map<String, int> ours, DateTime ref, DateTime base, String key) {
-  final oursDt = base.add(Duration(seconds: ours[key]!));
-  return oursDt.difference(ref).inSeconds;
+  // Wall-clock comparison, not instant comparison: the engine returns
+  // device-local wall times (seconds since local midnight) while the
+  // reference built with an explicit utcOffset yields UTC-clock wall times.
+  // DateTime.difference compares instants, so it would inject the host
+  // UTC offset (e.g. exactly -3600 on UTC+1) on any machine. Comparing
+  // wall seconds keeps the test host-zone independent.
+  final refWallSecs =
+      ref.difference(DateTime.utc(ref.year, ref.month, ref.day)).inSeconds;
+  return ours[key]! - refWallSecs;
 }
 
 void main() {

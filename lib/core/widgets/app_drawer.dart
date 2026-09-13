@@ -2,151 +2,104 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/features/asmaa_allah/presentation/asmaa_allah_screen.dart';
-import 'package:small_husn_muslim/features/dua/presentation/dua_screen.dart';
-import 'package:small_husn_muslim/features/ruqyah/presentation/ruqyah_screen.dart';
-import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
-import 'package:small_husn_muslim/features/qibla/presentation/qibla_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
-import 'package:small_husn_muslim/features/quran/presentation/screens/home_screen.dart'
-    as quran_home;
-import 'package:small_husn_muslim/features/nakhtem/presentation/screens/khatma_home_screen.dart';
+import 'package:small_husn_muslim/core/navigation/main_destinations.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_controller.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
-import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
 
+/// The app's only navigation menu: every section is a main entry.
+///
+/// Visual design is the original drawer look (plain [DrawerHeader] with the
+/// app icon, flat [ListTile] rows separated by thin dividers). Behavior:
+/// tapping an entry switches the [MainShell] IndexedStack in place via
+/// [MainNavController] — no route is ever pushed, so Back never walks between
+/// sections and each visited section keeps its state. The active entry is
+/// highlighted with the accent color.
+///
+/// When no shell controller is registered (standalone screen in tests or a
+/// deep route), tapping an entry is a no-op after closing the drawer.
 class AppDrawer extends StatelessWidget {
+  /// All drawer destinations, in display order. The mosque map is intentionally
+  /// excluded: it opens from the Mawaqit section (map button) and the prayer
+  /// data settings, and stays a shell page so those jumps push no routes.
+  static const List<MainDestination> mainEntries = [
+    MainDestination.adhkar,
+    MainDestination.quran,
+    MainDestination.khatma,
+    MainDestination.mawaqit,
+    MainDestination.tasbih,
+    MainDestination.dua,
+    MainDestination.names,
+    MainDestination.ruqyah,
+    MainDestination.tracking,
+    MainDestination.qibla,
+    MainDestination.settings,
+  ];
+
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    Size screenSize = MediaQuery.of(context).size;
+    final Size screenSize = MediaQuery.of(context).size;
+    const accent = Color(0xFFD64463);
+
     return Drawer(
-      width: screenSize.width - 100,
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          DrawerHeader(
-            child: Center(child: Image(image: AssetImage(icLauncher))),
-          ),
-          ListTile(
-            leading: const Icon(Icons.list_rounded),
-            title: Text(
-              loc.navAdhkar,
-              style: TextStyle(
-                fontSize: double.parse(fontSize18),
-                fontFamily: fontFamily,
+      width: screenSize.width - 150,
+      child: Obx(() {
+        final nav = Get.isRegistered<MainNavController>()
+            ? Get.find<MainNavController>()
+            : null;
+        final active = nav?.destination.value;
+
+        return ListView(
+          shrinkWrap: true,
+          children: [
+            DrawerHeader(
+              child: Center(
+                child: Image(
+                  image: AssetImage(icLauncher),
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.mosque_rounded,
+                    size: 56,
+                  ),
+                ),
               ),
-              textAlign: TextAlign.justify,
             ),
-            onTap: () => Get.back(),
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.auto_stories_rounded),
-            title: Text(loc.navDua, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const DuaScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.all_inclusive_rounded),
-            title: Text(loc.navNames, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const AsmaaAllahScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.health_and_safety_rounded),
-            title: Text(loc.navRuqyah, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const RuqyahScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.bubble_chart),
-            title: Text(loc.navMasbaha, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const CustomDikrScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.access_time_filled_rounded),
-            title:
-                Text(loc.navPrayerTimes, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const PrayerTimesScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.map_rounded),
-            title:
-                Text(loc.navMosqueMap, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const MosqueMapScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.explore_rounded),
-            title: Text(loc.navQibla, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const QiblaScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.local_fire_department_rounded),
-            title: Text(loc.navTracking, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const TrackingHomeScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.auto_stories_rounded),
-            title: Text(loc.navMushaf, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const quran_home.HomeScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.menu_book_rounded),
-            title: Text(loc.navKhatma, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const KhatmaHomeScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: Text(loc.navSettings, style: const TextStyle(fontSize: 18)),
-            onTap: () {
-              Get.back(); // Close drawer
-              Get.to(() => const SettingsScreen());
-            },
-          ),
-          const Divider(thickness: 0.3),
-        ],
-      ),
+            for (final dest in mainEntries) ...[
+              Builder(builder: (_) {
+                final selected = active == dest;
+                final color = selected ? accent : null;
+                return ListTile(
+                  key: ValueKey(dest.keyName),
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: Icon(dest.icon, color: color, size: 22),
+                  title: Text(
+                    dest.label(loc),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontFamily: fontFamily,
+                      fontWeight:
+                          selected ? FontWeight.bold : FontWeight.normal,
+                      color: color,
+                    ),
+                    textAlign: TextAlign.justify,
+                  ),
+                  trailing: selected
+                      ? const Icon(Icons.check_rounded, color: accent, size: 18)
+                      : null,
+                  onTap: () {
+                    // Close the drawer first for a smooth transition.
+                    Navigator.of(context).pop();
+                    nav?.goTo(dest);
+                  },
+                );
+              }),
+              const Divider(thickness: 0.3),
+            ],
+          ],
+        );
+      }),
     );
   }
 }

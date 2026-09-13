@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
 import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
@@ -112,7 +112,7 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const HusnLoading()
                   : ListView(
                       key: const ValueKey('pt_details_list'),
                       controller: scroll,
@@ -314,7 +314,9 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
               key: const ValueKey('pt_ctx_settings'),
               onPressed: () {
                 Navigator.of(context).pop(false);
-                Get.to(() => const SettingsScreen());
+                // Settings is a main section: switch the shell instead of
+                // pushing a duplicate route.
+                MainNavHelper.goToSettings();
               },
               child: Text(loc.ptMenuSettings),
             ),
@@ -347,7 +349,7 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(emoji, style: const TextStyle(fontSize: 22)),
-          Text(label, style: const TextStyle(fontFamily: 'Amiri')),
+          Text(label, style: HusnText.body),
         ],
       ),
     );
@@ -400,7 +402,7 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
                     Expanded(
                       child: Text(r.$2,
                           textAlign: TextAlign.end,
-                          style: const TextStyle(fontFamily: 'Amiri')),
+                          style: HusnText.body),
                     ),
                     const SizedBox(width: 10),
                     Icon(r.$1, color: r.$4),
@@ -425,7 +427,7 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(loc.ptOptionMeanings,
-            style: const TextStyle(fontFamily: 'Amiri')),
+            style: HusnText.body),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -503,7 +505,7 @@ class _TrackingDetailsSheetState extends State<_TrackingDetailsSheet> {
                       child: Text(r.$1,
                           textAlign: TextAlign.end,
                           style:
-                              const TextStyle(fontFamily: 'Amiri')),
+                              HusnText.body),
                     ),
                     const SizedBox(width: 10),
                     Icon(r.$3, color: Colors.amber),

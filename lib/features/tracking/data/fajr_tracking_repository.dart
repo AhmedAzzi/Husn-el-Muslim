@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/features/tracking/data/tracking_core.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 
@@ -65,19 +65,12 @@ class FajrTrackingRepository {
     }
   }
 
-  Future<SharedPreferences> _prefs() async {
-    try {
-      return SharedPrefsCache.instance;
-    } catch (_) {
-      return SharedPreferences.getInstance();
-    }
-  }
 
   /// Records the final successful wake-up for [date] (defaults: today).
   /// Only the confirmation step marks success — opening the alarm screen or
   /// starting the challenge is NOT enough.
   Future<FajrDayLog> recordWakeUpSuccess({DateTime? date}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date ?? DateTime.now());
     final log = FajrDayLog(
       date: key,
@@ -101,7 +94,7 @@ class FajrTrackingRepository {
   /// Partial progress (challenge done, confirmation pending) — does NOT count
   /// toward streaks until [recordWakeUpSuccess] merges the confirmation.
   Future<FajrDayLog> recordChallengeCompleted({DateTime? date}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date ?? DateTime.now());
     final prev = await getLog(key);
     final log = FajrDayLog(
@@ -115,7 +108,7 @@ class FajrTrackingRepository {
   }
 
   Future<FajrDayLog?> getLog(String key) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final raw = prefs.getString('fajr_log_$key');
     if (raw == null) return null;
     try {
@@ -133,7 +126,7 @@ class FajrTrackingRepository {
   /// the daily-log truth (called after every record + prayer sync).
   Future<void> syncTrackingWidget([SharedPreferences? prefs]) async {
     try {
-      final p = prefs ?? await _prefs();
+      final p = prefs ?? await trackingPrefs();
       final now = DateTime.now();
       final current = await currentStreak(now: now);
       final todayLog = await getLog(dateKey(now));
@@ -152,9 +145,9 @@ class FajrTrackingRepository {
   /// Consecutive wake-up-confirmed days ending today (or yesterday if today
   /// hasn't succeeded yet — so the streak doesn't read 0 mid-day).
   Future<int> currentStreak({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final today = now ?? DateTime.now();
-    var cursor = DateTime(today.year, today.month, today.day);
+    var cursor = dayOnly(today);
     // If today has no success yet, start counting from yesterday.
     final todayLog = await getLog(dateKey(cursor));
     if (todayLog?.success != true) {
@@ -184,7 +177,7 @@ class FajrTrackingRepository {
   }
 
   Future<int> longestStreak() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt('fajr_streak_longest') ?? 0;
   }
 
@@ -193,7 +186,7 @@ class FajrTrackingRepository {
     final today = now ?? DateTime.now();
     final out = <FajrDayLog?>[];
     for (var i = 0; i < days; i++) {
-      final d = DateTime(today.year, today.month, today.day)
+      final d = dayOnly(today)
           .subtract(Duration(days: i));
       out.add(await getLog(dateKey(d)));
     }

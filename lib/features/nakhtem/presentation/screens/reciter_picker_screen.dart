@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../quran/presentation/widgets/mushaf_brightness.dart';
 import '../../data/models/reciter_model.dart';
 import '../controllers/nakhtem_settings_controller.dart';
 
@@ -15,13 +16,20 @@ import '../controllers/nakhtem_settings_controller.dart';
 /// Tapping a reciter saves the selection into the [forKhatma] slot
 /// (khatma overlay audio) or the mushaf slot (reader audio) and closes
 /// the sheet. The two slots are fully independent.
-Future<void> showReciterPickerSheet({required bool forKhatma}) {
-  final isDark = Get.isDarkMode;
+///
+/// [forceLight] follows the mushaf paper toggle when opened from the reader.
+Future<void> showReciterPickerSheet({
+  required bool forKhatma,
+  bool forceLight = false,
+}) {
+  final isDark = !forceLight && Get.isDarkMode;
   final lang = khatmaLang();
   final l = L10n.of(lang);
 
   return Get.bottomSheet(
-    Directionality(
+    mushafOverlayTheme(
+      forceLight: forceLight,
+      child: Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
         constraints: BoxConstraints(maxHeight: Get.height * 0.78),
@@ -58,6 +66,7 @@ Future<void> showReciterPickerSheet({required bool forKhatma}) {
             _ReciterSheetBody(forKhatma: forKhatma),
           ],
         ),
+      ),
       ),
     ),
     isScrollControlled: true,

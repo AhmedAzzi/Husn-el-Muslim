@@ -2,17 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/masbaha/data/custom_dikr.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class CustomDikrScreen extends StatefulWidget {
+  /// Kept for backward compatibility; the screen always lives inside
+  /// [MainShell] now, so the drawer is always shown.
   final bool isHomeScreen;
 
   const CustomDikrScreen({super.key, this.isHomeScreen = false});
@@ -127,16 +131,17 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       final file = File('$selectedDirectory/$fileName');
       await file.writeAsString(jsonString);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.loc.msBackupSaved(fileName)),
-          backgroundColor: Colors.green,
-        ),
+      AppFeedback.snack(
+        context,
+        context.loc.msBackupSaved(fileName),
+        type: AppFeedbackType.success,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.loc.msExportFailed(e.toString()))),
+      AppFeedback.snack(
+        context,
+        context.loc.msExportFailed(e.toString()),
+        type: AppFeedbackType.error,
       );
     }
   }
@@ -157,14 +162,18 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
         });
         saveDikrList();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.loc.msImported)),
+        AppFeedback.snack(
+          context,
+          context.loc.msImported,
+          type: AppFeedbackType.success,
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.loc.msImportFailed(e.toString()))),
+      AppFeedback.snack(
+        context,
+        context.loc.msImportFailed(e.toString()),
+        type: AppFeedbackType.error,
       );
     }
   }
@@ -174,17 +183,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       dikrList.add(dikr);
     });
     saveDikrList();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(context.loc.msAdded,
-              style: const TextStyle(fontFamily: 'Amiri')),
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+    AppFeedback.snack(
+      context,
+      context.loc.msAdded,
+      type: AppFeedbackType.success,
     );
   }
 
@@ -193,17 +195,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       dikrList[index] = dikr;
     });
     saveDikrList();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(context.loc.msEdited,
-              style: const TextStyle(fontFamily: 'Amiri')),
-        ),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+    AppFeedback.snack(
+      context,
+      context.loc.msEdited,
+      type: AppFeedbackType.success,
     );
   }
 
@@ -212,17 +207,10 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       dikrList.removeAt(index);
     });
     saveDikrList();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(context.loc.msDeleted,
-              style: const TextStyle(fontFamily: 'Amiri')),
-        ),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+    AppFeedback.snack(
+      context,
+      context.loc.msDeleted,
+      type: AppFeedbackType.error,
     );
   }
 
@@ -328,7 +316,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                 ListTile(
                   leading: const Icon(Icons.edit),
                   title: Text(context.loc.msEdit,
-                      style: const TextStyle(fontFamily: 'Amiri')),
+                      style: HusnText.body),
                   onTap: () {
                     Navigator.pop(context);
                     showEditDikrDialog(index);
@@ -337,7 +325,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                 ListTile(
                   leading: const Icon(Icons.delete),
                   title: Text(context.loc.msDelete,
-                      style: const TextStyle(fontFamily: 'Amiri')),
+                      style: HusnText.body),
                   onTap: () {
                     Navigator.pop(context);
                     deleteCustomDikr(index);
@@ -361,22 +349,9 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            iconTheme: IconThemeData(color: theme.appBarTheme.foregroundColor),
-            title: Text(context.loc.navMasbaha,
-                style: TextStyle(
-                    fontFamily: 'Amiri',
-                    color: theme.appBarTheme.foregroundColor)),
-            // centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(
+            title: context.loc.navMasbaha,
             actions: [
               if (showScores)
                 Row(
@@ -397,7 +372,7 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert,
                     color: theme.appBarTheme.foregroundColor),
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'export') {
                     exportData();
                   } else if (value == 'import') {
@@ -405,27 +380,16 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
                   } else if (value == 'toggle_scores') {
                     toggleShowScores();
                   } else if (value == 'reset') {
-                    Get.dialog(
-                      Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: AlertDialog(
-                          title: Text(context.loc.msRestoreTitle),
-                          content: Text(context.loc.msRestoreBody),
-                          actions: [
-                            TextButton(
-                                onPressed: () => Get.back(),
-                                child: Text(context.loc.ctCancel)),
-                            TextButton(
-                                onPressed: () {
-                                  loadDefaultDikr().then((_) => saveDikrList());
-                                  Get.back();
-                                },
-                                child: Text(context.loc.msRestore,
-                                    style: const TextStyle(color: Colors.red))),
-                          ],
-                        ),
-                      ),
+                    final restore = await AppFeedback.confirmDestructive(
+                      context,
+                      title: context.loc.msRestoreTitle,
+                      content: context.loc.msRestoreBody,
+                      confirmLabel: context.loc.msRestore,
+                      cancelLabel: context.loc.ctCancel,
                     );
+                    if (restore) {
+                      loadDefaultDikr().then((_) => saveDikrList());
+                    }
                   }
                 },
                 itemBuilder: (BuildContext context) {
@@ -461,7 +425,6 @@ class _CustomDikrScreenState extends State<CustomDikrScreen> {
               ),
             ],
           ),
-          drawer: widget.isHomeScreen ? const AppDrawer() : null,
           body: ListView.builder(
             itemCount: dikrList.length + 1,
             itemBuilder: (context, index) {
@@ -783,7 +746,7 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
             builder: (context, setState) {
               return AlertDialog(
                 title: Text(context.loc.azSpeedTitle,
-                    style: const TextStyle(fontFamily: 'Amiri')),
+                    style: HusnText.body),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -944,17 +907,8 @@ class _DikrCounterScreenState extends State<DikrCounterScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title:
-                Text(context.loc.msCounterTitle, style: const TextStyle(fontFamily: 'Amiri')),
-            flexibleSpace: SizedBox(
-              height: 60,
-              child: Image.asset(
-                appBarBG,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: context.loc.msCounterTitle),
           body: Column(
             children: [
               const SizedBox(height: 20),

@@ -45,6 +45,12 @@ android {
         versionName = flutter.versionName
     }
 
+    // ViewBinding for the native ayah overlay card (overlay_ayah_card.xml).
+    // Generates OverlayAyahCardBinding; no findViewById anywhere.
+    buildFeatures {
+        viewBinding = true
+    }
+
     signingConfigs {
         create("release") {
             if (hasReleaseSigning) {
@@ -73,5 +79,6 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.constraintlayout:constraintlayout:2.2.2")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

@@ -1,3 +1,4 @@
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
@@ -5,11 +6,16 @@ import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 
+import 'support/fake_android_notifications.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    // logPrayer routes through PrayerReminderService → NotificationService;
+    // the fake keeps plugin cancel() from throwing under test.
+    FlutterLocalNotificationsPlatform.instance = FakeAndroidNotifications();
   });
 
   PrayerLogEntry entry(int prayer, PrayerStatus status) => PrayerLogEntry(

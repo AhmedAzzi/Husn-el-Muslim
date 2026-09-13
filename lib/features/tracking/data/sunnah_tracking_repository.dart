@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/features/tracking/data/tracking_core.dart';
 import 'package:small_husn_muslim/features/tracking/data/sunnah_type.dart';
 
 /// Sunnah tracker repository (Rawatib + Duha + Witr + Qiyam).
@@ -34,13 +34,6 @@ class SunnahTrackingRepository {
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  Future<SharedPreferences> _prefs() async {
-    try {
-      return SharedPrefsCache.instance;
-    } catch (_) {
-      return SharedPreferences.getInstance();
-    }
-  }
 
   String _entryKey(String date, int sunnahIndex) =>
       '$_logPrefix${date}_$sunnahIndex';
@@ -53,7 +46,7 @@ class SunnahTrackingRepository {
     required DateTime date,
     required SunnahType type,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     final entryKey = _entryKey(key, type.index);
@@ -82,7 +75,7 @@ class SunnahTrackingRepository {
     required SunnahType type,
     required bool done,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     final entryKey = _entryKey(key, type.index);
@@ -105,7 +98,7 @@ class SunnahTrackingRepository {
 
   /// One day's states in [SunnahType] order; true = done.
   Future<List<bool>> dayEntries(DateTime date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date);
     return List<bool>.generate(
       sunnahCount,
@@ -139,7 +132,7 @@ class SunnahTrackingRepository {
   /// Rolling 30-day points total ending at [now] (default today).
   Future<int> rolling30DayPoints({DateTime? now}) async {
     final anchor = now ?? DateTime.now();
-    final base = DateTime(anchor.year, anchor.month, anchor.day);
+    final base = dayOnly(anchor);
     var total = 0;
     for (var d = 0; d < 30; d++) {
       total += await dayPoints(base.subtract(Duration(days: d)));
@@ -151,7 +144,7 @@ class SunnahTrackingRepository {
   /// newest day first. Feeds the week overview.
   Future<List<int>> countsForRange(int days, {DateTime? end}) async {
     final anchor = end ?? DateTime.now();
-    final base = DateTime(anchor.year, anchor.month, anchor.day);
+    final base = dayOnly(anchor);
     final out = <int>[];
     for (var i = 0; i < days; i++) {
       out.add(await dayCount(base.subtract(Duration(days: i))));
@@ -164,20 +157,20 @@ class SunnahTrackingRepository {
   Future<int> _dailyGoal(SharedPreferences prefs) async =>
       (prefs.getInt(_kGoal) ?? defaultDailyGoal).clamp(1, sunnahCount);
 
-  Future<int> dailyGoal() async => _dailyGoal(await _prefs());
+  Future<int> dailyGoal() async => _dailyGoal(await trackingPrefs());
 
   Future<void> setDailyGoal(int goal) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setInt(_kGoal, goal.clamp(1, sunnahCount));
   }
 
   /// Consecutive goal-meeting days ending today (or yesterday if today is
   /// still pending — so the streak doesn't read 0 mid-day).
   Future<int> currentStreak({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final goal = await _dailyGoal(prefs);
     final today = now ?? DateTime.now();
-    var cursor = DateTime(today.year, today.month, today.day);
+    var cursor = dayOnly(today);
     if (await _countSync(prefs, cursor) < goal) {
       cursor = cursor.subtract(const Duration(days: 1));
     }
@@ -194,12 +187,12 @@ class SunnahTrackingRepository {
   }
 
   Future<int> longestStreak() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt(_kLongest) ?? 0;
   }
 
   Future<void> _refreshLongest() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final current = await currentStreak();
     final longest = prefs.getInt(_kLongest) ?? 0;
     if (current > longest) {
@@ -219,19 +212,19 @@ class SunnahTrackingRepository {
   // ---------- settings ----------
 
   Future<bool> isDisabled() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getBool(_kDisabled) ?? false;
   }
 
   Future<void> setDisabled(bool disabled) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setBool(_kDisabled, disabled);
   }
 
   /// Destructive reset: removes all Sunnah logs and the longest-streak
   /// mark. Keeps the daily goal (a setting, not data).
   Future<void> clearAll() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     for (final key in prefs.getKeys().toList()) {
       if (key.startsWith(_logPrefix)) {
         await prefs.remove(key);
@@ -242,7 +235,7 @@ class SunnahTrackingRepository {
 
   /// Developer snapshot for the diagnostics screen. Single read, no strings.
   Future<Map<String, Object>> diagnosticsSnapshot({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final anchor = now ?? DateTime.now();
     final todayKey = dateKey(anchor);
     var todayDone = 0;

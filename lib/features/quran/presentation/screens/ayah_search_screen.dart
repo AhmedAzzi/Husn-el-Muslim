@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/logic/quran_index.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
+import '../widgets/mushaf_brightness.dart';
 import '../providers/ayah_search_controller.dart';
 import 'mushaf_screen.dart';
 
@@ -10,11 +13,15 @@ import 'mushaf_screen.dart';
 /// AND with phrase-first ranking, and direct `surah:ayah` references.
 /// Tapping a hit opens the mushaf page at that ayah.
 class AyahSearchScreen extends StatefulWidget {
-  const AyahSearchScreen({super.key, this.onPick});
+  const AyahSearchScreen({super.key, this.onPick, this.forceLight = false});
 
   /// When set (mushaf reader), picking a hit calls this with the page and
   /// pops back instead of pushing a new reader route.
   final void Function(int page)? onPick;
+
+  /// Mushaf paper toggle: when true the search screen renders light even if
+  /// the app is dark.
+  final bool forceLight;
 
   @override
   State<AyahSearchScreen> createState() => _AyahSearchScreenState();
@@ -39,11 +46,15 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
   Widget build(BuildContext context) {
     final ctl = Get.find<AyahSearchController>();
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Container(
+    return mushafOverlayTheme(
+      forceLight: widget.forceLight,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: HusnAppBar.back(
+              titleWidget: Container(
             height: 40,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
@@ -86,12 +97,10 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
               ),
             ),
           ),
-          iconTheme: const IconThemeData(color: Colors.white),
-          backgroundColor: HusnTheme.primary,
         ),
         body: Obx(() {
           if (ctl.isLoading.value && ctl.hits.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const HusnLoading();
           }
           if (!ctl.hasSearched.value) {
             return const Center(
@@ -163,6 +172,8 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
             },
           );
         }),
+      ),
+      ),
       ),
     );
   }

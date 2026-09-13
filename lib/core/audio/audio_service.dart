@@ -217,6 +217,7 @@ class AudioService {
   int get currentAyah => _currentAyah;
   Duration? get position => _engine.position;
   Duration? get duration => _engine.duration;
+  Stream<bool> get playingStream => _engine.playingStream;
   Stream<Duration?> get positionStream => _engine.positionStream;
   Stream<Duration?> get durationStream => _engine.durationStream;
   Stream<void> get completedStream => _engine.completedStream;

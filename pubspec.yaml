@@ -86,10 +86,6 @@ flutter:
     - family: Poppins
       fonts:
         - asset: fonts/poppins.ttf
-    - family: AmiriQuran
-      fonts:
-        - asset: fonts/AmiriQuran-Regular.ttf
-
     - family: Amiri
       fonts:
         - asset: fonts/Amiri-Regular.ttf

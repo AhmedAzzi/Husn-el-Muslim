@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/core/theme/app_colors.dart';
+import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
@@ -55,44 +57,6 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
     super.dispose();
   }
 
-  String _stripDiacritics(String text) {
-    return BookService.normalizeArabic(text);
-  }
-
-  IconData _getIconForTreatment(int id, String title) {
-    final t = _stripDiacritics(title);
-    if (t.contains('السحر')) {
-      return Icons.shield_rounded;
-    } else if (t.contains('العين')) {
-      return Icons.visibility_rounded;
-    } else if (t.contains('الجن') || t.contains('الصرع')) {
-      return Icons.security_rounded;
-    } else if (t.contains('النفسية') || t.contains('الصدر')) {
-      return Icons.self_improvement_rounded;
-    } else if (t.contains('القرحة') || t.contains('الجرح')) {
-      return Icons.healing_rounded;
-    } else if (t.contains('المصيبة') ||
-        t.contains('الهم') ||
-        t.contains('الكرب')) {
-      return Icons.sentiment_satisfied_alt_rounded;
-    } else if (t.contains('المريض')) {
-      return Icons.health_and_safety_rounded;
-    } else if (t.contains('النوم') || t.contains('القلق')) {
-      return Icons.bedtime_rounded;
-    } else if (t.contains('الحمى') || t.contains('اللسعة')) {
-      return Icons.medication_rounded;
-    } else if (t.contains('الغضب')) {
-      return Icons.water_drop_rounded;
-    } else if (t.contains('الحبة') || t.contains('العسل')) {
-      return Icons.eco_rounded;
-    } else if (t.contains('زمزم')) {
-      return Icons.water_rounded;
-    } else if (t.contains('القلوب')) {
-      return Icons.favorite_rounded;
-    }
-    return Icons.auto_stories_rounded;
-  }
-
   List<Widget> _clearSearchAction() {
     return [
       IconButton(
@@ -126,25 +90,14 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          appBar: AppBar(
-            leading: toggle
-                ? IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Get.back(),
-                  )
-                : null,
-            title: toggle
-                ? SizedBox(
-                    height: 30,
-                    child: Text(
-                      context.loc.navRuqyah,
-                      style: TextStyle(
-                        fontSize: double.parse(fontSize22),
-                        fontFamily: fontFamily,
-                        color: bgLight,
-                      ),
-                    ),
-                  )
+          // Main section inside MainShell: drawer hamburger only, no Back
+          // button between main sections. Detail (RuqyahDetailScreen) keeps
+          // its own Back button.
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(
+            title: toggle ? context.loc.navRuqyah : null,
+            titleWidget: toggle
+                ? null
                 : Container(
                     height: 40,
                     decoration: BoxDecoration(
@@ -178,25 +131,16 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
                       ),
                     ),
                   ),
-            iconTheme: IconThemeData(color: bgLight),
             actions: toggle ? _toggleSearchIcon() : _clearSearchAction(),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
           body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const HusnLoading()
               : _bookData == null
                   ? Center(
                       child: Text(
                         context.loc.rqLoadFailed,
-                        style: const TextStyle(
-                            fontFamily: 'Amiri', fontSize: 18),
+                        style:
+                            const TextStyle(fontFamily: 'Amiri', fontSize: 18),
                       ),
                     )
                   : _buildTreatmentsList(),
@@ -216,26 +160,9 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
     }).toList();
 
     if (treatments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 60,
-              color: Colors.grey.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              context.loc.ctNoSearchResults,
-              style: TextStyle(
-                fontFamily: fontFamily,
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
+      return HusnEmptySearch(
+        message: context.loc.ctNoSearchResults,
+        fontFamily: fontFamily,
       );
     }
 
@@ -251,7 +178,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
             final treatment = treatments[index];
             return _buildTreatmentCard(
               treatment,
-              _getIconForTreatment(treatment.id, treatment.title),
+              Icons.auto_stories_rounded,
             );
           },
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:small_husn_muslim/features/azkar/data/azkar_info.dart';
 import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/utils/share_helper.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
@@ -96,7 +99,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
           builder: (context, setState) {
             return AlertDialog(
                 title: Text(context.loc.azSpeedTitle,
-                    style: const TextStyle(fontFamily: 'Amiri')),
+                    style: HusnText.body),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -215,23 +218,23 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(
+            title: widget.azkarInfo.category,
+            onBack: () {
+              _player.stop();
+              Navigator.pop(context);
+            },
             actions: <Widget>[
               PopupMenuButton<String>(
                   onSelected: (value) async {
                     switch (value) {
                       case 'copy':
-                        Clipboard.setData(ClipboardData(
-                                text: widget
-                                    .azkarInfo.array[currentPageIndex].text))
-                            .then((_) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Center(
-                                      child:
-                                          Text(context.loc.azCopied))));
-                        });
+                        await ShareHelper.copyToClipboard(
+                          context,
+                          widget.azkarInfo.array[currentPageIndex].text,
+                          message: context.loc.azCopied,
+                        );
                         break;
                       case 'share':
                         screenshotControllers[currentPageIndex]
@@ -245,11 +248,9 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                   .create();
                           file.writeAsBytesSync(list);
                           if (!context.mounted) return;
-                          await SharePlus.instance.share(
-                            ShareParams(
-                              text: context.loc.azSharePrefix(widget.azkarInfo.category),
-                              files: [XFile(file.path)],
-                            ),
+                          await ShareHelper.shareText(
+                            context.loc.azSharePrefix(widget.azkarInfo.category),
+                            files: [XFile(file.path)],
                           );
                         }).catchError((onError) {
                           if (kDebugMode) {
@@ -270,28 +271,6 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                     ),
                   ])
             ],
-            iconTheme: IconThemeData(color: bgLight),
-            flexibleSpace: SizedBox(
-              height: 60,
-              child: Image.asset(appBarBG, fit: BoxFit.cover),
-            ),
-            leading: IconButton(
-              onPressed: () {
-                _player.stop();
-                Navigator.pop(context);
-              },
-              icon: const Icon(
-                Icons.arrow_back,
-              ),
-            ),
-            title: Text(
-              widget.azkarInfo.category,
-              style: TextStyle(
-                fontSize: double.parse(fontSize18),
-                fontFamily: fontFamily,
-                color: bgLight,
-              ),
-            ),
           ),
           body: Column(
             children: [

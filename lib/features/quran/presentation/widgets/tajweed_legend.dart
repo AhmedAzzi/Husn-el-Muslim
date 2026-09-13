@@ -4,11 +4,17 @@ import 'package:get/get.dart';
 import '../../../../core/logic/ahkam.dart';
 import '../../../../core/theme/husn_style.dart';
 import '../../../../core/theme/tajweed_colors.dart';
+import 'mushaf_brightness.dart';
 import '../../../settings/settings_provider.dart';
 
 /// Shows the Tajweed color legend as a modal bottom sheet.
-Future<void> showTajweedLegendSheet(BuildContext context) async {
-  final dark = Theme.of(context).brightness == Brightness.dark;
+/// [forceLight] follows the mushaf paper toggle: the sheet renders light
+/// even when the app is dark.
+Future<void> showTajweedLegendSheet(
+  BuildContext context, {
+  bool forceLight = false,
+}) async {
+  final dark = mushafDark(context, forceLight: forceLight);
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -16,7 +22,9 @@ Future<void> showTajweedLegendSheet(BuildContext context) async {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => Directionality(
+    builder: (ctx) => mushafOverlayTheme(
+      forceLight: forceLight,
+      child: Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Padding(
@@ -98,6 +106,7 @@ Future<void> showTajweedLegendSheet(BuildContext context) async {
               ),
             ],
           ),
+        ),
         ),
       ),
     ),

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 
-class AyatHadithDialog extends StatelessWidget {
+class PrayerTimeAlert extends StatelessWidget {
   final String prayerName;
   final String content;
 
-  const AyatHadithDialog({
+  const PrayerTimeAlert({
     super.key,
     required this.prayerName,
     this.content =
@@ -136,12 +136,13 @@ class AyatHadithDialog extends StatelessWidget {
   }
 
   void _closeDialog() {
-    PrayerTimesLogic().stopAudio();
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
-    } else {
-      // In case it's pushed as a page
-      Get.back();
+    // Singleton registered permanent in main.dart — never construct a new
+    // PrayerTimesLogic here (that would leak an AudioPlayer and leave the
+    // adhan playing).
+    if (Get.isRegistered<PrayerTimesLogic>()) {
+      Get.find<PrayerTimesLogic>().stopAudio();
     }
+    // Works whether shown via Get.dialog or pushed as a page.
+    Get.back();
   }
 }

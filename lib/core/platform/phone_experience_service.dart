@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
 
 /// Centralizes all Android "phone-use" capability behind one interface so
 /// Flutter code never calls platform APIs directly.
@@ -16,9 +17,8 @@ import 'package:flutter/services.dart';
 /// All capability methods degrade gracefully when unsupported or denied.
 class PhoneExperienceService {
   PhoneExperienceService({MethodChannel? channel})
-      : _channel = channel ??
-            const MethodChannel('khatmah/phone_experience'),
-        _actions = const EventChannel('khatmah/overlay_actions');
+      : _channel = channel ?? PlatformChannels.phoneExperience,
+        _actions = PlatformChannels.overlayActions;
 
   final MethodChannel _channel;
   final EventChannel _actions;

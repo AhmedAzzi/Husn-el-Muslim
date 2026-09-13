@@ -1,14 +1,14 @@
 import 'dart:math';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/domain/challenge_models.dart'
     as engine;
@@ -33,7 +33,7 @@ class FajrChallengeScreen extends StatefulWidget {
 class _FajrChallengeScreenState extends State<FajrChallengeScreen>
     with WidgetsBindingObserver {
   late AudioPlayer _audioPlayer;
-  static const platform = MethodChannel('com.ahmed.hisnelmuslim/volume_lock');
+  static const platform = PlatformChannels.volumeLock;
   int _currentQuestionIndex = 0;
   int? _selectedAnswerIndex;
   bool _isAnswerCorrect = false;
@@ -285,12 +285,10 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
 
   void _handleWrongAnswer() {
     final loc = AppLocalizations.of(context)!;
-    Get.snackbar(
+    AppFeedback.getSnack(
       loc.chWrongAnswer,
       loc.chTryAgain,
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
+      type: AppFeedbackType.error,
     );
   }
 

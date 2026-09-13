@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,8 @@ import 'package:small_husn_muslim/features/settings/presentation/diagnostics_scr
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
+
+import 'support/fake_android_notifications.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized;
@@ -23,6 +26,9 @@ void main() {
     nativeCalls = [];
     SharedPreferences.setMockInitialValues({});
     SharedPrefsCache.init(await SharedPreferences.getInstance());
+    // Seeded prayer logs route through the reminder service → plugin
+    // cancel(); the fake keeps that path quiet under test.
+    FlutterLocalNotificationsPlatform.instance = FakeAndroidNotifications();
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(prayerChannel, (call) async {

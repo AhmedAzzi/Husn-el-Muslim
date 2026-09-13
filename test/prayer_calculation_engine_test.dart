@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_calculation_engine.dart';
 
@@ -39,7 +40,7 @@ void main() {
   group('PrayerCalculationEngine', () {
     test('debug calculated vs expected hours', () {
       final now = DateTime.now();
-      print('Current local date: $now, offset: ${now.timeZoneOffset}');
+      debugPrint('Current local date: $now, offset: ${now.timeZoneOffset}');
       // Algiers: lat 36.75, lon 3.05 (UTC+1)
       final times = PrayerCalculationEngine.computeDayTimes({
         'year': 2026,
@@ -58,9 +59,9 @@ void main() {
       final dhuhrSec = times['dhuhr']!;
       final fajrHours = fajrSec / 3600.0;
       final dhuhrHours = dhuhrSec / 3600.0;
-      print(
+      debugPrint(
           'Calculated Fajr: ${fajrSec ~/ 3600}:${(fajrSec % 3600) ~/ 60} ($fajrHours h)');
-      print(
+      debugPrint(
           'Calculated Dhuhr: ${dhuhrSec ~/ 3600}:${(dhuhrSec % 3600) ~/ 60} ($dhuhrHours h)');
     });
 

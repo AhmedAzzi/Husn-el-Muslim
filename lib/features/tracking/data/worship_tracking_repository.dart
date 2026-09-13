@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/features/tracking/data/tracking_core.dart';
 import 'package:small_husn_muslim/features/tracking/data/worship_type.dart';
 
 /// Worship tracker repository: voluntary fasting + daily wird + good deeds.
@@ -42,15 +42,7 @@ class WorshipTrackingRepository {
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  static DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  Future<SharedPreferences> _prefs() async {
-    try {
-      return SharedPrefsCache.instance;
-    } catch (_) {
-      return SharedPreferences.getInstance();
-    }
-  }
+  
 
   String _entryKey(String date, int deedIndex) =>
       '$_logPrefix${date}_$deedIndex';
@@ -65,7 +57,7 @@ class WorshipTrackingRepository {
     required DateTime date,
     required DeedType type,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     final entryKey = _entryKey(key, type.index);
@@ -93,7 +85,7 @@ class WorshipTrackingRepository {
     required DeedType type,
     required bool done,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     final entryKey = _entryKey(key, type.index);
@@ -116,7 +108,7 @@ class WorshipTrackingRepository {
 
   /// One day's deed states in [DeedType] order; true = done.
   Future<List<bool>> dayEntries(DateTime date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date);
     return List<bool>.generate(
       deedCount,
@@ -147,7 +139,7 @@ class WorshipTrackingRepository {
     required DateTime date,
     required FastKind kind,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     await prefs.setString(
@@ -164,21 +156,21 @@ class WorshipTrackingRepository {
 
   /// Removes the fast entry for [date] (back to not-fasted). Never fails.
   Future<void> clearFast(DateTime date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.remove(_fastKey(dateKey(date)));
   }
 
   /// The fast kind logged on [date], or null when not fasted.
   Future<FastKind?> fastOn(DateTime date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return _readFastSync(prefs, _fastKey(dateKey(date)));
   }
 
   /// Fast kinds for [days] consecutive days ending at [end] (default
   /// today), newest day first; null = not fasted.
   Future<List<FastKind?>> fastsForRange(int days, {DateTime? end}) async {
-    final prefs = await _prefs();
-    final anchor = _dayOnly(end ?? DateTime.now());
+    final prefs = await trackingPrefs();
+    final anchor = dayOnly(end ?? DateTime.now());
     final out = <FastKind?>[];
     for (var i = 0; i < days; i++) {
       out.add(_readFastSync(
@@ -201,7 +193,7 @@ class WorshipTrackingRepository {
 
   /// Rolling 30-day points total: daily deeds + fasting, ending at [now].
   Future<int> rolling30DayPoints({DateTime? now}) async {
-    final anchor = _dayOnly(now ?? DateTime.now());
+    final anchor = dayOnly(now ?? DateTime.now());
     var total = 0;
     for (var d = 0; d < 30; d++) {
       final date = anchor.subtract(Duration(days: d));
@@ -213,7 +205,7 @@ class WorshipTrackingRepository {
 
   /// Monday of the week containing [date] (weeks start on Monday).
   static DateTime mondayOfWeek(DateTime date) {
-    final base = _dayOnly(date);
+    final base = dayOnly(date);
     return base.subtract(Duration(days: (base.weekday - 1) % 7));
   }
 
@@ -221,8 +213,8 @@ class WorshipTrackingRepository {
   /// the current week is still pending (its Thursday is in the future, or
   /// today itself is an unlogged Monday/Thursday).
   Future<int> fastingWeekStreak({DateTime? now}) async {
-    final prefs = await _prefs();
-    final today = _dayOnly(now ?? DateTime.now());
+    final prefs = await trackingPrefs();
+    final today = dayOnly(now ?? DateTime.now());
     var cursor = mondayOfWeek(today);
     if (await _weekPending(prefs, cursor, today)) {
       cursor = cursor.subtract(const Duration(days: 7));
@@ -240,12 +232,12 @@ class WorshipTrackingRepository {
   }
 
   Future<int> fastingLongest() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt(_kFastLongest) ?? 0;
   }
 
   Future<void> _refreshFastLongest() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final current = await fastingWeekStreak();
     final longest = prefs.getInt(_kFastLongest) ?? 0;
     if (current > longest) {
@@ -291,19 +283,19 @@ class WorshipTrackingRepository {
   Future<int> _dailyGoal(SharedPreferences prefs) async =>
       (prefs.getInt(_kGoal) ?? defaultDailyGoal).clamp(1, deedCount);
 
-  Future<int> dailyGoal() async => _dailyGoal(await _prefs());
+  Future<int> dailyGoal() async => _dailyGoal(await trackingPrefs());
 
   Future<void> setDailyGoal(int goal) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setInt(_kGoal, goal.clamp(1, deedCount));
   }
 
   /// Consecutive goal-meeting days ending today (or yesterday if today is
   /// still pending).
   Future<int> currentStreak({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final goal = await _dailyGoal(prefs);
-    final today = _dayOnly(now ?? DateTime.now());
+    final today = dayOnly(now ?? DateTime.now());
     var cursor = today;
     if (await _countSync(prefs, cursor) < goal) {
       cursor = cursor.subtract(const Duration(days: 1));
@@ -321,12 +313,12 @@ class WorshipTrackingRepository {
   }
 
   Future<int> longestStreak() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt(_kLongest) ?? 0;
   }
 
   Future<void> _refreshLongest() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final current = await currentStreak();
     final longest = prefs.getInt(_kLongest) ?? 0;
     if (current > longest) {
@@ -346,19 +338,19 @@ class WorshipTrackingRepository {
   // ---------- settings ----------
 
   Future<bool> isDisabled() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getBool(_kDisabled) ?? false;
   }
 
   Future<void> setDisabled(bool disabled) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setBool(_kDisabled, disabled);
   }
 
   /// Destructive reset: removes all deed logs, fast logs and both
   /// longest-streak marks. Keeps the daily goal (a setting, not data).
   Future<void> clearAll() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     for (final key in prefs.getKeys().toList()) {
       if (key.startsWith(_logPrefix) || key.startsWith(_fastPrefix)) {
         await prefs.remove(key);
@@ -370,8 +362,8 @@ class WorshipTrackingRepository {
 
   /// Developer snapshot for the diagnostics screen. Single read, no strings.
   Future<Map<String, Object>> diagnosticsSnapshot({DateTime? now}) async {
-    final prefs = await _prefs();
-    final anchor = _dayOnly(now ?? DateTime.now());
+    final prefs = await trackingPrefs();
+    final anchor = dayOnly(now ?? DateTime.now());
     return {
       'worshipToday': await _countSync(prefs, anchor),
       'worshipCurrent': await currentStreak(now: anchor),

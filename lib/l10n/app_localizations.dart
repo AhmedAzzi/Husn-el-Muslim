@@ -1996,6 +1996,54 @@ abstract class AppLocalizations {
   /// **'مواعيد الأذان والتنبيهات والقبلة'**
   String get stHomePrayerSub;
 
+  /// No description provided for @stHomeQuranSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصحف الشريف والتلاوة'**
+  String get stHomeQuranSub;
+
+  /// No description provided for @stHomeKhatmaSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الختمة والآية العائمة'**
+  String get stHomeKhatmaSub;
+
+  /// No description provided for @stHomeQiblaSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتجاه القبلة'**
+  String get stHomeQiblaSub;
+
+  /// No description provided for @stHomeDuaSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدعية المأثورة'**
+  String get stHomeDuaSub;
+
+  /// No description provided for @stHomeNamesSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسماء الله الحسنى'**
+  String get stHomeNamesSub;
+
+  /// No description provided for @stHomeRuqyahSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقية الشرعية'**
+  String get stHomeRuqyahSub;
+
+  /// No description provided for @stHomeMosqueMapSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواقيت المساجد القريبة'**
+  String get stHomeMosqueMapSub;
+
+  /// No description provided for @stHomeTrackingSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الصلوات والتحدي'**
+  String get stHomeTrackingSub;
+
   /// No description provided for @stHomeSet.
   ///
   /// In ar, this message translates to:

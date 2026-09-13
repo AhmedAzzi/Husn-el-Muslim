@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
 import '../../data/models/khatma_models.dart';
 import '../../domain/services/statistics_service.dart';
 import '../controllers/statistics_controller.dart';
@@ -39,18 +40,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            l.t('statistics'),
-            style: const TextStyle(
-              fontFamily: HusnTheme.fontFamily,
-              fontSize: HusnTheme.fontSize18,
-              color: Colors.white,
-            ),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-          backgroundColor: HusnTheme.primary,
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: HusnAppBar.back(title: l.t('statistics')),
         body: RefreshIndicator(
           onRefresh: () async {
             await ctl.refresh();

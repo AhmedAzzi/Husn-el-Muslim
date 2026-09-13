@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../../../../core/logic/quran_index.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/app_drawer.dart';
+import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
 import '../../../prayer_times/services/prayer_notification_helper.dart';
 import '../../domain/services/reading_service.dart';
 import '../controllers/nakhtem_controller.dart';
@@ -15,51 +18,21 @@ import '../controllers/statistics_controller.dart';
 /// Khatma *settings* (reciter, edition, display flags) are kept.
 /// Returns true when a reset was performed.
 Future<bool> confirmAndResetKhatma(BuildContext context) async {
-  final confirmed = await Get.dialog<bool>(
-    Directionality(
-      textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'إعادة تعيين الختمة؟',
-          style: TextStyle(
-            fontFamily: HusnTheme.fontFamily,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: const Text(
-          'سيتم مسح كل تقدم الختمة نهائياً (الختمات وسجل القراءة والموضع المحفوظ). لا يمكن التراجع.',
-          style: TextStyle(fontFamily: HusnTheme.fontFamily),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text(
-              'إلغاء',
-              style: TextStyle(fontFamily: HusnTheme.fontFamily),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Get.back(result: true),
-            child: const Text(
-              'مسح التقدم',
-              style: TextStyle(fontFamily: HusnTheme.fontFamily),
-            ),
-          ),
-        ],
-      ),
-    ),
+  final confirmed = await AppFeedback.confirmDestructive(
+    context,
+    title: 'إعادة تعيين الختمة؟',
+    content:
+        'سيتم مسح كل تقدم الختمة نهائياً (الختمات وسجل القراءة والموضع المحفوظ). لا يمكن التراجع.',
+    confirmLabel: 'مسح التقدم',
+    cancelLabel: 'إلغاء',
   );
-  if (confirmed != true) return false;
+  if (!confirmed) return false;
   await Get.find<NakhtemController>().resetAllProgress();
   try {
     await Get.find<StatisticsController>().refresh();
   } catch (_) {}
   if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم مسح تقدم الختمة')),
-    );
+    AppFeedback.snack(context, 'تم مسح تقدم الختمة');
   }
   return true;
 }
@@ -121,10 +94,10 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
     if (!mounted) return;
     final surahName =
         QuranIndex.instance.surahMeta(_selectedSurah)?.nameAr ?? '';
-    Get.snackbar(
+    AppFeedback.getSnack(
       ok ? 'تم الانتقال' : 'تعذّر الانتقال',
       ok ? 'سورة $surahName • آية $_selectedAyah' : 'حاول مرة أخرى',
-      snackPosition: SnackPosition.BOTTOM,
+      type: ok ? AppFeedbackType.success : AppFeedbackType.error,
       duration: const Duration(seconds: 2),
     );
   }
@@ -280,18 +253,9 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title: Text(
-              l.t('app_name'),
-              style: const TextStyle(
-                fontSize: HusnTheme.fontSize22,
-                fontFamily: HusnTheme.fontFamily,
-                color: Colors.white,
-              ),
-            ),
-            iconTheme: const IconThemeData(color: Colors.white),
-            backgroundColor: HusnTheme.primary,
-          ),
+          // Main section inside MainShell: drawer is the primary navigation.
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(title: l.t('app_name')),
           body: RefreshIndicator(
             onRefresh: () async {
               await ctl.refresh();
@@ -679,7 +643,11 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
       edition: settingsCtl.settings.value.edition,
     );
     if (!ok) {
-      Get.snackbar(l.t('start_khatma'), 'تعذّر بدء الختمة');
+      AppFeedback.getSnack(
+        l.t('start_khatma'),
+        'تعذّر بدء الختمة',
+        type: AppFeedbackType.error,
+      );
       return;
     }
     await _startPhoneExperience(ctl);
@@ -693,10 +661,10 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
     final granted = await PrayerNotificationHelper.checkOverlayPermission();
     if (!granted) {
       await PrayerNotificationHelper.requestOverlayPermission();
-      Get.snackbar(
+      AppFeedback.getSnack(
         'السماح مطلوب',
         'فعّل السماح بالعرض فوق التطبيقات ثم اضغط ابدأ الآن مرة أخرى',
-        snackPosition: SnackPosition.BOTTOM,
+        type: AppFeedbackType.warn,
         duration: const Duration(seconds: 5),
       );
       return;
@@ -704,10 +672,10 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
 
     final shown = await ctl.publishAyahToOverlay();
     if (!shown) {
-      Get.snackbar(
+      AppFeedback.getSnack(
         'الآية العائمة',
         'تعذّر بدء عرض الآية',
-        snackPosition: SnackPosition.BOTTOM,
+        type: AppFeedbackType.error,
       );
     }
   }

@@ -69,6 +69,7 @@ class WordMeaningController extends GetxController {
     List<String> tajweedClasses = const [],
     int initialTab = 0,
     List<({String label, Widget view})> extraTabs = const [],
+    bool forceLight = false,
   }) async {
     final parsed = WordMeaning.parseLocation(location);
     if (parsed == null) return;
@@ -86,6 +87,7 @@ class WordMeaningController extends GetxController {
         ayah: parsed.a,
         word: result?.wordWithHaraqah ?? result?.plain,
         extraTabs: extraTabs,
+        forceLight: forceLight,
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
-import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
 class ExtraAlarmsSettingsScreen extends StatefulWidget {
@@ -168,46 +170,13 @@ class _ExtraAlarmsSettingsScreenState extends State<ExtraAlarmsSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-          appBar: AppBar(
-            backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.nsExtraAlarms,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                  opacity: isDark ? 0.35 : 0.15,
-                ),
-              ),
-            ),
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: loc.nsExtraAlarms),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             physics: const BouncingScrollPhysics(),
@@ -483,11 +452,11 @@ class _ExtraAlarmsSettingsScreenState extends State<ExtraAlarmsSettingsScreen> {
                     if (_logic.bedtimeAlarmEnabled)
                       SwitchListTile(
                         title: Text(loc.nsBedtimeRelative,
-                            style: const TextStyle(fontFamily: 'Amiri')),
+                            style: HusnText.body),
                         subtitle: Text(
                             loc.nsBedtimeRelativeSub(
                                 _logic.bedtimeRelativeHours),
-                            style: const TextStyle(fontFamily: 'Amiri')),
+                            style: HusnText.body),
                         value: _logic.bedtimeRelativeToFajr,
                         onChanged: (v) {
                           setState(
@@ -505,11 +474,10 @@ class _ExtraAlarmsSettingsScreenState extends State<ExtraAlarmsSettingsScreen> {
                               await _logic.skipBedtimeOnce();
                               if (!context.mounted) return;
                               setState(() {});
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(loc.nsSkippedTonight,
-                                        style: const TextStyle(
-                                            fontFamily: 'Amiri'))),
+                              AppFeedback.snack(
+                                context,
+                                loc.nsSkippedTonight,
+                                type: AppFeedbackType.warn,
                               );
                             },
                             icon: const Icon(Icons.skip_next_rounded),
@@ -673,7 +641,7 @@ class _ExtraAlarmsSettingsScreenState extends State<ExtraAlarmsSettingsScreen> {
                       label: Text(
                         loc.stHiddenAdvanced,
                         style:
-                            const TextStyle(fontFamily: 'Amiri'),
+                            HusnText.body,
                       ),
                     ),
                   ),

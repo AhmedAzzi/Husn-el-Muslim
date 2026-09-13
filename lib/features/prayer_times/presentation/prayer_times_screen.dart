@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
-import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_suggest_dialog.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_bottom_sheet.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
+  /// Kept for backward compatibility; the screen always lives inside
+  /// [MainShell] now, so the drawer is always shown and there is no Back
+  /// button between main sections.
   final bool isHomeScreen;
 
   const PrayerTimesScreen({super.key, this.isHomeScreen = false});
@@ -96,25 +100,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            elevation: 0,
-            leading: widget.isHomeScreen
-                ? null
-                : IconButton(
-                    icon: Icon(Icons.arrow_back,
-                        color: theme.appBarTheme.foregroundColor),
-                    onPressed: () => Get.back(),
-                  ),
-            title: Text(
-              context.loc.navPrayerTimes,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: theme.appBarTheme.foregroundColor,
-                fontSize: 24,
-              ),
-            ),
-            actions: [
+        appBar: HusnAppBar(
+          // Main section inside MainShell: drawer hamburger only, no Back
+          // button between main sections.
+          title: context.loc.navPrayerTimes,
+          actions: [
               IconButton(
                 icon: Icon(
                   Icons.wb_twilight_rounded,
@@ -129,7 +119,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 icon: Icon(Icons.map_rounded,
                     color: theme.appBarTheme.foregroundColor),
                 tooltip: context.loc.navMosqueMap,
-                onPressed: () => Get.to(() => const MosqueMapScreen()),
+                // Mosque map is a main section: switch the shell instead of
+                // pushing a duplicate route.
+                onPressed: () => MainNavHelper.goToMosqueMap(),
               ),
               IconButton(
                 icon: Icon(Icons.my_location,
@@ -141,9 +133,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   await _logic.ensureDataLoaded(force: true);
 
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(context.loc.ptLocationUpdated)),
+                    AppFeedback.snack(
+                      context,
+                      context.loc.ptLocationUpdated,
+                      type: AppFeedbackType.success,
                     );
                   }
                   await _maybeSuggestNearestMosque();
@@ -151,16 +144,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
               const SizedBox(width: 8),
             ],
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
-          drawer: widget.isHomeScreen ? const AppDrawer() : null,
+          drawer: const AppDrawer(),
           body: _buildRootBody(),
         ),
     );
@@ -804,16 +789,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final ok = await _fetchAndAdopt(m);
     if (mounted && sheetContext.mounted) {
       Navigator.of(sheetContext).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontFamily: 'Amiri'),
-          ),
-          backgroundColor: const Color(0xFF693B42),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppFeedback.snack(
+        context,
+        ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
+        type: ok ? AppFeedbackType.success : AppFeedbackType.error,
       );
     }
   }
@@ -825,16 +804,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final ok = await _fetchAndAdopt(m);
     if (!mounted) return;
     final loc = context.loc;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontFamily: 'Amiri'),
-        ),
-        backgroundColor: const Color(0xFF693B42),
-        behavior: SnackBarBehavior.floating,
-      ),
+    AppFeedback.snack(
+      context,
+      ok ? loc.ptMosqueAdopted(m.name) : loc.ptMosqueFailed,
+      type: ok ? AppFeedbackType.success : AppFeedbackType.error,
     );
   }
 

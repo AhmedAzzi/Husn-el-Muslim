@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
-import 'package:small_husn_muslim/core/theme/app_colors.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
 import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/azkar/controllers/azkar_controller.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 class MyHomePageScreen extends StatefulWidget {
+  /// Kept for backward compatibility. Inside [MainShell] every main section
+  /// always shows the drawer and never a Back button; secondary pushes of
+  /// this screen (none currently) would still render without a drawer only
+  /// if explicitly requested via [isHomeScreen] = false.
   final bool isRoot;
   final bool isHomeScreen;
   final bool isDarkMode;
@@ -51,69 +56,49 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
     // Build the main scaffold content
     Widget scaffoldContent = SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          leading: toggle
-              ? (widget.isHomeScreen
-                  ? null // Let drawer icon show automatically
-                  : IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Get.back(),
-                    ))
-              : null, // No leading icon during search
-          title: toggle
-              ? SizedBox(
-                  height: 30,
-                  child: Text(
-                    context.loc.navAdhkar,
-                      style: TextStyle(
-                        fontSize: double.parse(fontSize22),
+        appBar: HusnAppBar(
+          // Main section inside MainShell: the drawer hamburger opens the
+          // primary navigation. No Back button between main sections.
+          title: toggle ? context.loc.navAdhkar : null,
+          titleWidget: toggle
+              ? null
+              : Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    autofocus: true,
+                    onChanged: (value) {
+                      _azkarController.updateSearchQuery(value);
+                    },
+                    decoration: InputDecoration(
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontFamily: fontFamily,
-                        color: bgLight,
+                        fontSize: 16,
                       ),
+                      hintText: search,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 8),
                     ),
-                  )
-                : Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: TextField(
-                      controller: searchController,
-                      focusNode: searchFocusNode,
-                      autofocus: true,
-                      onChanged: (value) {
-                        _azkarController.updateSearchQuery(value);
-                      },
-                      decoration: InputDecoration(
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontFamily: fontFamily,
-                          fontSize: 16,
-                        ),
-                        hintText: search,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 8),
-                      ),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Amiri',
-                        fontSize: 18,
-                      ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Amiri',
+                      fontSize: 18,
                     ),
                   ),
-            iconTheme: IconThemeData(color: bgLight),
-            actions: toggle ? _toggleSearchIcon() : _clearSearchAction(),
-            flexibleSpace: SizedBox(
-              height: 60,
-              child: Image.asset(appBarBG, fit: BoxFit.cover),
-            ),
-          ),
-          drawer: widget.isHomeScreen ? const AppDrawer() : null,
+                ),
+          actions: toggle ? _toggleSearchIcon() : _clearSearchAction(),
+        ),
+          drawer: const AppDrawer(),
           body: Obx(() {
             if (_azkarController.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return const HusnLoading();
             }
 
             final list = _azkarController.filteredAzkarList;
@@ -234,7 +219,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
       final pendingScreen = await PrayerNotificationHelper.getPendingScreen();
       if (pendingScreen != null) {
         if (pendingScreen == 'prayer_times') {
-          Get.to(() => const PrayerTimesScreen());
+          MainNavHelper.goToMawaqit();
         } else if (pendingScreen == 'tracking') {
           Get.to(() => const PrayerTrackingScreen());
         }
@@ -243,24 +228,21 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
   }
 
   List<Widget> _clearSearchAction() {
+    // Single button: clears the query while text is present, exits search
+    // mode once the field is already empty (previously two ✕ buttons
+    // showed side by side whenever a query was present).
     return [
-      IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () => setState(() {
-          searchController.clear();
-          _azkarController.clearSearch();
-          toggle = true;
-        }),
-      ),
-      Obx(() => _azkarController.searchQuery.isNotEmpty
-          ? IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                searchController.clear();
-                _azkarController.clearSearch();
-              },
-            )
-          : const SizedBox.shrink()),
+      Obx(() {
+        final hasQuery = _azkarController.searchQuery.isNotEmpty;
+        return IconButton(
+          icon: Icon(hasQuery ? Icons.clear : Icons.close),
+          onPressed: () {
+            searchController.clear();
+            _azkarController.clearSearch();
+            if (!hasQuery) setState(() => toggle = true);
+          },
+        );
+      }),
     ];
   }
 

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/core/theme/app_colors.dart';
+import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/utils/share_helper.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/features/book/services/book_service.dart';
@@ -73,20 +74,11 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
   }
 
   void _copyToClipboard(String text, {String? message}) {
-    Clipboard.setData(ClipboardData(text: text)).then((_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Center(
-            child: Text(
-              message ?? context.loc.asCopiedDefault,
-              style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
-            ),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    });
+    ShareHelper.copyToClipboard(
+      context,
+      text,
+      message: message ?? context.loc.asCopiedDefault,
+    );
   }
 
   List<Widget> _clearSearchAction() {
@@ -126,25 +118,13 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          appBar: AppBar(
-            leading: toggle
-                ? IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Get.back(),
-                  )
-                : null,
-            title: toggle
-                ? SizedBox(
-                    height: 30,
-                    child: Text(
-                      context.loc.navNames,
-                      style: TextStyle(
-                        fontSize: double.parse(fontSize22),
-                        fontFamily: fontFamily,
-                        color: bgLight,
-                      ),
-                    ),
-                  )
+          // Main section inside MainShell: drawer hamburger only, no Back
+          // button between main sections.
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(
+            title: toggle ? context.loc.navNames : null,
+            titleWidget: toggle
+                ? null
                 : Container(
                     height: 40,
                     decoration: BoxDecoration(
@@ -178,19 +158,10 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
                       ),
                     ),
                   ),
-            iconTheme: IconThemeData(color: bgLight),
             actions: toggle ? _toggleSearchIcon() : _clearSearchAction(),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
           body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const HusnLoading()
               : filteredNames.isEmpty
                   ? _buildEmptyState()
                   : CustomScrollView(
@@ -573,26 +544,9 @@ class _AsmaaAllahScreenState extends State<AsmaaAllahScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            size: 60,
-            color: Colors.grey.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.loc.ctNoSearchResults,
-            style: TextStyle(
-              fontFamily: fontFamily,
-              fontSize: 18,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
+    return HusnEmptySearch(
+      message: context.loc.ctNoSearchResults,
+      fontFamily: fontFamily,
     );
   }
 }

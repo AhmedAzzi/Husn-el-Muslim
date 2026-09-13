@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../core/logic/quran_index.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
 import '../../../../core/widgets/islamic_ornaments.dart';
 import '../controllers/nakhtem_controller.dart';
 import '../controllers/nakhtem_settings_controller.dart';
@@ -48,18 +49,8 @@ class _StartAyahPickerScreenState extends State<StartAyahPickerScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            l.t('choose_start'),
-            style: const TextStyle(
-              fontFamily: HusnTheme.fontFamily,
-              fontSize: HusnTheme.fontSize18,
-              color: Colors.white,
-            ),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-          backgroundColor: HusnTheme.primary,
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: HusnAppBar.back(title: l.t('choose_start')),
         body: Column(
           children: [
             Expanded(

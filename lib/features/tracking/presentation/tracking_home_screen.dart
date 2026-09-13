@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/sunnah_tracking_screen.dart';
 import 'package:small_husn_muslim/features/tracking/presentation/worship_tracking_screen.dart';
@@ -66,32 +66,9 @@ class _TrackingHomeScreenState extends State<TrackingHomeScreen>
       child: SafeArea(
         child: Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            foregroundColor: theme.appBarTheme.foregroundColor,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.navTracking,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
+          // Main section inside MainShell: drawer is the primary navigation.
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(title: loc.navTracking),
           body: SafeArea(
             child: Column(
               children: [

@@ -16,6 +16,7 @@ class NakhtemSettings {
     this.tafsirEnabled = true,
     this.translationEnabled = false,
     this.showDailySummary = true,
+    this.overlayEnabled = true,
   });
 
   final String edition; // QuranEdition.id
@@ -36,6 +37,12 @@ class NakhtemSettings {
   /// Show the end-of-day reading summary once per day on the khatma home.
   final bool showDailySummary;
 
+  /// Master switch for the floating ayah overlay (unlock experience).
+  /// When false, the native unlock receiver never draws the overlay and any
+  /// visible overlay is dismissed. Defaults to true to preserve the previous
+  /// always-on-when-active behaviour.
+  final bool overlayEnabled;
+
   NakhtemSettings copyWith({
     String? edition,
     String? mushafReciterId,
@@ -43,6 +50,7 @@ class NakhtemSettings {
     bool? tafsirEnabled,
     bool? translationEnabled,
     bool? showDailySummary,
+    bool? overlayEnabled,
   }) =>
       NakhtemSettings(
         edition: edition ?? this.edition,
@@ -51,6 +59,7 @@ class NakhtemSettings {
         tafsirEnabled: tafsirEnabled ?? this.tafsirEnabled,
         translationEnabled: translationEnabled ?? this.translationEnabled,
         showDailySummary: showDailySummary ?? this.showDailySummary,
+        overlayEnabled: overlayEnabled ?? this.overlayEnabled,
       );
 
   Map<String, String> toKV() => {
@@ -60,6 +69,7 @@ class NakhtemSettings {
         'tafsir_enabled': tafsirEnabled.toString(),
         'translation_enabled': translationEnabled.toString(),
         'show_daily_summary': showDailySummary.toString(),
+        'overlay_enabled': overlayEnabled.toString(),
       };
 
   static NakhtemSettings fromKV(Map<String, String> kv) {
@@ -75,6 +85,9 @@ class NakhtemSettings {
       translationEnabled: b('translation_enabled'),
       showDailySummary:
           kv.containsKey('show_daily_summary') ? b('show_daily_summary') : true,
+      // Absence = legacy install where the overlay was always on.
+      overlayEnabled:
+          kv.containsKey('overlay_enabled') ? b('overlay_enabled') : true,
     );
   }
 }

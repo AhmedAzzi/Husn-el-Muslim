@@ -3,9 +3,14 @@ import 'package:get/get.dart';
 
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
+import '../../../../core/widgets/settings_widgets.dart';
+import '../../nakhtem/presentation/controllers/nakhtem_controller.dart';
 import '../../nakhtem/presentation/controllers/nakhtem_settings_controller.dart';
 import '../../nakhtem/presentation/screens/khatma_home_screen.dart';
 import '../../nakhtem/presentation/screens/reciter_picker_screen.dart';
+import '../../prayer_times/services/prayer_notification_helper.dart';
 import '../settings_provider.dart';
 
 /// Quran (Mushaf + Khatma) settings, hosted inside Husn-el-Muslim's
@@ -26,18 +31,8 @@ class QuranSettingsScreen extends StatelessWidget {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'إعدادات المصحف',
-              style: TextStyle(
-                fontFamily: HusnTheme.fontFamily,
-                fontSize: HusnTheme.fontSize18,
-                color: Colors.white,
-              ),
-            ),
-            iconTheme: const IconThemeData(color: Colors.white),
-            backgroundColor: HusnTheme.primary,
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: 'إعدادات المصحف'),
           body: Obx(() {
             final m = mushafCtl.settings.value;
             final k = khatmaCtl.settings.value;
@@ -47,10 +42,22 @@ class QuranSettingsScreen extends StatelessWidget {
               children: [
                 _sectionHeader('الختمة', Icons.menu_book_outlined),
                 _group([
-                  SwitchListTile(
-                    secondary: const Icon(Icons.summarize_outlined),
-                    title: const Text('ملخص يومي'),
-                    subtitle: const Text('عرض ملخص القراءة مرة واحدة في اليوم'),
+                  SettingsWidgets.buildSwitchTile(
+                    context: context,
+                    icon: Icons.layers_outlined,
+                    iconColor: HusnTheme.primary,
+                    title: l.t('phone_experience'),
+                    subtitle: l.t('overlay_lock_hint'),
+                    value: k.overlayEnabled,
+                    onChanged: (v) =>
+                        _setOverlayEnabled(context, khatmaCtl, v),
+                  ),
+                  SettingsWidgets.buildSwitchTile(
+                    context: context,
+                    icon: Icons.summarize_outlined,
+                    iconColor: HusnTheme.primary,
+                    title: 'ملخص يومي',
+                    subtitle: 'عرض ملخص القراءة مرة واحدة في اليوم',
                     value: k.showDailySummary,
                     onChanged: khatmaCtl.setShowDailySummary,
                   ),
@@ -66,10 +73,12 @@ class QuranSettingsScreen extends StatelessWidget {
                     onTap: () => showReciterPickerSheet(forKhatma: false),
                   ),
                   _editionTile(khatmaCtl, k.edition, l),
-                  SwitchListTile(
-                    secondary: const Icon(Icons.summarize_outlined),
-                    title: const Text('ملخص يومي'),
-                    subtitle: const Text('عرض ملخص القراءة مرة واحدة في اليوم'),
+                  SettingsWidgets.buildSwitchTile(
+                    context: context,
+                    icon: Icons.summarize_outlined,
+                    iconColor: HusnTheme.primary,
+                    title: 'ملخص يومي',
+                    subtitle: 'عرض ملخص القراءة مرة واحدة في اليوم',
                     value: k.showDailySummary,
                     onChanged: khatmaCtl.setShowDailySummary,
                   ),
@@ -86,17 +95,21 @@ class QuranSettingsScreen extends StatelessWidget {
                     trailing: const Icon(Icons.chevron_left),
                     onTap: () => confirmAndResetKhatma(context),
                   ),
-                  SwitchListTile(
-                    secondary: const Icon(Icons.translate),
-                    title: Text(l.t('translation')),
-                    subtitle: const Text('تبويب الترجمة في تفاصيل الكلمة'),
+                  SettingsWidgets.buildSwitchTile(
+                    context: context,
+                    icon: Icons.translate,
+                    iconColor: HusnTheme.primary,
+                    title: l.t('translation'),
+                    subtitle: 'تبويب الترجمة في تفاصيل الكلمة',
                     value: k.translationEnabled,
                     onChanged: khatmaCtl.setTranslationEnabled,
                   ),
-                  SwitchListTile(
-                    secondary: const Icon(Icons.legend_toggle_outlined),
-                    title: const Text('دليل ألوان التجويد'),
-                    subtitle: const Text('إظهار الدليل أسفل صفحات المصحف'),
+                  SettingsWidgets.buildSwitchTile(
+                    context: context,
+                    icon: Icons.legend_toggle_outlined,
+                    iconColor: HusnTheme.primary,
+                    title: 'دليل ألوان التجويد',
+                    subtitle: 'إظهار الدليل أسفل صفحات المصحف',
                     value: m.showLegend,
                     onChanged: (_) => mushafCtl.toggleLegend(),
                   ),
@@ -110,6 +123,30 @@ class QuranSettingsScreen extends StatelessWidget {
   }
 
   // ---------- building blocks ----------
+
+  /// Master overlay switch: persists the flag, applies it to the native
+  /// unlock cache (dismissing any visible overlay when turned off), and —
+  /// when turning on — guides the user to grant "display over other apps".
+  Future<void> _setOverlayEnabled(
+    BuildContext context,
+    NakhtemSettingsController ctl,
+    bool v,
+  ) async {
+    await ctl.setOverlayEnabled(v);
+    try {
+      await Get.find<NakhtemController>().syncOverlayCache();
+    } catch (_) {}
+    if (!v || !context.mounted) return;
+    final granted = await PrayerNotificationHelper.checkOverlayPermission();
+    if (granted) return;
+    AppFeedback.getSnack(
+      'السماح مطلوب',
+      'فعّل السماح بالعرض فوق التطبيقات لتعمل الآية العائمة',
+      type: AppFeedbackType.warn,
+      duration: const Duration(seconds: 5),
+    );
+    await PrayerNotificationHelper.requestOverlayPermission();
+  }
 
   Widget _sectionHeader(String title, IconData icon) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),

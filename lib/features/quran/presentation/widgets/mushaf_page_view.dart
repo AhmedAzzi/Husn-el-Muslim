@@ -9,6 +9,8 @@ import '../../../../core/logic/quran_index.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
 import '../../../../core/theme/tajweed_colors.dart';
+import '../../../../core/widgets/app_feedback.dart';
+import 'mushaf_brightness.dart';
 import '../../../nakhtem/presentation/controllers/nakhtem_settings_controller.dart';
 import '../../../nakhtem/presentation/screens/reciter_picker_screen.dart';
 import '../../data/models/quran_models.dart';
@@ -274,7 +276,12 @@ class MushafPageView extends StatelessWidget {
     /// التفسير / الترجمة) directly on the التفسير tab for that ayah.
     void onMarkerTap(String location) {
       if (!Get.isRegistered<WordMeaningController>()) return;
-      WordMeaningController.to.showWordDialog(context, location, initialTab: 2);
+      WordMeaningController.to.showWordDialog(
+        context,
+        location,
+        initialTab: 2,
+        forceLight: forceLight,
+      );
     }
 
     /// True when this word belongs to the currently recited ayah.
@@ -301,6 +308,7 @@ class MushafPageView extends StatelessWidget {
         word.location,
         tajweedClasses: classes,
         initialTab: tappedCls.isEmpty ? 0 : 1,
+        forceLight: forceLight,
       );
     }
 
@@ -445,7 +453,7 @@ class MushafPageView extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: numColor,
-                                fontFamily: 'AmiriQuran',
+                                fontFamily: 'Amiri',
                                 fontSize: medallion,
                                 height: 1.0,
                                 fontWeight: FontWeight.bold,
@@ -475,7 +483,7 @@ class MushafPageView extends StatelessWidget {
                               softWrap: false,
                               style: TextStyle(
                                 color: numColor,
-                                fontFamily: 'AmiriQuran',
+                                fontFamily: 'Amiri',
                                 fontSize: numberSize,
                                 height: 1.0,
                                 fontWeight: FontWeight.bold,
@@ -1191,18 +1199,21 @@ class MushafPageView extends StatelessWidget {
 bool _requireReciterForAudio(
   BuildContext context,
   BuildContext sheetCtx,
-  bool hasNakhtem,
-) {
+  bool hasNakhtem, {
+  bool forceLight = false,
+}) {
   if (!hasNakhtem) {
     Navigator.of(sheetCtx).pop();
-    ScaffoldMessenger.of(
+    AppFeedback.snack(
       context,
-    ).showSnackBar(const SnackBar(content: Text('الصوت غير متاح')));
+      'الصوت غير متاح',
+      type: AppFeedbackType.warn,
+    );
     return false;
   }
   if (Get.find<NakhtemSettingsController>().selectedMushafReciter == null) {
     Navigator.of(sheetCtx).pop();
-    showReciterPickerSheet(forKhatma: false);
+    showReciterPickerSheet(forKhatma: false, forceLight: forceLight);
     return false;
   }
   return true;
@@ -1213,12 +1224,10 @@ void _reportAudioError(BuildContext context) {
   if (!Get.isRegistered<MushafAudioController>()) return;
   final err = Get.find<MushafAudioController>().error.value;
   if (err != null && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          err == 'no_reciter' ? 'اختر القارئ أولًا' : 'تعذّر تشغيل الصوت',
-        ),
-      ),
+    AppFeedback.snack(
+      context,
+      err == 'no_reciter' ? 'اختر القارئ أولًا' : 'تعذّر تشغيل الصوت',
+      type: AppFeedbackType.error,
     );
   }
 }
@@ -1232,6 +1241,7 @@ void showSurahAudioSheet(
   required String surahName,
   required int pageNum,
   required List<QueueAya> pageAyahs,
+  bool forceLight = false,
 }) {
   _showSurahSheet(
     context,
@@ -1239,6 +1249,7 @@ void showSurahAudioSheet(
     surahName,
     pageNum: pageNum,
     pageAyahs: pageAyahs,
+    forceLight: forceLight,
   );
 }
 
@@ -1250,6 +1261,7 @@ void _showSurahSheet(
   String surahName, {
   required int pageNum,
   required List<QueueAya> pageAyahs,
+  bool forceLight = false,
 }) {
   if (surahId == null || surahId <= 0) return;
   ensureMushafAudioController();
@@ -1260,8 +1272,11 @@ void _showSurahSheet(
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    backgroundColor: forceLight ? AppPalette.paper : null,
     builder: (sheetCtx) {
-      return Directionality(
+      return mushafOverlayTheme(
+        forceLight: forceLight,
+        child: Directionality(
         textDirection: TextDirection.rtl,
         child: SafeArea(
           child: Padding(
@@ -1297,7 +1312,10 @@ void _showSurahSheet(
                       trailing: const Icon(Icons.chevron_left),
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
-                        showReciterPickerSheet(forKhatma: false);
+                        showReciterPickerSheet(
+                          forKhatma: false,
+                          forceLight: forceLight,
+                        );
                       },
                     );
                   }),
@@ -1321,6 +1339,7 @@ void _showSurahSheet(
                       context,
                       sheetCtx,
                       hasNakhtem,
+                      forceLight: forceLight,
                     )) {
                       return;
                     }
@@ -1352,6 +1371,7 @@ void _showSurahSheet(
                             context,
                             sheetCtx,
                             hasNakhtem,
+                            forceLight: forceLight,
                           )) {
                             return;
                           }
@@ -1388,6 +1408,7 @@ void _showSurahSheet(
                                   surahName,
                                   ayahCount,
                                   hasNakhtem,
+                                  forceLight,
                                 ),
                       ),
                     ),
@@ -1396,6 +1417,7 @@ void _showSurahSheet(
               ],
             ),
           ),
+        ),
         ),
       );
     },
@@ -1410,13 +1432,17 @@ void _showSurahAyahPicker(
   String surahName,
   int ayahCount,
   bool hasNakhtem,
+  bool forceLight,
 ) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
+    backgroundColor: forceLight ? AppPalette.paper : null,
     builder: (sheetCtx) {
-      return Directionality(
+      return mushafOverlayTheme(
+        forceLight: forceLight,
+        child: Directionality(
         textDirection: TextDirection.rtl,
         child: SafeArea(
           child: ConstrainedBox(
@@ -1461,6 +1487,7 @@ void _showSurahAyahPicker(
                               context,
                               sheetCtx,
                               hasNakhtem,
+                              forceLight: forceLight,
                             )) {
                               return;
                             }
@@ -1492,6 +1519,7 @@ void _showSurahAyahPicker(
               ],
             ),
           ),
+        ),
         ),
       );
     },

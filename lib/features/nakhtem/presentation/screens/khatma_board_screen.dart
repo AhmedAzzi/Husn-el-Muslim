@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
 import '../../data/models/khatma_models.dart';
 import '../../domain/services/khatma_service.dart';
 import '../controllers/nakhtem_controller.dart';
@@ -20,23 +22,13 @@ class KhatmaBoardScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            l.t('khatma'),
-            style: const TextStyle(
-              fontFamily: HusnTheme.fontFamily,
-              fontSize: HusnTheme.fontSize18,
-              color: Colors.white,
-            ),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-          backgroundColor: HusnTheme.primary,
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: HusnAppBar.back(title: l.t('khatma')),
         body: FutureBuilder<List<dynamic>>(
           future: Future.wait([service.all(), service.active()]),
           builder: (context, snap) {
             if (!snap.hasData) {
-              return const Center(child: CircularProgressIndicator());
+              return const HusnLoading();
             }
             final list = (snap.data![0] as List).cast<Khatma>();
             final active = snap.data![1] as Khatma?;

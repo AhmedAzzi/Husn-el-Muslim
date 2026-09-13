@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gradient border for the dhikr reminder card: rose → gold, TL→BR.
+     Matches the programmatic GradientDrawable previously built in
+     PrayerTimeService.triggerDhikrOverlay. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:startColor="#FFD64463"
+        android:endColor="#FFFFD700"
+        android:angle="135" />
+    <corners android:radius="20dp" />
+</shape>

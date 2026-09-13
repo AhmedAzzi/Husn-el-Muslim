@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
-import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/app_sheets.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
@@ -46,7 +47,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     });
   }
 
-  // Home screen options (localized at call time — const maps can't use loc)
+  // Home screen options: every main page (settings excluded — opening
+  // the app straight into settings is never useful). Localized at call
+  // time — const maps can't use loc. Keys match `fromHomeScreenKey`.
   static Map<String, ({String title, String subtitle, IconData icon})>
       homeScreenMeta(AppLocalizations loc) => {
     'azkar': (
@@ -63,6 +66,46 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       title: loc.navPrayerTimes,
       subtitle: loc.stHomePrayerSub,
       icon: Icons.access_time_filled_rounded,
+    ),
+    'quran': (
+      title: loc.navMushaf,
+      subtitle: loc.stHomeQuranSub,
+      icon: Icons.auto_stories_rounded,
+    ),
+    'khatma': (
+      title: loc.navKhatma,
+      subtitle: loc.stHomeKhatmaSub,
+      icon: Icons.menu_book_outlined,
+    ),
+    'qibla': (
+      title: loc.navQibla,
+      subtitle: loc.stHomeQiblaSub,
+      icon: Icons.explore_rounded,
+    ),
+    'dua': (
+      title: loc.navDua,
+      subtitle: loc.stHomeDuaSub,
+      icon: Icons.favorite_rounded,
+    ),
+    'names': (
+      title: loc.navNames,
+      subtitle: loc.stHomeNamesSub,
+      icon: Icons.all_inclusive_rounded,
+    ),
+    'ruqyah': (
+      title: loc.navRuqyah,
+      subtitle: loc.stHomeRuqyahSub,
+      icon: Icons.health_and_safety_rounded,
+    ),
+    'mosque_map': (
+      title: loc.navMosqueMap,
+      subtitle: loc.stHomeMosqueMapSub,
+      icon: Icons.map_rounded,
+    ),
+    'tracking': (
+      title: loc.navTracking,
+      subtitle: loc.stHomeTrackingSub,
+      icon: Icons.local_fire_department_rounded,
     ),
   };
 
@@ -98,7 +141,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     setState(() {
       _selectedHomeScreen = value;
     });
-    _showSnackBar(loc.stHomeSet);
+    snack(loc.stHomeSet);
   }
 
   Future<void> _setLanguage(String value) async {
@@ -112,13 +155,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
 
   Future<void> _toggleReminder(bool value) async {
     if (value) {
-      final hasPermission =
-          await PrayerNotificationHelper.checkOverlayPermission();
-      if (!hasPermission) {
-        if (!mounted) return;
-        final bool? proceed = await _showOverlayPermissionDialog();
-        if (proceed != true) return;
-      }
+      final loc = AppLocalizations.of(context)!;
+      if (!mounted) return;
+      final proceed = await OverlayGate.ensure(
+        context,
+        title: loc.stOverlayTitle,
+        body: loc.stOverlayBody,
+        laterLabel: loc.sheetLater,
+        activateLabel: loc.stActivateNow,
+      );
+      if (!proceed) return;
     }
 
     await _reminderHelper.updateSettings(value, _reminderInterval);
@@ -133,81 +179,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       _reminderInterval = value;
     });
   }
-  Future<bool?> _showOverlayPermissionDialog() {
-    final loc = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Get.dialog<bool>(
-      AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF23232E) : Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Row(
-            children: [
-              const Icon(Icons.layers_rounded,
-                  color: Color(0xFFD64463), size: 28),
-              const SizedBox(width: 10),
-              Text(
-                loc.stOverlayTitle,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            loc.stOverlayBody,
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              fontSize: 16,
-              color: isDark ? Colors.white70 : Colors.black87,
-              height: 1.5,
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: Text(
-                loc.sheetLater,
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  color: isDark ? Colors.white54 : Colors.black54,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD64463),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                PrayerNotificationHelper.requestOverlayPermission();
-                Get.back(result: true);
-              },
-              child: Text(
-                loc.stActivateNow,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
-    );
-  }
   void _showHomeScreenPicker() {
     final loc = AppLocalizations.of(context)!;
-    _showCustomBottomSheet(
+    AppSheets.show(
+      context,
       title: loc.stHomePicker,
       subtitle: loc.stHomePickerSub,
       child: Column(
@@ -235,7 +210,8 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       ('en', loc.langEnglish, loc.stLangEnSub, Icons.language_outlined),
       ('fr', loc.langFrench, loc.stLangFrSub, Icons.translate_rounded),
     ];
-    _showCustomBottomSheet(
+    AppSheets.show(
+      context,
       title: loc.stLanguagePicker,
       subtitle: loc.stLanguagePickerSub,
       child: Column(
@@ -259,138 +235,27 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
   void _showIntervalPicker() {
     final loc = AppLocalizations.of(context)!;
     final intervals = [1, 2, 3, 5, 10, 15, 30, 60];
-    _showCustomBottomSheet(
+    AppSheets.show(
+      context,
       title: loc.stIntervalTitle,
       subtitle: loc.stIntervalSub,
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        alignment: WrapAlignment.center,
-        children: intervals.map((mins) {
-          final isSelected = _reminderInterval == mins;
-          return ChoiceChip(
-            label: Text(
-              mins >= 60 ? loc.stEveryHour : loc.stEveryMinutes(mins),
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : null,
-                fontSize: 15,
-              ),
-            ),
-            selected: isSelected,
-            selectedColor: const Color(0xFFD64463),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2C2C38)
-                : Colors.grey.shade200,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: BorderSide(
-                color: isSelected
-                    ? const Color(0xFFD64463)
-                    : Colors.transparent,
-              ),
-            ),
-            onSelected: (selected) {
-              if (selected) {
-                Get.back();
-                _setReminderInterval(mins);
-              }
-            },
-          );
-        }).toList(),
+      child: AppSheets.chipGroup<int>(
+        context: context,
+        values: intervals,
+        selected: _reminderInterval,
+        labelOf: (mins) =>
+            mins >= 60 ? loc.stEveryHour : loc.stEveryMinutes(mins),
+        onSelected: (mins) {
+          Get.back();
+          _setReminderInterval(mins);
+        },
       ),
     );
   }
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontFamily: 'Amiri', fontSize: 15),
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   // --- Dialogs & Bottom Sheets ---
-  void _showCustomBottomSheet({
-    required String title,
-    required String subtitle,
-    required Widget child,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Get.bottomSheet(
-      Directionality(
-        textDirection: TextDirection.rtl,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E28) : Colors.white,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 14,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 18),
-              // Options scroll when taller than the sheet allows (e.g. the
-              // 11-item calculation-method list on small screens).
-              Flexible(
-                child: SingleChildScrollView(
-                  child: child,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      isScrollControlled: true,
-);
-    }
-
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final homeScreenTitle =
         homeScreenMeta(loc)[_selectedHomeScreen]?.title ?? loc.navAdhkar;
     final languageTitle = switch (_appLanguage) {
@@ -403,39 +268,8 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-          appBar: AppBar(
-            backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.stAppearance,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                  opacity: isDark ? 0.35 : 0.15,
-                ),
-              ),
-            ),
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: loc.stAppearance),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             physics: const BouncingScrollPhysics(),

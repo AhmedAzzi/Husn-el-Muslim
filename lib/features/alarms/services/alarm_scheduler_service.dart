@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
 
 /// Single Dart entry point to the native [AlarmScheduler] (AlarmManager).
 ///
@@ -12,7 +13,7 @@ class AlarmSchedulerService {
   static final AlarmSchedulerService instance = AlarmSchedulerService._();
 
   static const MethodChannel _channel =
-      MethodChannel('com.ahmed.hisnelmuslim/prayer_notification');
+      PlatformChannels.prayerNotification;
 
   Future<bool> scheduleSuhoor(int triggerAtMillis) async {
     try {

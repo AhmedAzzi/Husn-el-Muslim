@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
@@ -64,7 +67,7 @@ class _FajrChallengeBottomSheetContentState
           TextButton(
             onPressed: () => Get.back(result: false),
             child: Text(loc.sheetLater,
-                style: const TextStyle(fontFamily: 'Amiri')),
+                style: HusnText.body),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -73,7 +76,7 @@ class _FajrChallengeBottomSheetContentState
             ),
             onPressed: () => Get.back(result: true),
             child: Text(loc.diagOpenSettings,
-                style: const TextStyle(fontFamily: 'Amiri')),
+                style: HusnText.body),
           ),
         ],
       ),
@@ -229,12 +232,10 @@ class _FajrChallengeBottomSheetContentState
                   if (value) {
                     final ok = await _ensureExactAlarmPermission();
                     if (!ok && mounted) {
-                      Get.snackbar(
+                      AppFeedback.getSnack(
                         loc.sheetWarnTitle,
                         loc.sheetWarnBody,
-                        backgroundColor: Colors.orange.shade800,
-                        colorText: Colors.white,
-                        snackPosition: SnackPosition.BOTTOM,
+                        type: AppFeedbackType.warn,
                         duration: const Duration(seconds: 4),
                       );
                     }
@@ -282,11 +283,12 @@ class _FajrChallengeBottomSheetContentState
               Row(
                 children: [
                   Expanded(
-                    child: _buildChoiceCard(
+                    child: SettingsWidgets.buildChoiceCard(
+                      context: context,
                       title: loc.sheetLastThird,
                       subtitle: loc.sheetLastThirdSub,
                       isSelected: _logic.fajrChallengeWakeUpMode == 'auto',
-                      isDark: isDark,
+
                       onTap: () {
                         setState(() => _logic.fajrChallengeWakeUpMode = 'auto');
                         _saveSettings(challengeWakeUpMode: 'auto');
@@ -295,11 +297,12 @@ class _FajrChallengeBottomSheetContentState
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildChoiceCard(
+                    child: SettingsWidgets.buildChoiceCard(
+                      context: context,
                       title: loc.sheetCustom,
                       subtitle: loc.sheetCustomSub,
                       isSelected: _logic.fajrChallengeWakeUpMode == 'custom',
-                      isDark: isDark,
+
                       onTap: () {
                         setState(
                             () => _logic.fajrChallengeWakeUpMode = 'custom');
@@ -472,11 +475,12 @@ class _FajrChallengeBottomSheetContentState
                     SizedBox(
                       width:
                           (MediaQuery.of(context).size.width - 72) / 2,
-                      child: _buildChoiceCard(
+                      child: SettingsWidgets.buildChoiceCard(
+                        context: context,
                         title: t.$2,
                         subtitle: t.$3,
                         isSelected: _logic.fajrChallengeType == t.$1,
-                        isDark: isDark,
+
                         onTap: () {
                           setState(
                               () => _logic.fajrChallengeType = t.$1);
@@ -506,7 +510,7 @@ class _FajrChallengeBottomSheetContentState
                     contentPadding: EdgeInsets.zero,
                     dense: true,
                     title: Text(t.$2,
-                        style: const TextStyle(fontFamily: 'Amiri')),
+                        style: HusnText.body),
                     value: _logic.fajrRandomPool.contains(t.$1),
                     activeColor: const Color(0xFFD64463),
                     onChanged: (v) {
@@ -543,12 +547,13 @@ class _FajrChallengeBottomSheetContentState
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _buildChoiceCard(
+                        child: SettingsWidgets.buildChoiceCard(
+                          context: context,
                           title: d.$2,
                           subtitle: '',
                           isSelected:
                               _logic.fajrChallengeDifficulty == d.$1,
-                          isDark: isDark,
+
                           onTap: () {
                             setState(() => _logic.fajrChallengeDifficulty =
                                 d.$1);
@@ -581,12 +586,13 @@ class _FajrChallengeBottomSheetContentState
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: _buildChoiceCard(
+                          child: SettingsWidgets.buildChoiceCard(
+                            context: context,
                             title: s.$2,
                             subtitle: '',
                             isSelected:
                                 _logic.fajrShakeSensitivity == s.$1,
-                            isDark: isDark,
+
                             onTap: () {
                               setState(() => _logic.fajrShakeSensitivity =
                                   s.$1);
@@ -682,21 +688,17 @@ class _FajrChallengeBottomSheetContentState
                   if (!context.mounted) return;
                   Navigator.of(context).pop();
                   if (scheduled) {
-                    Get.snackbar(
+                    AppFeedback.getSnack(
                       loc.sheetTestScheduled,
                       loc.sheetTestWillRing(_testDelaySeconds),
-                      backgroundColor: const Color(0xFFD64463),
-                      colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
+                      type: AppFeedbackType.success,
                       duration: const Duration(seconds: 4),
                     );
                   } else {
-                    Get.snackbar(
+                    AppFeedback.getSnack(
                       loc.sheetTestFailedTitle,
                       loc.sheetTestFailedBody,
-                      backgroundColor: Colors.redAccent,
-                      colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
+                      type: AppFeedbackType.error,
                     );
                   }
                 },
@@ -753,54 +755,4 @@ class _FajrChallengeBottomSheetContentState
     );
   }
 
-  Widget _buildChoiceCard({
-    required String title,
-    required String subtitle,
-    required bool isSelected,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFD64463).withValues(alpha: 0.12)
-              : (isDark ? const Color(0xFF282836) : Colors.grey.shade100),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFD64463) : Colors.transparent,
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: isSelected
-                    ? const Color(0xFFD64463)
-                    : (isDark ? Colors.white : Colors.black87),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 11,
-                color: isDark ? Colors.white60 : Colors.black54,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Floating dhikr reminder card. Fully RTL.
+     Static structure only — DhikrOverlayUi binds the dhikr text, the Amiri
+     typeface, entrance/exit animations and the 5s countdown progress.
+     IDs dhikr_* are part of the DhikrOverlayUi contract: do not rename
+     them (the view binding + PrayerTimeService depend on them).
+     Replaces the programmatic card previously built inline in
+     PrayerTimeService.triggerDhikrOverlay (same 280dp width, same
+     rose→gold border, same dark inner card, same 3dp progress bar). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dhikr_root"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layoutDirection="rtl"
+    android:background="@drawable/overlay_dhikr_border"
+    android:elevation="12dp">
+
+    <LinearLayout
+        android:id="@+id/dhikr_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layoutDirection="rtl"
+        android:paddingLeft="20dp"
+        android:paddingTop="4dp"
+        android:paddingRight="20dp"
+        android:paddingBottom="4dp"
+        android:background="@drawable/overlay_dhikr_card">
+
+        <TextView
+            android:id="@+id/dhikr_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="@font/amiri_regular"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:layoutDirection="rtl"
+            android:textDirection="rtl"
+            android:maxLines="3"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18sp"
+            android:lineSpacingMultiplier="1.4"
+            tools:text="سبحان الله" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="3dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/overlay_dhikr_progress_track" />
+
+            <View
+                android:id="@+id/dhikr_progress"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/overlay_dhikr_progress_fill" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../core/logic/ahkam.dart';
 import '../../../../core/theme/husn_style.dart';
 import '../../../../core/theme/tajweed_colors.dart';
+import 'mushaf_brightness.dart';
 import '../../data/models/tafsir_source.dart';
 import '../../data/models/word_meaning.dart';
 import '../../../settings/settings_provider.dart';
@@ -32,6 +33,7 @@ class WordDetailDialog extends StatefulWidget {
     this.ayah,
     this.word,
     this.extraTabs = const [],
+    this.forceLight = false,
   });
 
   final Rxn<WordMeaning> selected;
@@ -48,6 +50,10 @@ class WordDetailDialog extends StatefulWidget {
   /// Future tabs. Each entry provides a tab label and its view.
   /// Appended after the built-in tabs.
   final List<({String label, Widget view})> extraTabs;
+
+  /// Mushaf paper toggle: when true the dialog renders light even if the
+  /// app is dark.
+  final bool forceLight;
 
   @override
   State<WordDetailDialog> createState() => _WordDetailDialogState();
@@ -99,12 +105,15 @@ class _WordDetailDialogState extends State<WordDetailDialog>
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final dark = mushafDark(context, forceLight: widget.forceLight);
     return Dialog(
+      backgroundColor: widget.forceLight ? AppPalette.paper : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
       elevation: 12,
-      child: ConstrainedBox(
+      child: mushafOverlayTheme(
+        forceLight: widget.forceLight,
+        child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380, maxHeight: 640),
         child: Directionality(
           textDirection: TextDirection.rtl,
@@ -231,6 +240,7 @@ class _WordDetailDialogState extends State<WordDetailDialog>
               ],
             ),
           ),
+        ),
         ),
       ),
     );
@@ -487,8 +497,15 @@ class _TafsirViewState extends State<_TafsirView> {
                   visualDensity: VisualDensity.compact,
                   selected: s == current,
                   selectedColor: HusnTheme.primary,
+                  backgroundColor: widget.dark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : HusnTheme.primary.withValues(alpha: 0.06),
                   labelStyle: TextStyle(
-                    color: s == current ? Colors.white : HusnTheme.primary,
+                    color: s == current
+                        ? Colors.white
+                        : (widget.dark
+                            ? const Color(0xFFE7C65A)
+                            : HusnTheme.primary),
                     fontWeight:
                         s == current ? FontWeight.bold : FontWeight.normal,
                   ),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:hijri/hijri_calendar.dart';
 // Hide intl's bidi TextDirection helper: we only need DateFormat from intl,
 // while Flutter's TextDirection drives layout direction.
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:small_husn_muslim/features/tracking/data/worship_tracking_repository.dart';
 import 'package:small_husn_muslim/features/tracking/data/worship_type.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
 /// Worship tracker ("تتبع الصيام والورد"): voluntary fasting (Mon/Thu +
@@ -36,22 +39,6 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
     return code == 'ar' ? TextDirection.rtl : TextDirection.ltr;
   }
 
-  static BoxDecoration _cardDeco(bool isDark) => BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E28) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      );
 
   late DateTime _viewingDate;
   bool _loading = true;
@@ -189,7 +176,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
         textDirection: _dir(ctx),
         child: AlertDialog(
           title: Text(loc.wtDailyGoal,
-              style: const TextStyle(fontFamily: 'Amiri')),
+              style: HusnText.body),
           content: StatefulBuilder(
             builder: (ctx, setD) => Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -231,29 +218,14 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
   }
 
   Future<void> _confirmClear(AppLocalizations loc) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: _dir(ctx),
-        child: AlertDialog(
-          title: Text(loc.wtClearTitle,
-              style: const TextStyle(fontFamily: 'Amiri')),
-          content: Text(loc.wtClearHint),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(loc.ctCancel),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(loc.ptDelete),
-            ),
-          ],
-        ),
-      ),
+    final confirmed = await AppFeedback.confirmDestructive(
+      context,
+      title: loc.wtClearTitle,
+      content: loc.wtClearHint,
+      confirmLabel: loc.ptDelete,
+      cancelLabel: loc.ctCancel,
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await WorshipTrackingRepository.instance.clearAll();
       await _load();
     }
@@ -319,9 +291,6 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA);
     // Follow the app locale (Arabic → RTL, others → LTR) so the layout
     // mirrors automatically instead of being hardcoded.
     final dir = _dir(context);
@@ -334,26 +303,9 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
     return Directionality(
       textDirection: dir,
       child: Scaffold(
-        backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-        elevation: 0,
-        title: Text(loc.wtTitle,
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              color: isDark ? Colors.white : Colors.black87,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            )),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : Colors.black87,
-            size: 20,
-          ),
-          onPressed: () => Get.back(),
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: HusnAppBar.back(
+        title: loc.wtTitle,
         actions: [
           IconButton(
             tooltip: loc.wtClear,
@@ -373,7 +325,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
     final loc = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const HusnLoading();
     }
     // Compact single-screen layout: tight padding/gaps so the whole page
     // fits without scrolling on a regular phone. The ListView stays as the
@@ -403,7 +355,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
     final progress = _goal == 0 ? 0.0 : (done / _goal).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -525,7 +477,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
     final hint = _occasionHint(loc);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,7 +624,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
       List<DeedType> types) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -748,7 +700,7 @@ class _WorshipTrackingScreenState extends State<WorshipTrackingScreen> {
         _weeks.every((w) => !w.$1 && !w.$2);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: _cardDeco(isDark),
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -986,7 +938,7 @@ class _FastKindSheetState extends State<_FastKindSheet> {
                     title: Text(_name(k, loc),
                         textAlign: TextAlign.start,
                         style:
-                            const TextStyle(fontFamily: 'Amiri')),
+                            HusnText.body),
                     trailing: Text(
                       loc.ptPointsNum(points),
                       style: const TextStyle(

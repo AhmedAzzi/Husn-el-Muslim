@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_reminder_service.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
@@ -52,7 +54,7 @@ class _TrackingSettingsSectionState extends State<TrackingSettingsSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(loc.ptGoalDialogTitle,
-            style: const TextStyle(fontFamily: 'Amiri')),
+            style: HusnText.body),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -103,7 +105,7 @@ class _TrackingSettingsSectionState extends State<TrackingSettingsSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(loc.ptContext,
-            style: const TextStyle(fontFamily: 'Amiri')),
+            style: HusnText.body),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -164,7 +166,7 @@ class _TrackingSettingsSectionState extends State<TrackingSettingsSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(loc.ptWidgetTitle,
-            style: const TextStyle(fontFamily: 'Amiri')),
+            style: HusnText.body),
         content: Text(loc.ptWidgetHint),
         actions: [
           TextButton(
@@ -177,27 +179,15 @@ class _TrackingSettingsSectionState extends State<TrackingSettingsSection> {
   }
 
   Future<void> _confirmClear(AppLocalizations loc) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.ptClearTitle,
-            style: const TextStyle(fontFamily: 'Amiri')),
-        content: Text(loc.ptClearHint),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(loc.ctCancel),
-          ),
-          FilledButton(
-            key: const ValueKey('pt_clear_confirm'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(loc.ptDelete),
-          ),
-        ],
-      ),
+    final confirmed = await AppFeedback.confirmDestructive(
+      context,
+      title: loc.ptClearTitle,
+      content: loc.ptClearHint,
+      confirmLabel: loc.ptDelete,
+      cancelLabel: loc.ctCancel,
+      confirmKey: const ValueKey('pt_clear_confirm'),
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await PrayerTrackingRepository.instance.clearAll();
       await _load();
     }

@@ -1,14 +1,17 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_controller.dart';
+import 'package:small_husn_muslim/core/utils/share_helper.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
@@ -102,6 +105,17 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
     _searchController.dispose();
     _api.dispose();
     super.dispose();
+  }
+
+  /// Prev button: back to the previously visited main section inside the
+  /// shell (drawer-less screen). Falls back to popping the route when there
+  /// is no shell (standalone/tests).
+  void _goBack() {
+    if (Get.isRegistered<MainNavController>()) {
+      Get.find<MainNavController>().goBack();
+    } else {
+      Get.back();
+    }
   }
 
   CountryInfo get _currentCountry => kSupportedCountries.firstWhere(
@@ -479,15 +493,11 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: theme.appBarTheme.foregroundColor),
-              onPressed: () => Get.back(),
-            ),
-            title: _isSearching
+          // Drawer-less main section: Prev returns to the previous section
+          // (usually Mawaqit, where the map button lives).
+          appBar: HusnAppBar.back(
+            onBack: _goBack,
+            titleWidget: _isSearching
                 ? TextField(
                     controller: _searchController,
                     autofocus: true,
@@ -500,6 +510,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                           fontFamily: 'Amiri'),
                       border: InputBorder.none,
                     ),
+                    onChanged: (_) => setState(() {}),
                   )
                 : Text(
                     context.loc.mmTitle,
@@ -513,8 +524,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
             actions: [
               IconButton(
                 tooltip: _isSearching ? context.loc.mmCloseSearch : context.loc.mmSearch,
-                icon: Icon(_isSearching ? Icons.close : Icons.search_rounded,
-                    color: theme.appBarTheme.foregroundColor),
+                icon: const Icon(Icons.search_rounded),
                 onPressed: () {
                   setState(() {
                     if (_isSearching) {
@@ -530,8 +540,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                 tooltip: _showListView ? context.loc.mmShowMap : context.loc.mmShowList,
                 icon: Icon(_showListView
                         ? Icons.map_rounded
-                        : Icons.list_rounded,
-                    color: theme.appBarTheme.foregroundColor),
+                        : Icons.list_rounded),
                 onPressed: () {
                   setState(() => _showListView = !_showListView);
                 },
@@ -544,18 +553,9 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
               IconButton(
                 tooltip: context.loc.ctRefresh,
                 onPressed: _loading ? null : () => _loadMosques(forceRefresh: true),
-                icon: Icon(Icons.refresh_rounded,
-                    color: theme.appBarTheme.foregroundColor),
+                icon: const Icon(Icons.refresh_rounded),
               ),
             ],
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
           body: Stack(
             children: [
@@ -722,7 +722,7 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                             onPressed: () => _loadMosques(forceRefresh: true),
                             icon: const Icon(Icons.refresh),
                             label: Text(context.loc.mmRetry,
-                                style: const TextStyle(fontFamily: 'Amiri')),
+                                style: HusnText.body),
                           ),
                         ],
                       ),
@@ -1124,16 +1124,9 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                           _rebuildMarkers();
                         });
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                context.loc.mmAdoptedNow(m.name),
-                                textAlign: TextAlign.right,
-                                style: const TextStyle(fontFamily: 'Amiri'),
-                              ),
-                              backgroundColor: const Color(0xFF693B42),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                          AppFeedback.snack(
+                            context,
+                            context.loc.mmAdoptedNow(m.name),
                           );
                         }
                       },
@@ -1188,16 +1181,10 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                         }
                       }
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              context.loc.mmDirectionsFailed,
-                              textAlign: TextAlign.right,
-                              style:
-                                  const TextStyle(fontFamily: 'Amiri'),
-                            ),
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        AppFeedback.snack(
+                          context,
+                          context.loc.mmDirectionsFailed,
+                          type: AppFeedbackType.error,
                         );
                       }
                     },
@@ -1227,11 +1214,9 @@ ${context.loc.nsPrayerIsha}: ${s.isha}
 ${s.jumua != null && s.jumua!.isNotEmpty ? context.loc.mmJumua(s.jumua!) : ''}
 ${context.loc.mmAppName}
 ''';
-                            SharePlus.instance.share(
-                              ShareParams(
-                                text: shareText,
-                                subject: context.loc.mmPrayerTimesFor(m.name, m.city),
-                              ),
+                            ShareHelper.shareText(
+                              shareText,
+                              subject: context.loc.mmPrayerTimesFor(m.name, m.city),
                             );
                           }
                         : null,

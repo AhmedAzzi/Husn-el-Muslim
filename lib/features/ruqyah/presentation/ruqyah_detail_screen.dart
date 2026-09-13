@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:small_husn_muslim/core/constants/strings.dart';
-import 'package:small_husn_muslim/core/theme/app_colors.dart';
+import 'package:small_husn_muslim/core/utils/share_helper.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/islamic_ornaments.dart';
 import 'package:small_husn_muslim/features/book/data/book_models.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
@@ -21,20 +18,7 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
   String get _fullText => widget.treatment.items.join('\n\n');
 
   void _copyAll() {
-    Clipboard.setData(ClipboardData(text: _fullText)).then((_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Center(
-            child: Text(
-              context.loc.ctCopied,
-              style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
-            ),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    });
+    ShareHelper.copyToClipboard(context, _fullText, message: context.loc.ctCopied);
   }
 
   void _shareAll() {
@@ -46,11 +30,9 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
       fullText.writeln();
     }
     fullText.writeln('من كتاب: الدعاء ويليه العلاج بالرقى من الكتاب والسنة');
-    SharePlus.instance.share(
-      ShareParams(
-        text: fullText.toString(),
-        subject: widget.treatment.title,
-      ),
+    ShareHelper.shareText(
+      fullText.toString(),
+      subject: widget.treatment.title,
     );
   }
 
@@ -74,22 +56,9 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              widget.treatment.title,
-              style: TextStyle(
-                fontSize: double.parse(fontSize18),
-                fontFamily: fontFamily,
-                color: bgLight,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            iconTheme: IconThemeData(color: bgLight),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(
+            title: widget.treatment.title,
             actions: [
               IconButton(
                 icon: const Icon(Icons.copy_rounded),
@@ -102,14 +71,6 @@ class _RuqyahDetailScreenState extends State<RuqyahDetailScreen> {
                 onPressed: _shareAll,
               ),
             ],
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
           body: Stack(
             children: [

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Floating ayah overlay card, compact header style. Fully RTL.
+    Static structure only — all dynamic state (texts, tafsir visibility,
+    nav dimming, ▶/⏸) is bound in AyahOverlayUi.buildCard(). At runtime the
+    Amiri typeface is applied from code (assets/fonts), so the Studio preview
+    shows system fonts. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_gravity="center"
+    android:gravity="center"
+    android:layoutDirection="rtl"
+    android:paddingLeft="25dp"
+    android:paddingTop="6dp"
+    android:paddingRight="25dp"
+    android:paddingBottom="8dp"
+    >
+
+    <!-- Dark card with gold border and soft shadow. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layoutDirection="rtl"
+        android:paddingLeft="12dp"
+        android:paddingTop="10dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="10dp"
+        android:background="@drawable/overlay_card"
+        android:elevation="10dp">
+
+        <!-- Compact header: the 4 actions + icon spread evenly. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layoutDirection="rtl"
+            android:gravity="center"
+            android:paddingHorizontal="15dp"
+            >
+
+            <TextView
+                android:id="@+id/overlay_done"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:background="@drawable/overlay_circle_ring_gold"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:layoutDirection="rtl"
+                android:text="✓"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/overlay_help"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:gravity="center"
+                android:layoutDirection="rtl"
+                android:text="?"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/overlay_circle_ring_gold"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@mipmap/ic_launcher"
+                android:gravity="center"
+                android:contentDescription="ختمة" />
+
+
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/overlay_play"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:gravity="center"
+                android:layoutDirection="rtl"
+                android:text="▶"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/overlay_circle_ring_gold"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+
+
+            <ImageView
+                android:id="@+id/overlay_later"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:background="@drawable/overlay_circle_ring_gold"
+                android:src="@drawable/overlay_ic_later"
+                android:scaleType="centerInside"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layoutDirection="rtl"
+                android:contentDescription="تأجيل" />
+        </LinearLayout>
+
+        <!-- Gold hairline divider. -->
+     
+
+        <!-- Scroll for ayah + nav + tafsir, capped in code to ~62% of the
+            screen so long ayahs scroll inside the card. -->
+        <ScrollView
+            android:id="@+id/overlay_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layoutDirection="rtl"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layoutDirection="rtl">
+
+                <!-- Ayah text: ivory, centered, RTL. -->
+                <TextView
+                    android:id="@+id/overlay_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:layoutDirection="rtl"
+                    android:textDirection="rtl"
+                    android:textColor="@color/overlay_ivory"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:lineSpacingMultiplier="1.35"
+                    android:paddingLeft="2dp"
+                    android:paddingTop="5dp"
+                    android:paddingRight="2dp"
+                    android:paddingBottom="2dp"
+                    tools:text="قَالَ رَبِّ إِنِّي دَعَوْتُ قَوْمِي لَيْلًا وَنَهَارًا" />
+
+                <!-- Nav row, RTL: prev right, meta centered, next left. -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layoutDirection="rtl"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/overlay_next"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:gravity="center"
+                        android:layoutDirection="rtl"
+                        android:text="⏮"
+                        android:textColor="@color/overlay_gold"
+                        android:textSize="18sp"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:id="@+id/overlay_meta"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:textAlignment="center"
+                        android:textDirection="ltr"
+                        android:textColor="@color/overlay_gold_light"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        tools:text="(نوح - 4 / 28)" />
+
+                    <TextView
+                        android:id="@+id/overlay_prev"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:gravity="center"
+                        android:layoutDirection="rtl"
+                        android:text="⏭"
+                        android:textColor="@color/overlay_gold"
+                        android:textSize="18sp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <!-- Tafsir in a sand-tinted box; gone unless bound. -->
+                <LinearLayout
+                    android:id="@+id/overlay_tafsir_box"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical"
+                    android:layoutDirection="rtl"
+                    android:paddingLeft="8dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="8dp"
+                    android:paddingBottom="10dp"
+                    android:background="@drawable/overlay_tafsir_box"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/overlay_tafsir"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textAlignment="center"
+                        android:layoutDirection="rtl"
+                        android:textDirection="rtl"
+                        android:textColor="@color/overlay_sand"
+                        android:textSize="18sp"
+                        android:lineSpacingMultiplier="1.3"
+                        tools:text="التفسير المختصر…" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

@@ -118,6 +118,11 @@ class NakhtemSettingsController extends GetxController {
     await _persist();
   }
 
+  Future<void> setOverlayEnabled(bool v) async {
+    settings.value = settings.value.copyWith(overlayEnabled: v);
+    await _persist();
+  }
+
   /// Returns the reciter matching the current setting, or null.
   /// Resolves against the API list first, then the offline defaults, so a
   /// reciter picked while online keeps working across restarts.

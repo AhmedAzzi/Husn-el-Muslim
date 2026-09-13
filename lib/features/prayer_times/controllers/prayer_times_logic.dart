@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:geolocator/geolocator.dart';
@@ -346,8 +347,7 @@ class PrayerTimesLogic extends GetxController {
     _fajrChallengeOpen = true;
     try {
       try {
-        const platform =
-            MethodChannel('com.ahmed.hisnelmuslim/prayer_notification');
+        const platform = PlatformChannels.prayerNotification;
         await platform.invokeMethod('bringAppToForeground');
       } catch (e) {
         if (kDebugMode) print("Error bringing - $e");
@@ -405,11 +405,21 @@ class PrayerTimesLogic extends GetxController {
       onOpenScreen: (screenName) {
         if (screenName == 'prayer_times') {
           if (Get.context != null) {
-            Get.to(() => const PrayerTimesScreen());
+            // Main section: switch the shell instead of pushing a duplicate.
+            if (MainNavHelper.isShellReady) {
+              MainNavHelper.goToMawaqit();
+            } else {
+              Get.to(() => const PrayerTimesScreen());
+            }
           }
         } else if (screenName == 'tracking') {
           if (Get.context != null) {
-            Get.to(() => const TrackingHomeScreen());
+            // Main section: switch the shell instead of pushing a duplicate.
+            if (MainNavHelper.isShellReady) {
+              MainNavHelper.goToTracking();
+            } else {
+              Get.to(() => const TrackingHomeScreen());
+            }
           }
         }
       },
@@ -423,11 +433,19 @@ class PrayerTimesLogic extends GetxController {
     if (pendingScreen != null) {
       if (pendingScreen == 'prayer_times') {
         if (Get.context != null) {
-          Get.to(() => const PrayerTimesScreen());
+          if (MainNavHelper.isShellReady) {
+            MainNavHelper.goToMawaqit();
+          } else {
+            Get.to(() => const PrayerTimesScreen());
+          }
         }
       } else if (pendingScreen == 'tracking') {
         if (Get.context != null) {
-          Get.to(() => const TrackingHomeScreen());
+          if (MainNavHelper.isShellReady) {
+            MainNavHelper.goToTracking();
+          } else {
+            Get.to(() => const TrackingHomeScreen());
+          }
         }
       }
     }
@@ -669,33 +687,16 @@ class PrayerTimesLogic extends GetxController {
             children: [
               Icon(Icons.location_off, color: Color(0xFFD64463)),
               SizedBox(width: 8),
-              Text(
-                'خدمات الموقع معطلة',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text('خدمات الموقع معطلة'),
             ],
           ),
           content: const Text(
             'لحساب مواقيت الصلاة بدقة، يرجى تفعيل خدمات الموقع (GPS) من إعدادات الجهاز.',
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              fontSize: 16,
-            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(result: false),
-              child: const Text(
-                'إلغاء',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                ),
-              ),
+              child: const Text('إلغاء'),
             ),
             ElevatedButton(
               onPressed: () => Get.back(result: true),
@@ -705,10 +706,7 @@ class PrayerTimesLogic extends GetxController {
               ),
               child: const Text(
                 'فتح الإعدادات',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -730,33 +728,16 @@ class PrayerTimesLogic extends GetxController {
             children: [
               Icon(Icons.location_disabled, color: Color(0xFFD64463)),
               SizedBox(width: 8),
-              Text(
-                'إذن الموقع مرفوض',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text('إذن الموقع مرفوض'),
             ],
           ),
           content: const Text(
             'تم رفض إذن الوصول إلى الموقع بشكل دائم. لتفعيل مواقيت الصلاة، يرجى منح التطبيق إذن الموقع من إعدادات التطبيق في النظام.',
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              fontSize: 16,
-            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(),
-              child: const Text(
-                'حسناً',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                ),
-              ),
+              child: const Text('حسناً'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -769,10 +750,7 @@ class PrayerTimesLogic extends GetxController {
               ),
               child: const Text(
                 'فتح الإعدادات',
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -788,7 +766,7 @@ class PrayerTimesLogic extends GetxController {
     if (status == LocationPermission.whileInUse) {
       if (kDebugMode) print("Upgrading to background location permission...");
       try {
-        const platform = MethodChannel('com.ahmed.hisnelmuslim/location');
+        const platform = PlatformChannels.location;
         final bool granted =
             await platform.invokeMethod('requestBackgroundLocationPermission');
         return granted;

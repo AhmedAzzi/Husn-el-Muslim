@@ -418,8 +418,22 @@ class NakhtemController extends GetxController {
   Future<void> syncOverlayCache() async {
     try {
       final svc = Get.find<PhoneExperienceService>();
-      // The overlay has no settings toggle — it is always enabled whenever
-      // a khatma is active, so the unlock receiver can draw the ayah.
+      // Master kill-switch from settings: when the user disables the overlay,
+      // the unlock receiver must never draw, so cache disabled + dismiss any
+      // visible surface. Manual `publishAyahToOverlay` (explicit "start now")
+      // still works on demand.
+      final overlayOn = !Get.isRegistered<NakhtemSettingsController>() ||
+          Get.find<NakhtemSettingsController>().settings.value.overlayEnabled;
+      if (!overlayOn) {
+        try {
+          await svc.dismissAyahOverlay();
+        } catch (_) {}
+        await svc.cacheOverlayAyah(enabled: false);
+        return;
+      }
+      // The overlay has no other toggle — it is enabled whenever a khatma is
+      // active and [overlayEnabled] is on, so the unlock receiver can draw
+      // the ayah.
       final idx = progress.value?.currentGlobalAyah ??
           khatma.value?.currentGlobalAyah ??
           0;

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
-import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/mosque_map_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/app_sheets.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
@@ -104,16 +107,17 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
     setState(() => _isRefreshingLocation = true);
     try {
       await _prayerLogic.ensureDataLoaded(force: true);
-      _showSnackBar(loc.stGpsRefreshed);
+      snack(loc.stGpsRefreshed, type: AppFeedbackType.success);
     } catch (e) {
-      _showSnackBar(loc.stGpsFailed);
+      snack(loc.stGpsFailed, type: AppFeedbackType.error);
     } finally {
       if (mounted) setState(() => _isRefreshingLocation = false);
     }
   }
   void _showPrayerSourcePicker() {
     final loc = AppLocalizations.of(context)!;
-    _showCustomBottomSheet(
+      AppSheets.show(
+        context,
       title: loc.stSourcePicker,
       subtitle: loc.stSourcePickerSub,
       child: Column(
@@ -128,11 +132,13 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
             onTap: () {
               Get.back();
               if (_prayerLogic.selectedMosque == null) {
-                Get.to(() => const MosqueMapScreen());
+                // Mosque map is a main section: switch the shell instead of
+                // pushing a duplicate route.
+                MainNavHelper.goToMosqueMap();
               } else {
                 setState(() =>
                     _prayerLogic.setPrayerTimeSource(PrayerTimeSource.mosque));
-                _showSnackBar(AppLocalizations.of(context)!.stSourceMosqueSet);
+                snack(AppLocalizations.of(context)!.stSourceMosqueSet);
               }
             },
           ),
@@ -147,7 +153,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
               Get.back();
               setState(() => _prayerLogic
                   .setPrayerTimeSource(PrayerTimeSource.calculated));
-              _showSnackBar(AppLocalizations.of(context)!.stSourceCalcSet);
+              snack(AppLocalizations.of(context)!.stSourceCalcSet);
             },
           ),
         ],
@@ -156,7 +162,8 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
   }
   void _showCalculationMethodPicker() {
     final loc = AppLocalizations.of(context)!;
-    _showCustomBottomSheet(
+      AppSheets.show(
+        context,
       title: loc.stCalcPicker,
       subtitle: loc.stCalcPickerSub,
       child: Column(
@@ -172,7 +179,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
               Get.back();
               setState(() => _prayerLogic.angles = entry.key);
               _prayerLogic.saveCalculationSettings();
-              _showSnackBar(AppLocalizations.of(context)!.stCalcSaved);
+              snack(AppLocalizations.of(context)!.stCalcSaved);
             },
           );
         }).toList(),
@@ -181,7 +188,8 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
   }
   void _showAsrMethodPicker() {
     final loc = AppLocalizations.of(context)!;
-    _showCustomBottomSheet(
+      AppSheets.show(
+        context,
       title: loc.stAsrPicker,
       subtitle: loc.stAsrPickerSub,
       child: Column(
@@ -197,7 +205,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
               Get.back();
               setState(() => _prayerLogic.asrMethod = entry.key);
               _prayerLogic.saveCalculationSettings();
-              _showSnackBar(AppLocalizations.of(context)!.stAsrSaved);
+              snack(AppLocalizations.of(context)!.stAsrSaved);
             },
           );
         }).toList(),
@@ -261,7 +269,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: Text(
                           loc.stReset,
-                          style: const TextStyle(fontFamily: 'Amiri'),
+                          style: HusnText.body,
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFFD64463),
@@ -377,7 +385,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                         _prayerLogic.saveCalculationSettings();
                         setState(() {});
                         Get.back();
-                        _showSnackBar(AppLocalizations.of(context)!.stManualSaved);
+                        snack(AppLocalizations.of(context)!.stManualSaved);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD64463),
@@ -460,7 +468,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: Text(
                           loc.stReset,
-                          style: const TextStyle(fontFamily: 'Amiri'),
+                          style: HusnText.body,
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFFD64463),
@@ -580,7 +588,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                         _prayerLogic.saveCalculationSettings();
                         setState(() {});
                         Get.back();
-                        _showSnackBar(AppLocalizations.of(context)!.stIqamaSaved);
+                        snack(AppLocalizations.of(context)!.stIqamaSaved);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD64463),
@@ -720,7 +728,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                         _prayerLogic.saveCalculationSettings();
                         setState(() {});
                         Get.back();
-                        _showSnackBar(AppLocalizations.of(context)!.stHijriSaved);
+                        snack(AppLocalizations.of(context)!.stHijriSaved);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD64463),
@@ -746,88 +754,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
         ),
     );
   }
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontFamily: 'Amiri', fontSize: 15),
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   // --- Dialogs & Bottom Sheets ---
-  void _showCustomBottomSheet({
-    required String title,
-    required String subtitle,
-    required Widget child,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Get.bottomSheet(
-      Directionality(
-        textDirection: TextDirection.rtl,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E28) : Colors.white,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 14,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 18),
-              // Options scroll when taller than the sheet allows (e.g. the
-              // 11-item calculation-method list on small screens).
-              Flexible(
-                child: SingleChildScrollView(
-                  child: child,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      isScrollControlled: true,
-);
-    }
 
   @override
   Widget build(BuildContext context) {
@@ -844,39 +771,8 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-          appBar: AppBar(
-            backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.stPrayerData,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                  opacity: isDark ? 0.35 : 0.15,
-                ),
-              ),
-            ),
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: loc.stPrayerData),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             physics: const BouncingScrollPhysics(),
@@ -948,7 +844,9 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                             ),
                           ),
                         ),
-                        onTap: () => Get.to(() => const MosqueMapScreen()),
+                        // Mosque map is a main section: switch the shell instead
+                        // of pushing a duplicate route.
+                        onTap: () => MainNavHelper.goToMosqueMap(),
                       ),
                       SettingsWidgets.buildDivider(context),
                     ],
@@ -1124,7 +1022,7 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                       label: Text(
                         loc.stHiddenAdvanced,
                         style:
-                            const TextStyle(fontFamily: 'Amiri'),
+                            HusnText.body,
                       ),
                     ),
                   ),

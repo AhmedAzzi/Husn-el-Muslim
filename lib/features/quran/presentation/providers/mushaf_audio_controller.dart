@@ -61,6 +61,7 @@ class MushafAudioController extends GetxController {
   StreamSubscription<int?>? _indexSub;
   StreamSubscription<Duration?>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
+  StreamSubscription<bool>? _playingSub;
 
   AudioService get _audio => Get.find<AudioService>();
   NakhtemSettingsController get _settings =>
@@ -105,6 +106,18 @@ class MushafAudioController extends GetxController {
       queueIndex.value = i;
       playingSurah.value = queue[i].surah;
       playingAyah.value = queue[i].ayah;
+    });
+  }
+
+  /// Ground truth for the mini-player: the engine's real playing state.
+  /// Fixes the stuck loading circle — the optimistic `isPlaying` flags can
+  /// desync (pause during load, overlapping play calls, engine-side resume),
+  /// leaving `isLoading && !isPlaying` true while sound is audible. The
+  /// engine stream corrects both flags on every real transition.
+  void _ensurePlayingHook() {
+    _playingSub ??= _audio.playingStream.listen((playing) {
+      isPlaying.value = playing;
+      if (playing && isLoading.value) isLoading.value = false;
     });
   }
 
@@ -210,7 +223,9 @@ class MushafAudioController extends GetxController {
 
   Future<void> _playOne(Reciter r, int surah, int ayah) async {
     error.value = null;
-    isLoading.value = true;
+    // Already reciting (sequential queue advance): keep the pause button up
+    // instead of flashing the loading circle between ayahs.
+    if (!isPlaying.value) isLoading.value = true;
     playingSurah.value = surah;
     playingAyah.value = ayah;
     try {
@@ -220,6 +235,7 @@ class MushafAudioController extends GetxController {
         isPlaying.value = false;
       } else {
         isPlaying.value = true;
+        _ensurePlayingHook();
         _ensurePositionHook();
       }
     } catch (e) {
@@ -312,6 +328,7 @@ class MushafAudioController extends GetxController {
       _singleFile = false;
       await _audio.playPlaylist();
       isPlaying.value = true;
+      _ensurePlayingHook();
       _ensurePositionHook();
     } catch (_) {
       // Playlist preparation failed — sequential mode with mirror retries.
@@ -427,6 +444,7 @@ class MushafAudioController extends GetxController {
     playingAyah.value = 0;
     await _audio.playPlaylist();
     isPlaying.value = true;
+    _ensurePlayingHook();
     _ensurePositionHook();
     if (r != null && ayahCount > 0) {
       unawaited(_beginTrackedSchedule(r, surah, ayahCount));
@@ -503,6 +521,7 @@ class MushafAudioController extends GetxController {
     _indexSub?.cancel();
     _positionSub?.cancel();
     _durationSub?.cancel();
+    _playingSub?.cancel();
     super.onClose();
   }
 }

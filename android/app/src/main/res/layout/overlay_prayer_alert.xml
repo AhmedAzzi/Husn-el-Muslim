@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full-screen prayer-time alert: "cute compact card" composition. Fully RTL.
+    One chubby gold-trimmed card holds the whole call; the close button is
+    pinned to the root bottom (outside the scaled tree) so it can never be
+    pushed off-screen. Amiri is baked in via res/font; PrayerAlertUi
+    re-applies it in code, binds the prayer title, shrinks the card to fit
+    any height, and wires dismiss.
+    IDs prayer_alert_* are part of the PrayerAlertUi contract: do not rename
+    them (the view binding + service depend on the generated names). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/prayer_alert_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/overlay_prayer_backdrop"
+    android:layoutDirection="rtl">
+
+    <!-- Luxury gold crown line pinned to the top edge. -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_gravity="top"
+        android:background="@drawable/overlay_gold_divider" />
+
+    <!-- Night-sky stars, floating behind the content. -->
+    <View
+        android:layout_width="4dp"
+        android:layout_height="4dp"
+        android:layout_gravity="top|left"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="100dp"
+        android:alpha="0.5"
+        android:background="@drawable/overlay_star_white"
+        tools:ignore="RtlHardcoded" />
+    <View
+        android:layout_width="3dp"
+        android:layout_height="3dp"
+        android:layout_gravity="top|right"
+        android:layout_marginRight="56dp"
+        android:layout_marginTop="180dp"
+        android:alpha="0.4"
+        android:background="@drawable/overlay_circle_gold" />
+    <View
+        android:layout_width="5dp"
+        android:layout_height="5dp"
+        android:layout_gravity="top|left"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="330dp"
+        android:alpha="0.55"
+        android:background="@drawable/overlay_star_white" />
+    <View
+        android:layout_width="4dp"
+        android:layout_height="4dp"
+        android:layout_gravity="top|right"
+        android:layout_marginRight="70dp"
+        android:layout_marginTop="430dp"
+        android:alpha="0.45"
+        android:background="@drawable/overlay_star_white" />
+    <View
+        android:layout_width="3dp"
+        android:layout_height="3dp"
+        android:layout_gravity="bottom|left"
+        android:layout_marginLeft="70dp"
+        android:layout_marginBottom="200dp"
+        android:alpha="0.4"
+        android:background="@drawable/overlay_star_white" />
+    <View
+        android:layout_width="5dp"
+        android:layout_height="5dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="52dp"
+        android:layout_marginBottom="150dp"
+        android:alpha="0.45"
+        android:background="@drawable/overlay_circle_gold" />
+
+    <!-- No ScrollView by design: PrayerAlertUi.fitContentToHeight() shrinks
+         this card to fit any screen height, so the alert never scrolls. -->
+    <LinearLayout
+        android:id="@+id/prayer_alert_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layoutDirection="rtl"
+        android:paddingLeft="24dp"
+        android:paddingTop="28dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="28dp">
+
+        <!-- Basmala crown. -->
+        <TextView
+            android:id="@+id/prayer_alert_basmala"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/amiri_regular"
+            android:gravity="center"
+            android:text="بسم الله الرحمن الرحيم"
+            android:textColor="@color/overlay_gold_light"
+            android:textSize="20sp" />
+
+        <!-- ═══ THE CUTE CARD: everything lives in here ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layoutDirection="rtl"
+            android:padding="50dp"
+            android:background="@drawable/overlay_cute_card"
+            android:elevation="10dp">
+
+            <!-- Little ringed crescent (pulse is driven in code). -->
+            <TextView
+                android:id="@+id/prayer_alert_icon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/overlay_circle_ring_gold"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:text="☪"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="28sp" />
+
+            <!-- Takbeer badge. -->
+            <TextView
+                android:id="@+id/prayer_alert_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/overlay_prayer_badge"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:paddingLeft="18dp"
+                android:paddingTop="8dp"
+                android:paddingRight="18dp"
+                android:paddingBottom="8dp"
+                android:text="الله أكبر، الله أكبر"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Prayer name, bound in code to "صلاة <arabic>". -->
+            <TextView
+                android:id="@+id/prayer_alert_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:textColor="@color/overlay_ivory"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="4"
+                android:shadowRadius="10"
+                tools:text="صلاة الفجر" />
+
+            <!-- Hayya ala as-salah line straight from the adhan. -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:text="حي على الصلاة، حي على الفلاح"
+                android:textColor="@color/overlay_sand"
+                android:textSize="16sp" />
+
+            <View
+                android:layout_width="70dp"
+                android:layout_height="2dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/overlay_gold_divider" />
+
+            <TextView
+                android:id="@+id/prayer_alert_verse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:layoutDirection="rtl"
+                android:textDirection="rtl"
+                android:text="إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ\nكِتَابًا مَوْقُوتًا"
+                android:textColor="@color/overlay_ivory"
+                android:textSize="23sp"
+                android:lineSpacingMultiplier="1.35" />
+
+            <TextView
+                android:id="@+id/prayer_alert_source"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/amiri_regular"
+                android:gravity="center"
+                android:text="﴿ سورة النساء: ١٠٣ ﴾"
+                android:textColor="@color/overlay_gold_light"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Ibrahim's dua for prayer (Quran 14:40). -->
+        <TextView
+            android:id="@+id/prayer_alert_dua"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="28dp"
+            android:layout_marginRight="28dp"
+            android:layout_marginBottom="6dp"
+            android:fontFamily="@font/amiri_regular"
+            android:gravity="center"
+            android:textAlignment="center"
+            android:layoutDirection="rtl"
+            android:textDirection="rtl"
+            android:text="رب اجعلني مقيم الصلاة ومن ذريتي ربنا وتقبل دعاء"
+            android:textColor="@color/overlay_sand"
+            android:textSize="14sp"
+            android:lineSpacingMultiplier="1.4" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/amiri_regular"
+            android:gravity="center"
+            android:text="﴿ سورة إبراهيم: ٤٠ ﴾"
+            android:textColor="@color/overlay_muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Pinned gold action, dark on-gold text. Lives OUTSIDE the scaled
+         content tree (direct child of the root, anchored to the bottom) so
+         the fit pass can never shrink it or push it off-screen — it is
+         always visible and tappable on every screen height. -->
+    <TextView
+        android:id="@+id/prayer_alert_close"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/overlay_prayer_close_gold"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="8dp"
+        android:fontFamily="@font/amiri_regular"
+        android:gravity="center"
+        android:padding="1dp"
+        android:text="إغلاق"
+        android:textColor="@color/overlay_sand"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+</FrameLayout>

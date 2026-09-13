@@ -1079,6 +1079,30 @@ class AppLocalizationsFr extends AppLocalizations {
   String get stHomePrayerSub => 'Horaires de l\'adhan, alertes et Qibla';
 
   @override
+  String get stHomeQuranSub => 'Moushaf et récitation';
+
+  @override
+  String get stHomeKhatmaSub => 'Progression khatma et ayah flottante';
+
+  @override
+  String get stHomeQiblaSub => 'Direction de la Qibla';
+
+  @override
+  String get stHomeDuaSub => 'Douas authentiques';
+
+  @override
+  String get stHomeNamesSub => 'Noms d\'Allah';
+
+  @override
+  String get stHomeRuqyahSub => 'Roqya';
+
+  @override
+  String get stHomeMosqueMapSub => 'Horaires des mosquées proches';
+
+  @override
+  String get stHomeTrackingSub => 'Suivi des prières et défi';
+
+  @override
   String get stHomeSet => 'Écran d\'accueil défini (appliqué au redémarrage)';
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
@@ -186,7 +187,7 @@ class _LogPrayerSheetState extends State<_LogPrayerSheet> {
                         : null,
                     leading: Icon(o.icon, color: o.color),
                     title: Text(o.label(loc),
-                        style: const TextStyle(fontFamily: 'Amiri')),
+                        style: HusnText.body),
                     trailing: Text(
                       points < 0
                           ? loc.ptPointsCount(points)

@@ -1,12 +1,18 @@
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
+
+import 'support/fake_android_notifications.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    // Wake-up records route through the reminder service → plugin cancel();
+    // the fake keeps that path quiet under test.
+    FlutterLocalNotificationsPlatform.instance = FakeAndroidNotifications();
   });
 
   Future<FajrDayLog?> log(String date) =>

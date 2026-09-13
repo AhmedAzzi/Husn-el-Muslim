@@ -1,10 +1,11 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:small_husn_muslim/core/platform/platform_channels.dart';
 
 /// Helper class for battery optimization settings
 class BatteryOptimizationHelper {
   static const MethodChannel _channel =
-      MethodChannel('com.ahmed.hisnelmuslim/battery_optimization');
+      PlatformChannels.batteryOptimization;
 
   /// Check if battery optimization is enabled for this app
   static Future<bool> isBatteryOptimizationEnabled() async {

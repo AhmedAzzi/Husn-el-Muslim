@@ -11,15 +11,14 @@ import 'package:workmanager/workmanager.dart';
 
 import 'package:small_husn_muslim/app.dart';
 import 'package:small_husn_muslim/core/config/app_config.dart';
+import 'package:small_husn_muslim/core/navigation/main_destinations.dart';
+import 'package:small_husn_muslim/core/navigation/main_shell.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/core/storage/app_database.dart';
-import 'package:small_husn_muslim/core/platform/phone_experience_service.dart';
-import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
+import 'package:small_husn_muslim/core/platform/phone_experience_service.dart'; 
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
-import 'package:small_husn_muslim/features/azkar/presentation/home_page.dart';
 import 'package:small_husn_muslim/features/quran/data/repositories/quran_repository.dart';
 import 'package:small_husn_muslim/features/quran/presentation/providers/quran_providers.dart';
 import 'package:small_husn_muslim/features/quran/presentation/providers/asbab_providers.dart';
@@ -137,15 +136,15 @@ Future<void> _initializeAppAsync(Stopwatch stopwatch) async {
   }
 
   if (onboardingComplete) {
-    // Onboarding already done — navigate to the user's preferred home screen
-    // (the initial frame showed onboarding as placeholder, now we replace it)
-    if (savedHomeScreen == homeScreenMisbaha) {
-      Get.offAll(() => const CustomDikrScreen(isHomeScreen: true));
-    } else if (savedHomeScreen == homeScreenPrayerTimes) {
-      Get.offAll(() => const PrayerTimesScreen(isHomeScreen: true));
-    } else {
-      Get.offAll(() => MyHomePageScreen(isDarkMode: savedIsDarkMode));
-    }
+    // Onboarding already done — replace the placeholder onboarding frame
+    // with the single MainShell route, selecting the user's preferred
+    // home section. Section state lives in the shell's IndexedStack.
+    Get.offAll(
+      () => MainShell(
+        initialDestination:
+            MainDestinationX.fromHomeScreenKey(savedHomeScreen),
+      ),
+    );
   }
   // If onboarding is NOT complete, the OnboardingScreen is already showing
   // from the initial runApp call — no navigation needed.

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:simple_icons/simple_icons.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/core/constants/strings.dart';
+import 'package:small_husn_muslim/core/navigation/main_nav_controller.dart';
 import 'package:small_husn_muslim/core/utils/url_utils.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
@@ -74,6 +77,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Get.to(() => page)?.then((_) => _loadSettings());
   }
 
+  /// Prev button: back to the previously visited main section inside the
+  /// shell (drawer-less screen). Falls back to popping the route when there
+  /// is no shell (standalone/tests).
+  void _goBack() {
+    if (Get.isRegistered<MainNavController>()) {
+      Get.find<MainNavController>().goBack();
+    } else {
+      Get.back();
+    }
+  }
+
   String _wakeStatus(AppLocalizations loc) {
     if (!_prayerLogic.fajrChallengeEnabled) return loc.sheetEnabledOff;
     final t = switch (_prayerLogic.fajrChallengeType) {
@@ -84,6 +98,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _ => loc.nsTypeQuestions,
     };
     return '${loc.sheetEnabledOn} • $t • ${loc.sheetQuestions(_prayerLogic.fajrChallengeQuestionsCount)}';
+  }
+
+  String _extraStatus(AppLocalizations loc) {
+    final on = <String>[
+      if (_prayerLogic.suhoorAlarmEnabled) loc.nsSuhoor,
+      if (_prayerLogic.preFajrAlarmEnabled) loc.nsPreFajr,
+      if (_prayerLogic.tahajjudEnabled) loc.nsTahajjud,
+      if (_prayerLogic.fajrExtra1Enabled || _prayerLogic.fajrExtra2Enabled)
+        loc.nsFajrExtra,
+      if (_prayerLogic.bedtimeAlarmEnabled) loc.nsBedtime,
+      if (_prayerLogic.prePrayerEnabled) loc.nsPrePrayer,
+      if (_prayerLogic.postPrayerEnabled) loc.nsPostPrayer,
+    ];
+    if (on.isEmpty) return loc.sheetEnabledOff;
+    if (on.length <= 2) return on.join(' • ');
+    return '${on.take(2).join(' • ')} • +${on.length - 2}';
+  }
+
+  String _adhkarStatus(AppLocalizations loc) {
+    final on = <String>[
+      if (_prayerLogic.morningAdhkarEnabled) loc.nsMorning,
+      if (_prayerLogic.eveningAdhkarEnabled) loc.nsEvening,
+      if (_prayerLogic.wakeupAdhkarEnabled) loc.nsWakeupAdhkar,
+      if (_prayerLogic.sleepAdhkarEnabled) loc.nsSleepAdhkar,
+      if (_prayerLogic.fridayKahfEnabled) loc.nsFridayKahf,
+    ];
+    if (on.isEmpty) return loc.sheetEnabledOff;
+    if (on.length <= 2) return on.join(' • ');
+    return '${on.take(2).join(' • ')} • +${on.length - 2}';
+  }
+
+  /// Single-line summary for the unified Notifications hub tile,
+  /// covering every notification family managed on its dedicated page.
+  String _notifHubStatus(AppLocalizations loc) {
+    final parts = <String>[];
+    parts.add(_wakeStatus(loc) == loc.sheetEnabledOff
+        ? loc.sheetEnabledOff
+        : loc.sheetEnabledOn);
+    final extra = _extraStatus(loc);
+    if (extra != loc.sheetEnabledOff) parts.add(extra);
+    final adhkar = _adhkarStatus(loc);
+    if (adhkar != loc.sheetEnabledOff) parts.add(adhkar);
+    return parts.join(' • ');
   }
 
   String? _fajrTime() {
@@ -250,7 +307,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               sub: loc.stFloatingDhikrSub,
               icon: Icons.auto_awesome_rounded,
               color: const Color(0xFF10B981),
-              open: () => _openSub(const GeneralSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
+            ),
+            (
+              title: loc.ptRemindToggle,
+              sub: loc.ptRemindHint,
+              icon: Icons.notifications_active_rounded,
+              color: const Color(0xFFD64463),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.stQuran,
@@ -561,35 +625,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-          appBar: AppBar(
-            backgroundColor: theme.appBarTheme.backgroundColor,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: theme.appBarTheme.foregroundColor,
-              ),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.stSettingsTitle,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: theme.appBarTheme.foregroundColor,
-                fontSize: 24,
-              ),
-            ),
-            centerTitle: true,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(appBarBG),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+          backgroundColor: theme.scaffoldBackgroundColor,
+          // Drawer-less main section: Prev returns to the previous section.
+          // Sub-pages opened from here use Get.to and keep their Back button.
+          appBar: HusnAppBar.back(
+            title: loc.stSettingsTitle,
+            onBack: _goBack,
           ),
           body: Column(
             children: [
@@ -601,7 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(fontFamily: 'Amiri', fontSize: 16),
                   decoration: InputDecoration(
                     hintText: loc.stSearchHint,
-                    hintStyle: const TextStyle(fontFamily: 'Amiri'),
+                    hintStyle: HusnText.body,
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _query.isEmpty
                         ? null
@@ -728,8 +769,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _menuRow(
                                   loc: loc,
                                   title: loc.stNotifHub,
-                                  subtitle: _wakeStatus(loc),
-                                  icon: Icons.alarm_on_outlined,
+                                  subtitle: _notifHubStatus(loc),
+                                  icon: Icons.notifications_active_outlined,
                                   color: const Color(0xFF06B6D4),
                                   page:
                                       const NotificationSettingsScreen(),

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
+import 'package:small_husn_muslim/features/tracking/data/tracking_core.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/tracking/data/points_engine.dart';
 import 'package:small_husn_muslim/features/tracking/data/prayer_log_entry.dart';
@@ -64,13 +64,6 @@ class PrayerTrackingRepository {
     }
   }
 
-  Future<SharedPreferences> _prefs() async {
-    try {
-      return SharedPrefsCache.instance;
-    } catch (_) {
-      return SharedPreferences.getInstance();
-    }
-  }
 
   String _entryKey(String date, int prayerIndex) =>
       '$_logPrefix${date}_$prayerIndex';
@@ -86,7 +79,7 @@ class PrayerTrackingRepository {
     required PrayerStatus status,
   }) async {
     assert(prayerIndex >= 0 && prayerIndex < prayerCount);
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return null;
     final key = dateKey(date);
     final entry = PrayerLogEntry(
@@ -108,7 +101,7 @@ class PrayerTrackingRepository {
     required DateTime date,
     required int prayerIndex,
   }) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date);
     await prefs.remove(_entryKey(key, prayerIndex));
     await _syncWidget(prefs);
@@ -118,7 +111,7 @@ class PrayerTrackingRepository {
 
   /// One day's entries in prayer order (Fajr..Isha); null = unlogged.
   Future<List<PrayerLogEntry?>> dayEntries(DateTime date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final key = dateKey(date);
     final out = <PrayerLogEntry?>[];
     for (var i = 0; i < prayerCount; i++) {
@@ -134,7 +127,7 @@ class PrayerTrackingRepository {
     DateTime? end,
   }) async {
     final anchor = end ?? DateTime.now();
-    final base = DateTime(anchor.year, anchor.month, anchor.day);
+    final base = dayOnly(anchor);
     final out = <List<PrayerLogEntry?>>[];
     for (var i = 0; i < days; i++) {
       out.add(await dayEntries(base.subtract(Duration(days: i))));
@@ -154,10 +147,10 @@ class PrayerTrackingRepository {
   Future<int> _dailyGoal(SharedPreferences prefs) async =>
       (prefs.getInt(_kDailyGoal) ?? defaultDailyGoal).clamp(1, prayerCount);
 
-  Future<int> dailyGoal() async => _dailyGoal(await _prefs());
+  Future<int> dailyGoal() async => _dailyGoal(await trackingPrefs());
 
   Future<void> setDailyGoal(int goal) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setInt(_kDailyGoal, goal.clamp(1, prayerCount));
     await syncDayProgress(prefs);
   }
@@ -165,10 +158,10 @@ class PrayerTrackingRepository {
   /// Consecutive goal-meeting days ending today (or yesterday if today is
   /// still pending — so the streak doesn't read 0 mid-day).
   Future<int> currentStreak({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final goal = await _dailyGoal(prefs);
     final today = now ?? DateTime.now();
-    var cursor = DateTime(today.year, today.month, today.day);
+    var cursor = dayOnly(today);
     final todayKey = dateKey(cursor);
     var performed = 0;
     for (var i = 0; i < prayerCount; i++) {
@@ -197,7 +190,7 @@ class PrayerTrackingRepository {
   }
 
   Future<int> longestStreak() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt(_kLongest) ?? 0;
   }
 
@@ -214,53 +207,53 @@ class PrayerTrackingRepository {
   // ---------- settings ----------
 
   Future<String> context() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final v = prefs.getString(_kContext);
     return v == contextWoman ? contextWoman : contextMan;
   }
 
   Future<void> setContext(String value) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setString(
         _kContext, value == contextWoman ? contextWoman : contextMan);
   }
 
   Future<bool> isDisabled() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getBool(_kDisabled) ?? false;
   }
 
   Future<void> setDisabled(bool disabled) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setBool(_kDisabled, disabled);
   }
 
   Future<bool> isOnboarded() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getBool(_kOnboarded) ?? false;
   }
 
   Future<void> setOnboarded(bool onboarded) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setBool(_kOnboarded, onboarded);
   }
 
   /// Logging reminders ("إشعارات ذكية"). Default OFF: enabled by accepting
   /// the tracker onboarding, toggleable in tracking settings afterwards.
   Future<bool> remindersEnabled() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getBool(_kReminders) ?? false;
   }
 
   Future<void> setReminders(bool enabled) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     await prefs.setBool(_kReminders, enabled);
   }
 
   /// Destructive reset ("مسح بيانات التتبع"): removes all prayer logs and
   /// the longest-streak mark. Keeps settings (context, goal, onboarding).
   Future<void> clearAll() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     for (final key in prefs.getKeys().toList()) {
       if (key.startsWith(_logPrefix)) {
         await prefs.remove(key);
@@ -273,7 +266,7 @@ class PrayerTrackingRepository {
   /// Developer snapshot for the diagnostics screen: streaks, goal, level
   /// inputs, flags, and reminder-cache presence. Single read, no UI strings.
   Future<Map<String, Object>> diagnosticsSnapshot({DateTime? now}) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     final anchor = now ?? DateTime.now();
     final todayKey = dateKey(anchor);
     var todayLogged = 0;
@@ -282,7 +275,7 @@ class PrayerTrackingRepository {
     }
     final entries = <PrayerLogEntry>[];
     final base =
-        DateTime(anchor.year, anchor.month, anchor.day);
+        dayOnly(anchor);
     for (var d = 0; d < 30; d++) {
       final key = dateKey(base.subtract(Duration(days: d)));
       for (var p = 0; p < prayerCount; p++) {
@@ -314,7 +307,7 @@ class PrayerTrackingRepository {
   /// on time unless the user already logged Fajr manually (manual entry
   /// always wins) or tracking is disabled.
   Future<void> recordAlarmFajr(String date) async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kDisabled) ?? false) return;
     if (_readSync(prefs, _entryKey(date, fajrIndex)) != null) return;
     final entry = PrayerLogEntry(
@@ -334,7 +327,7 @@ class PrayerTrackingRepository {
   /// Fajr=onTimeAlone entries. Never overwrites an existing manual entry.
   /// Safe to call repeatedly (guarded by a flag + per-day checks).
   Future<int> migrateFajrLogs() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     if (prefs.getBool(_kMigrated) ?? false) return 0;
     var imported = 0;
     for (final key in prefs.getKeys().toList()) {
@@ -368,7 +361,7 @@ class PrayerTrackingRepository {
   /// User Hijri day-adjustment shared with the prayer-times screen
   /// (raw `hijriOffset` pref; default 0). Display-only helper.
   Future<int> hijriOffsetDays() async {
-    final prefs = await _prefs();
+    final prefs = await trackingPrefs();
     return prefs.getInt('hijriOffset') ?? 0;
   }
 
@@ -377,7 +370,7 @@ class PrayerTrackingRepository {
   /// caller triggers the native re-render (see [_syncWidget]).
   Future<void> syncDayProgress([SharedPreferences? prefs]) async {
     try {
-      final p = prefs ?? await _prefs();
+      final p = prefs ?? await trackingPrefs();
       final key = dateKey(DateTime.now());
       var done = 0;
       for (var i = 0; i < prayerCount; i++) {

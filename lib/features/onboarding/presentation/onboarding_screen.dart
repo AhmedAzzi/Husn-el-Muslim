@@ -6,10 +6,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
-import 'package:small_husn_muslim/features/azkar/presentation/home_page.dart';
-import 'package:small_husn_muslim/features/masbaha/presentation/custom_dikr_screen.dart';
-import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
 import 'package:small_husn_muslim/core/config/app_config.dart';
+import 'package:small_husn_muslim/core/navigation/main_destinations.dart';
+import 'package:small_husn_muslim/core/navigation/main_shell.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
@@ -201,19 +200,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _navigateToHome(SharedPreferences prefs) {
     final savedHome = prefs.getString('home_screen') ?? homeScreenAzkar;
-    Widget home;
-    switch (savedHome) {
-      case homeScreenMisbaha:
-        home = const CustomDikrScreen(isHomeScreen: true);
-        break;
-      case homeScreenPrayerTimes:
-        home = const PrayerTimesScreen(isHomeScreen: true);
-        break;
-      default:
-        final isDark = prefs.getBool('dark_mode') ?? true;
-        home = MyHomePageScreen(isDarkMode: isDark);
-    }
-    Get.offAll(() => home);
+    Get.offAll(
+      () => MainShell(
+        initialDestination: MainDestinationX.fromHomeScreenKey(savedHome),
+      ),
+    );
   }
 
   // ─────────────────────────────────────────────────────────────

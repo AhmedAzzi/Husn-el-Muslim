@@ -1070,6 +1070,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String get stHomePrayerSub => 'مواعيد الأذان والتنبيهات والقبلة';
 
   @override
+  String get stHomeQuranSub => 'المصحف الشريف والتلاوة';
+
+  @override
+  String get stHomeKhatmaSub => 'تتبع الختمة والآية العائمة';
+
+  @override
+  String get stHomeQiblaSub => 'اتجاه القبلة';
+
+  @override
+  String get stHomeDuaSub => 'الأدعية المأثورة';
+
+  @override
+  String get stHomeNamesSub => 'أسماء الله الحسنى';
+
+  @override
+  String get stHomeRuqyahSub => 'الرقية الشرعية';
+
+  @override
+  String get stHomeMosqueMapSub => 'مواقيت المساجد القريبة';
+
+  @override
+  String get stHomeTrackingSub => 'تتبع الصلوات والتحدي';
+
+  @override
   String get stHomeSet => 'تم تعيين الصفحة الرئيسية (تُطبق عند إعادة الفتح)';
 
   @override

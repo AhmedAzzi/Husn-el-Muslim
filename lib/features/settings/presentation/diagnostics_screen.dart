@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:small_husn_muslim/core/services/battery_optimization_helper.dart';
+import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
@@ -83,7 +85,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     if (!mounted) return;
     setState(() => _rescheduling = false);
     final loc = context.loc;
-    _snack(ok ? loc.diagRescheduled : loc.diagRescheduleFailed);
+    snack(
+      ok ? loc.diagRescheduled : loc.diagRescheduleFailed,
+      type: ok ? AppFeedbackType.success : AppFeedbackType.error,
+    );
     await _refresh();
   }
 
@@ -94,22 +99,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     if (!mounted) return;
     setState(() => _testingAlarm = false);
     final loc = context.loc;
-    _snack(ok ? loc.diagTestWillRing : loc.diagTestFailed);
-  }
-
-  void _snack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontFamily: 'Amiri', fontSize: 15)),
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-      ),
+    snack(
+      ok ? loc.diagTestWillRing : loc.diagTestFailed,
+      type: ok ? AppFeedbackType.success : AppFeedbackType.error,
     );
   }
 
@@ -122,32 +114,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-          appBar: AppBar(
-            backgroundColor: isDark ? const Color(0xFF1A1A24) : Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
-            title: Text(
-              loc.diagTitle,
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            centerTitle: true,
-          ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: HusnAppBar.back(title: loc.diagTitle),
           body: _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const HusnLoading()
               : RefreshIndicator(
                   onRefresh: _refresh,
                   child: SingleChildScrollView(

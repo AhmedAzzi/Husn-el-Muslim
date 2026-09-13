@@ -37,7 +37,10 @@ class PrayerCalculationEngine {
     final int day = params['day'];
     final double lat = params['lat'];
     final double lon = params['lon'];
-    final bool dstEnabled = params['dstEnabled'] ?? false;
+    // NB: params['dstEnabled'] is accepted for contract compatibility but
+    // intentionally not read: the platform timezone offset already includes
+    // DST when active, so adding a manual hour would double-count it
+    // (locked by 'manual dst flag does not add an extra hour...').
     final Map<String, int> prayerOffsets =
         Map<String, int>.from(params['prayerOffsets']);
     final String asrMethod = params['asrMethod'];

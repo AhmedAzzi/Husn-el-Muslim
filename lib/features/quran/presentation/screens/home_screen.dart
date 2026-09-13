@@ -1,10 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/logic/quran_index.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/widgets/app_drawer.dart';
+import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
 import '../../../../core/widgets/islamic_ornaments.dart';
 import '../../data/models/quran_models.dart';
 import '../providers/ayah_search_controller.dart';
@@ -70,9 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            leading: _searching ? null : null,
-            title: _searching
+          // Main section inside MainShell: drawer is the primary navigation
+          // between sections; detail (Mushaf reader) keeps its Back button.
+          drawer: const AppDrawer(),
+          appBar: HusnAppBar(
+            title: _searching ? null : 'القرآن الملوّن',
+            titleWidget: _searching
                 ? Container(
                     height: 40,
                     decoration: BoxDecoration(
@@ -104,18 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   )
-                : SizedBox(
-                    height: 30,
-                    child: Text(
-                      'القرآن الملوّن',
-                      style: TextStyle(
-                        fontSize: HusnTheme.fontSize22,
-                        fontFamily: HusnTheme.fontFamily,
-                        color: bgLight,
-                      ),
-                    ),
-                  ),
-            iconTheme: IconThemeData(color: bgLight),
+                : null,
             actions: _searching
                 ? [
                     IconButton(
@@ -144,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ],
-            backgroundColor: HusnTheme.primary,
           ),
           body: Column(
             children: [
@@ -153,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Obx(() {
                   if (quranCtl.isLoadingSurahs.value &&
                       quranCtl.surahs.value == null) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const HusnLoading();
                   }
                   if (quranCtl.surahsError.value != null &&
                       quranCtl.surahs.value == null) {
@@ -267,10 +262,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               }
                               if (target <= 0) {
                                 if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('تعذّر فتح السورة'),
-                                  ),
+                                AppFeedback.snack(
+                                  context,
+                                  'تعذّر فتح السورة',
+                                  type: AppFeedbackType.error,
                                 );
                                 return;
                               }

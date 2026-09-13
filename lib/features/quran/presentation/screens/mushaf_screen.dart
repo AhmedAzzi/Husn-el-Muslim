@@ -5,6 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/logic/quran_index.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/husn_style.dart';
+import '../../../../core/theme/tajweed_colors.dart';
+import '../../../../core/widgets/app_feedback.dart';
+import '../../../../core/widgets/husn_app_bar.dart';
+import '../widgets/mushaf_brightness.dart';
 import '../../../nakhtem/presentation/controllers/nakhtem_settings_controller.dart';
 import '../../../settings/settings_provider.dart';
 import '../providers/mushaf_audio_controller.dart';
@@ -108,12 +112,15 @@ class _MushafScreenState extends State<MushafScreen> {
         surahName: surahName(surahId),
         pageNum: _currentPage.value,
         pageAyahs: pageQueueAyahs(b.page.lines),
+        forceLight: _mushafLight,
       );
     } catch (e) {
       debugPrint('openPageAudio failed on page ${_currentPage.value}: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر فتح التلاوة')),
+      AppFeedback.snack(
+        context,
+        'تعذّر فتح التلاوة',
+        type: AppFeedbackType.error,
       );
     }
   }
@@ -129,8 +136,11 @@ class _MushafScreenState extends State<MushafScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      backgroundColor: _mushafLight ? AppPalette.paper : null,
       builder: (sheetCtx) {
-        return Directionality(
+        return mushafOverlayTheme(
+          forceLight: _mushafLight,
+          child: Directionality(
           textDirection: TextDirection.rtl,
           child: SafeArea(
             child: ConstrainedBox(
@@ -276,6 +286,7 @@ class _MushafScreenState extends State<MushafScreen> {
               ),
             ),
           ),
+        ),
         );
       },
     );
@@ -339,7 +350,9 @@ class _MushafScreenState extends State<MushafScreen> {
           // shines through pages 1-2.
           backgroundColor:
               _mushafLight ? const Color(0xFFFFFDF5) : null,
-          appBar: AppBar(
+          appBar: HusnAppBar(
+            title: 'القرآن الملوّن',
+            automaticallyImplyLeading: false,
             leading: canPop
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -347,15 +360,6 @@ class _MushafScreenState extends State<MushafScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                   )
                 : null,
-            title: Text(
-              'القرآن الملوّن',
-              style: TextStyle(
-                fontSize: HusnTheme.fontSize18,
-                fontFamily: HusnTheme.fontFamily,
-                color: bgLight,
-              ),
-            ),
-            iconTheme: IconThemeData(color: bgLight),
             actions: [
               // Mushaf-only light toggle: keeps the light paper even when
               // the rest of the app is dark. Tap again to follow the app.
@@ -385,6 +389,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   () => AyahSearchScreen(
                     onPick: (page) =>
                         _pages.jumpToPage((page - 1).clamp(0, 603)),
+                    forceLight: _mushafLight,
                   ),
                 ),
               ),
@@ -404,10 +409,12 @@ class _MushafScreenState extends State<MushafScreen> {
               IconButton(
                 icon: const Icon(Icons.palette_outlined),
                 tooltip: 'دليل ألوان التجويد',
-                onPressed: () => showTajweedLegendSheet(context),
+                onPressed: () => showTajweedLegendSheet(
+                  context,
+                  forceLight: _mushafLight,
+                ),
               ),
             ],
-            backgroundColor: HusnTheme.primary,
           ),
           body: SafeArea(
             child: Stack(
@@ -430,7 +437,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   left: 12,
                   right: 12,
                   bottom: 12,
-                  child: _MushafMiniPlayer(),
+                  child: _MushafMiniPlayer(forceLight: _mushafLight),
                 ),
               ],
             ),
@@ -521,9 +528,11 @@ class _MushafPageLoader extends StatelessWidget {
 
 /// Bottom mini-player shown only while mushaf audio is loading/playing.
 /// Uses the shared reciter ([MushafAudioController]) so it always matches
-/// the Khatma selection.
+/// the Khatma selection. Follows the mushaf paper toggle.
 class _MushafMiniPlayer extends StatelessWidget {
-  const _MushafMiniPlayer();
+  const _MushafMiniPlayer({this.forceLight = false});
+
+  final bool forceLight;
 
   @override
   Widget build(BuildContext context) {
@@ -537,8 +546,11 @@ class _MushafMiniPlayer extends StatelessWidget {
       final hasNakhtem = Get.isRegistered<NakhtemSettingsController>();
       final lang = hasNakhtem ? khatmaLang() : 'ar';
       final reciterName = hasNakhtem ? audio.reciterLabel(lang) : '';
-      return Card(
-        margin: EdgeInsets.zero,
+      return mushafOverlayTheme(
+        forceLight: forceLight,
+        child: Card(
+          margin: EdgeInsets.zero,
+          color: forceLight ? AppPalette.paper : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
@@ -616,6 +628,7 @@ class _MushafMiniPlayer extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       );
     });

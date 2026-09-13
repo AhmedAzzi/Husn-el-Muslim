@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
+import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/qibla/services/qibla_service.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
@@ -141,19 +143,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-        backgroundColor:
-            isDark ? const Color(0xFF14141C) : const Color(0xFFF7F7FA),
-        appBar: AppBar(
-          title: Text(loc.qiblaTitle,
-              style: const TextStyle(
-                  fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded),
-              onPressed: () => Get.back()),
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        // Main section inside MainShell: drawer is the primary navigation
+        // between sections — no Back button here.
+        drawer: const AppDrawer(),
+        appBar: HusnAppBar(title: loc.qiblaTitle),
         body: _locating
-            ? const Center(child: CircularProgressIndicator())
+            ? const HusnLoading()
             : _error != null
                 ? _message(_error!, Icons.location_off_rounded, isDark)
                 : _sensorsDead && _heading == null
@@ -285,7 +281,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 _init();
               },
               child: Text(AppLocalizations.of(context)!.qiblaRetry,
-                  style: const TextStyle(fontFamily: 'Amiri')),
+                  style: HusnText.body),
             ),
           ],
         ),
