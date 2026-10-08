@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
+import 'package:small_husn_muslim/core/widgets/husn_number_dropdown.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
@@ -313,110 +314,41 @@ class _FajrChallengeBottomSheetContentState
                 ],
               ),
 
-              // Custom offset slider if 'custom'
+              // Custom offset dropdown picker if 'custom'
               if (_logic.fajrChallengeWakeUpMode == 'custom') ...[
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      loc.sheetBeforeFajrBy,
-                      style: const TextStyle(
-                        fontFamily: 'Amiri',
-                        fontSize: 14,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD64463).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        loc.sheetMinutes(
-                            _logic.fajrChallengeCustomOffsetMinutes),
-                        style: const TextStyle(
-                          fontFamily: 'Amiri',
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD64463),
-                        ),
-                      ),
-                    ),
+                HusnNumberPickerRow(
+                  title: loc.sheetBeforeFajrBy,
+                  value: _logic.fajrChallengeCustomOffsetMinutes,
+                  options: const [
+                    10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
                   ],
-                ),
-                Slider(
-                  value: _logic.fajrChallengeCustomOffsetMinutes.toDouble(),
-                  min: 10,
-                  max: 120,
-                  divisions: 11,
-                  activeColor: const Color(0xFFD64463),
-                  inactiveColor:
-                      isDark ? Colors.white12 : Colors.grey.shade300,
-                  label: loc.sheetMinutes(
-                      _logic.fajrChallengeCustomOffsetMinutes),
-                  onChanged: (val) {
-                    setState(() {
-                      _logic.fajrChallengeCustomOffsetMinutes = val.toInt();
-                    });
-                  },
-                  onChangeEnd: (val) {
-                    _saveSettings(challengeCustomOffset: val.toInt());
+                  accentColor: const Color(0xFFD64463),
+                  labelOf: (v) => loc.sheetMinutes(v),
+                  onChanged: (v) {
+                    setState(() =>
+                        _logic.fajrChallengeCustomOffsetMinutes = v);
+                    _saveSettings(challengeCustomOffset: v);
                   },
                 ),
               ],
 
               const SizedBox(height: 14),
 
-              // Number of Questions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    loc.sheetQuestionCount,
-                    style: const TextStyle(
-                      fontFamily: 'Amiri',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD64463).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      loc.sheetQuestions(
-                          _logic.fajrChallengeQuestionsCount),
-                      style: const TextStyle(
-                        fontFamily: 'Amiri',
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFD64463),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Slider(
-                value: _logic.fajrChallengeQuestionsCount.toDouble(),
-                min: 1,
-                max: 10,
-                divisions: 9,
-                activeColor: const Color(0xFFD64463),
-                inactiveColor: isDark ? Colors.white12 : Colors.grey.shade300,
-                label: loc
-                    .sheetQuestions(_logic.fajrChallengeQuestionsCount),
-                onChanged: (double value) {
-                  setState(() {
-                    _logic.fajrChallengeQuestionsCount = value.toInt();
-                  });
-                },
-                onChangeEnd: (double value) {
-                  _saveSettings(challengeQuestionsCount: value.toInt());
+              // Number of Questions dropdown picker
+              HusnNumberPickerRow(
+                title: loc.sheetQuestionCount,
+                value: _logic.fajrChallengeQuestionsCount,
+                options: const [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                accentColor: const Color(0xFFD64463),
+                labelOf: (v) => loc.sheetQuestions(v),
+                onChanged: (v) {
+                  setState(
+                      () => _logic.fajrChallengeQuestionsCount = v);
+                  _saveSettings(challengeQuestionsCount: v);
                 },
               ),
+              const SizedBox(height: 8),
 
               // Text Input Mode Switch
               SwitchListTile(

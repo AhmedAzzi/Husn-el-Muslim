@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workmanager/workmanager.dart';
@@ -16,7 +17,7 @@ import 'package:small_husn_muslim/core/navigation/main_shell.dart';
 import 'package:small_husn_muslim/core/services/notification_service.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/core/storage/app_database.dart';
-import 'package:small_husn_muslim/core/platform/phone_experience_service.dart'; 
+import 'package:small_husn_muslim/core/platform/phone_experience_service.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
 import 'package:small_husn_muslim/features/quran/data/repositories/quran_repository.dart';
@@ -29,6 +30,7 @@ import 'package:small_husn_muslim/features/quran/presentation/providers/word_mea
 import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/ayah_overlay_lifecycle.dart';
 import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/nakhtem_providers.dart';
 import 'package:small_husn_muslim/features/settings/settings_provider.dart';
+import 'package:small_husn_muslim/features/todo/controllers/todo_controller.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -52,9 +54,18 @@ void callbackDispatcher() {
   });
 }
 
-void main() {
+Future<void> main() async {
   final stopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Intl date symbols for every supported app language. Required before any
+  // DateFormat.withLocale call (todo tiles/sheets, pickers) — otherwise
+  // non-English locales throw LocaleDataException. In-memory data, ~ms.
+  await Future.wait([
+    initializeDateFormatting('ar'),
+    initializeDateFormatting('en'),
+    initializeDateFormatting('fr'),
+  ]);
 
   // Allow Google Fonts to fallback to system fonts when network unavailable
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -105,6 +116,7 @@ Future<void> _initializeAppAsync(Stopwatch stopwatch) async {
   initTranslationDependencies();
   try {
     final database = await AppDatabase.open();
+    TodoController.findOrCreate(database);
     initNakhtemDependencies(database, makeNakhtemSettingsController(database));
     final overlayObserver = AyahOverlayLifecycleObserver();
     if (Get.isRegistered<PhoneExperienceService>()) {
@@ -141,8 +153,7 @@ Future<void> _initializeAppAsync(Stopwatch stopwatch) async {
     // home section. Section state lives in the shell's IndexedStack.
     Get.offAll(
       () => MainShell(
-        initialDestination:
-            MainDestinationX.fromHomeScreenKey(savedHomeScreen),
+        initialDestination: MainDestinationX.fromHomeScreenKey(savedHomeScreen),
       ),
     );
   }

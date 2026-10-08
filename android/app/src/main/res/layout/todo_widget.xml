@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Interactive todo widget (4x3): header opens the todo screen,
+      the list below is a collection (TodoWidgetService) where tapping
+      the circle toggles the task done — all without opening the app. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/todo_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layoutDirection="rtl"
+    android:descendantFocusability="blocksDescendants"
+    android:padding="14dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Header (tap opens the todo screen) -->
+    <LinearLayout
+        android:id="@+id/todo_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/todo_widget_desc" />
+
+        <TextView
+            android:id="@+id/todo_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="المهام"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal" />
+
+        <TextView
+            android:id="@+id/todo_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/0"
+            android:textSize="12sp"
+            android:textColor="#FFD700" />
+    </LinearLayout>
+
+    <!-- Task collection -->
+    <ListView
+        android:id="@+id/todo_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+
+        android:divider="@null"
+        android:scrollbars="none" />
+
+    <!-- Shown automatically when the list is empty -->
+    <TextView
+        android:id="@+id/todo_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="لا توجد مهام اليوم"
+        android:textSize="13sp"
+        android:textColor="#8E8E9A" />
+</LinearLayout>

@@ -20,12 +20,11 @@ import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_names.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/mosque_api.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/presentation/prayer_times_screen.dart';
+import 'package:small_husn_muslim/features/todo/presentation/todo_screen.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_widget_sync.dart';
 import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
-import 'package:small_husn_muslim/features/tracking/data/prayer_reminder_service.dart';
 
 class DayPrayerSummary {
   final List<PrayerTime> prayerTimes;
@@ -107,14 +106,19 @@ class PrayerTimesLogic extends GetxController {
   bool notificationSoundEnabled = true;
   bool persistentNotificationEnabled = true;
   bool persistentNotificationBlackBg = false;
-  bool fajrChallengeEnabled = false;
+  // All notifications/alarms default ON for fresh installs (existing users
+  // keep their stored choices via the `??` fallbacks in
+  // loadNotificationPreference). Permission-gated features (DND, overlays)
+  // and removed alarms stay OFF — they cannot work without a system grant
+  // or have no UI left to switch them off.
+  bool fajrChallengeEnabled = true;
   int fajrChallengeQuestionsCount = 3;
   bool fajrChallengeIsTextInput = false;
   bool morningAdhkarEnabled = true;
   bool eveningAdhkarEnabled = true;
-  bool wakeupAdhkarEnabled = false;
-  bool sleepAdhkarEnabled = false;
-  bool fridayKahfEnabled = false;
+  bool wakeupAdhkarEnabled = true;
+  bool sleepAdhkarEnabled = true;
+  bool fridayKahfEnabled = true;
   bool dndDuringPrayerEnabled = false;
   int dndDurationMinutes = 20;
   bool nightPrayerTimesEnabled = true;
@@ -193,12 +197,13 @@ class PrayerTimesLogic extends GetxController {
   bool wakeUpConfirmationEnabled = true;
 
   // Additional alarms (Phase 6). All anchored to Fajr unless noted.
+  // Removed alarms (Suhoor, pre-Fajr, Tahajjud) stay OFF — no UI remains.
   bool suhoorAlarmEnabled = false;
   int suhoorOffsetMinutes = 40; // Fajr − 40min. Distinct UI from Fajr.
   bool preFajrAlarmEnabled = false;
   int preFajrOffsetMinutes =
       10; // presets 5/10/15 + custom 10–120 (shared range)
-  bool bedtimeAlarmEnabled = false;
+  bool bedtimeAlarmEnabled = true;
   int bedtimeHour = 23;
   int bedtimeMinute = 0;
   bool bedtimeRelativeToFajr = false;
@@ -215,9 +220,9 @@ class PrayerTimesLogic extends GetxController {
 
   // Heavy-sleeper chain: re-fire the Fajr challenge +N minutes after Fajr.
   // Two independent slots so users can enable +5 only, +10 only, or both.
-  bool fajrExtra1Enabled = false;
+  bool fajrExtra1Enabled = true;
   int fajrExtra1Minutes = 5;
-  bool fajrExtra2Enabled = false;
+  bool fajrExtra2Enabled = true;
   int fajrExtra2Minutes = 10;
 
   // Pre/post prayer reminders (informational; global + per-prayer, no spam).
@@ -228,12 +233,12 @@ class PrayerTimesLogic extends GetxController {
     'Maghrib',
     'Isha'
   ];
-  bool prePrayerEnabled = false;
+  bool prePrayerEnabled = true;
   int prePrayerOffsetMinutes = 10;
   final Map<String, bool> prePrayerPerPrayer = {
     for (final p in prePostPrayers) p: true,
   };
-  bool postPrayerEnabled = false;
+  bool postPrayerEnabled = true;
   int postPrayerOffsetMinutes = 15;
   final Map<String, bool> postPrayerPerPrayer = {
     for (final p in prePostPrayers) p: true,
@@ -295,12 +300,22 @@ class PrayerTimesLogic extends GetxController {
 
   void _updateCountdown() {
     final info = getNextPrayerInfo();
-    nextPrayerNameRx.value = info['name'] ?? '';
-    timeRemainingRx.value = info['timeRemaining'] ?? '';
-    iqamaCountdownRx.value = info['iqamaCountdown'] ?? '';
-    nextPrayerIqamaTimeRx.value = info['iqamaTime'] ?? '';
-    hasIqamaDataRx.value = info['hasIqama'] == true;
-    currentTime = _formatCurrentTime();
+    // Perf-only: assign Rx only on change so identical 1s ticks do not fan
+    // out to Obx rebuilds. Values, formatting, and frequency unchanged.
+    final name = info['name'] ?? '';
+    if (nextPrayerNameRx.value != name) nextPrayerNameRx.value = name;
+    final remaining = info['timeRemaining'] ?? '';
+    if (timeRemainingRx.value != remaining) timeRemainingRx.value = remaining;
+    final iqama = info['iqamaCountdown'] ?? '';
+    if (iqamaCountdownRx.value != iqama) iqamaCountdownRx.value = iqama;
+    final iqamaTime = info['iqamaTime'] ?? '';
+    if (nextPrayerIqamaTimeRx.value != iqamaTime) {
+      nextPrayerIqamaTimeRx.value = iqamaTime;
+    }
+    final hasIqama = info['hasIqama'] == true;
+    if (hasIqamaDataRx.value != hasIqama) hasIqamaDataRx.value = hasIqama;
+    final nowStr = _formatCurrentTime();
+    if (currentTimeRx.value != nowStr) currentTimeRx.value = nowStr;
   }
 
   String _formatCurrentTime() {
@@ -363,6 +378,18 @@ class PrayerTimesLogic extends GetxController {
   // _lastNotificationContent removed as unused
   dynamic _lastSentTargetTimestamp;
 
+  // Batch 1 (perf-only, in-memory): dedup redundant native sync work.
+  // All maps hold last-sent trigger millis per alarm key; empty = first sync
+  // always sends, so cold start / restart behavior is unchanged.
+  final Map<String, int> _lastScheduledTriggers = <String, int>{};
+  final Map<String, String> _lastAdhkarSchedule = <String, String>{};
+  // Cached Fajr-challenge times: avoids a compute() isolate + yesterday-
+  // Maghrib calc on every 60s tick when inputs are unchanged. Key covers
+  // every input of _getFajrChallengeTime; values are only reused for the
+  // same Fajr instant, so firing accuracy is preserved. Small map (not a
+  // single slot) because the passed-challenge path needs today + tomorrow.
+  final Map<String, DateTime?> _cachedChallengeTimes = <String, DateTime?>{};
+
   final List<String> arabicPrayerNames = [
     'الفجر',
     'الشروق',
@@ -412,13 +439,12 @@ class PrayerTimesLogic extends GetxController {
               Get.to(() => const PrayerTimesScreen());
             }
           }
-        } else if (screenName == 'tracking') {
+        } else if (screenName == 'todo') {
           if (Get.context != null) {
-            // Main section: switch the shell instead of pushing a duplicate.
             if (MainNavHelper.isShellReady) {
-              MainNavHelper.goToTracking();
+              MainNavHelper.goToTodo();
             } else {
-              Get.to(() => const TrackingHomeScreen());
+              Get.to(() => const TodoScreen());
             }
           }
         }
@@ -437,14 +463,6 @@ class PrayerTimesLogic extends GetxController {
             MainNavHelper.goToMawaqit();
           } else {
             Get.to(() => const PrayerTimesScreen());
-          }
-        }
-      } else if (pendingScreen == 'tracking') {
-        if (Get.context != null) {
-          if (MainNavHelper.isShellReady) {
-            MainNavHelper.goToTracking();
-          } else {
-            Get.to(() => const TrackingHomeScreen());
           }
         }
       }
@@ -824,14 +842,18 @@ class PrayerTimesLogic extends GetxController {
           }
         }
         if (schedule == null) {
+          // Perf-only: same request/response semantics; client closed to
+          // avoid socket/FD leak. No URL/header/timeout/retry change.
+          final api = MawaqitApi();
           try {
-            final api = MawaqitApi();
             schedule = await api.scheduleBySlug(selectedMosque!.slug,
                 forceRefresh: force);
             isMosqueScheduleOffline = false;
           } catch (_) {
             schedule = await OfflineCache.getSchedule(selectedMosque!.slug);
             isMosqueScheduleOffline = true;
+          } finally {
+            api.dispose();
           }
         }
 
@@ -1158,7 +1180,7 @@ class PrayerTimesLogic extends GetxController {
         prefs.getBool('persistentNotificationEnabled') ?? true;
     persistentNotificationBlackBg =
         prefs.getBool('persistentNotificationBlackBg') ?? false;
-    fajrChallengeEnabled = prefs.getBool('fajrChallengeEnabled') ?? false;
+    fajrChallengeEnabled = prefs.getBool('fajrChallengeEnabled') ?? true;
     fajrChallengeQuestionsCount =
         prefs.getInt('fajrChallengeQuestionsCount') ?? 3;
     fajrChallengeIsTextInput =
@@ -1187,12 +1209,13 @@ class PrayerTimesLogic extends GetxController {
     wakeUpConfirmationEnabled =
         prefs.getBool('wakeUpConfirmationEnabled') ?? true;
 
-    // Additional alarms (all default OFF so existing users see no change).
+    // Additional alarms (all default ON for fresh installs; stored prefs
+    // still win for existing users).
     suhoorAlarmEnabled = prefs.getBool('suhoorAlarmEnabled') ?? false;
     suhoorOffsetMinutes = prefs.getInt('suhoorOffsetMinutes') ?? 40;
     preFajrAlarmEnabled = prefs.getBool('preFajrAlarmEnabled') ?? false;
     preFajrOffsetMinutes = prefs.getInt('preFajrOffsetMinutes') ?? 10;
-    bedtimeAlarmEnabled = prefs.getBool('bedtimeAlarmEnabled') ?? false;
+    bedtimeAlarmEnabled = prefs.getBool('bedtimeAlarmEnabled') ?? true;
     bedtimeHour = prefs.getInt('bedtimeHour') ?? 23;
     bedtimeMinute = prefs.getInt('bedtimeMinute') ?? 0;
     bedtimeRelativeToFajr = prefs.getBool('bedtimeRelativeToFajr') ?? false;
@@ -1203,17 +1226,17 @@ class PrayerTimesLogic extends GetxController {
     tahajjudMode = prefs.getString('tahajjudMode') ?? 'lastThird';
     tahajjudHour = prefs.getInt('tahajjudHour') ?? 3;
     tahajjudMinute = prefs.getInt('tahajjudMinute') ?? 30;
-    fajrExtra1Enabled = prefs.getBool('fajrExtra1Enabled') ?? false;
+    fajrExtra1Enabled = prefs.getBool('fajrExtra1Enabled') ?? true;
     fajrExtra1Minutes = prefs.getInt('fajrExtra1Minutes') ?? 5;
-    fajrExtra2Enabled = prefs.getBool('fajrExtra2Enabled') ?? false;
+    fajrExtra2Enabled = prefs.getBool('fajrExtra2Enabled') ?? true;
     fajrExtra2Minutes = prefs.getInt('fajrExtra2Minutes') ?? 10;
 
-    prePrayerEnabled = prefs.getBool('prePrayerEnabled') ?? false;
+    prePrayerEnabled = prefs.getBool('prePrayerEnabled') ?? true;
     prePrayerOffsetMinutes = prefs.getInt('prePrayerOffsetMinutes') ?? 10;
     for (final p in prePostPrayers) {
       prePrayerPerPrayer[p] = prefs.getBool('prePrayer_$p') ?? true;
     }
-    postPrayerEnabled = prefs.getBool('postPrayerEnabled') ?? false;
+    postPrayerEnabled = prefs.getBool('postPrayerEnabled') ?? true;
     postPrayerOffsetMinutes = prefs.getInt('postPrayerOffsetMinutes') ?? 15;
     for (final p in prePostPrayers) {
       postPrayerPerPrayer[p] = prefs.getBool('postPrayer_$p') ?? true;
@@ -1228,9 +1251,9 @@ class PrayerTimesLogic extends GetxController {
 
     morningAdhkarEnabled = prefs.getBool('morningAdhkarEnabled') ?? true;
     eveningAdhkarEnabled = prefs.getBool('eveningAdhkarEnabled') ?? true;
-    wakeupAdhkarEnabled = prefs.getBool('wakeupAdhkarEnabled') ?? false;
-    sleepAdhkarEnabled = prefs.getBool('sleepAdhkarEnabled') ?? false;
-    fridayKahfEnabled = prefs.getBool('fridayKahfEnabled') ?? false;
+    wakeupAdhkarEnabled = prefs.getBool('wakeupAdhkarEnabled') ?? true;
+    sleepAdhkarEnabled = prefs.getBool('sleepAdhkarEnabled') ?? true;
+    fridayKahfEnabled = prefs.getBool('fridayKahfEnabled') ?? true;
     dndDuringPrayerEnabled = prefs.getBool('dndDuringPrayerEnabled') ?? false;
     dndDurationMinutes = prefs.getInt('dndDurationMinutes') ?? 20;
     nightPrayerTimesEnabled = prefs.getBool('nightPrayerTimesEnabled') ?? false;
@@ -1456,8 +1479,8 @@ class PrayerTimesLogic extends GetxController {
   /// proximity search if the country list cannot be determined or loaded.
   Future<void> searchNearbyMosques() async {
     isSearchingMosquesRx.value = true;
+    final api = MawaqitApi();
     try {
-      final api = MawaqitApi();
       final countryCode = _countryCodeFor(lat, lon);
       nearbyMosqueCountryRx.value = '';
       List<MosquePoint> results;
@@ -1481,6 +1504,7 @@ class PrayerTimesLogic extends GetxController {
       if (kDebugMode) print('Nearby mosque search error: $e');
       nearbyMosquesRx.value = [];
     } finally {
+      api.dispose();
       isSearchingMosquesRx.value = false;
     }
   }
@@ -2034,7 +2058,7 @@ class PrayerTimesLogic extends GetxController {
     if (fajrChallengeEnabled) {
       try {
         final fajrPrayer = prayerTimes!.firstWhere((p) => p.name == 'Fajr');
-        DateTime? cTime = await _getFajrChallengeTime(fajrPrayer);
+        DateTime? cTime = await _getCachedFajrChallengeTime(fajrPrayer);
 
         // If today's challenge passed, check tomorrow's
         if (cTime != null && cTime.isBefore(now)) {
@@ -2043,7 +2067,7 @@ class PrayerTimesLogic extends GetxController {
               orElse: () => fajrPrayer.copyWith(
                   time: fajrPrayer.time.add(const Duration(days: 1))));
 
-          cTime = await _getFajrChallengeTime(tomorrowFajr);
+          cTime = await _getCachedFajrChallengeTime(tomorrowFajr);
         }
 
         if (cTime != null) {
@@ -2060,10 +2084,22 @@ class PrayerTimesLogic extends GetxController {
     final dhikrInterval = dhikrHelper.intervalMinutes;
     final dhikrList = dhikrHelper.adhkar;
 
-    // Optimization check (Include Dhikr and Fajr Challenge in check to prevent blocking settings updates)
+    // Optimization check: skip the native IPC (which re-arms AlarmManager
+    // + restarts the foreground service) when the full user-visible payload
+    // is unchanged. Covers every field forwarded to startPrayerCountdown so
+    // settings/day/prayer/dhikr/challenge changes still repost identically.
     final checkKey = '${targetPrayer.time.millisecondsSinceEpoch}'
+        '_$hijriDate'
+        '_$info'
+        '_$fallbackTimestamp'
+        '_$fallbackInfo'
+        '_$challengeTimestamp'
+        '_$notificationMode'
+        '_$persistentNotificationBlackBg'
         '_$dhikrEnabled'
         '_$dhikrInterval'
+        '_${dhikrList.length}'
+        '_${dhikrList.join('|').hashCode}'
         '_$fajrChallengeEnabled'
         '_$fajrChallengeWakeUpMode'
         '_$fajrChallengeCustomOffsetMinutes';
@@ -2134,30 +2170,70 @@ class PrayerTimesLogic extends GetxController {
     return null;
   }
 
+  /// Cached wrapper for [_getFajrChallengeTime]: same result, but skips the
+  /// yesterday-Maghrib `compute()` isolate when every input is unchanged.
+  /// In-memory only, so restarts/recalculations always recompute (safe).
+  Future<DateTime?> _getCachedFajrChallengeTime(PrayerTime fajrPrayer) async {
+    final key =
+        '${fajrChallengeEnabled}_${fajrChallengeWakeUpMode}_${fajrChallengeCustomOffsetMinutes}_${fajrPrayer.time.millisecondsSinceEpoch}_${lat}_${lon}_${dstEnabled}_${asrMethod}_${angles}_${customFajrAngle}_${customIshaAngle}_${_getEffectiveOffsets()}';
+    if (_cachedChallengeTimes.containsKey(key)) {
+      return _cachedChallengeTimes[key];
+    }
+    final t = await _getFajrChallengeTime(fajrPrayer);
+    // Bound the map: today + tomorrow + settings churn fit easily; evict the
+    // oldest entry past that so steady state never regrows work or memory.
+    if (_cachedChallengeTimes.length >= 8) {
+      _cachedChallengeTimes.remove(_cachedChallengeTimes.keys.first);
+    }
+    _cachedChallengeTimes[key] = t;
+    return t;
+  }
+
+  /// Sends one native alarm IPC only when its desired trigger changed since
+  /// the last send. Returns the future for batching with [Future.wait].
+  /// Passing 0 keeps the cancel-first convention (cancels stale alarms).
+  /// In-memory only: restarts always resend, so boot flows are unchanged.
+  Future<void> _sendAlarmIfChanged(String key, int triggerAtMillis,
+      Future<bool> Function(int) schedule) {
+    if (_lastScheduledTriggers[key] == triggerAtMillis) {
+      return Future.value();
+    }
+    _lastScheduledTriggers[key] = triggerAtMillis;
+    return schedule(triggerAtMillis).then((_) {});
+  }
+
   /// Schedule (or cancel) the Fajr challenge exact alarm on the native side,
   /// independent of the persistent notification service, so it works even when
   /// the persistent notification / location permission is unavailable.
   Future<void> _syncFajrChallengeAlarm() async {
     if (!fajrChallengeEnabled || prayerTimes == null || prayerTimes!.isEmpty) {
-      await PrayerNotificationHelper.scheduleFajrChallengeAlarm(0);
-      await PrayerNotificationHelper.scheduleFajrExtra1Alarm(0);
-      await PrayerNotificationHelper.scheduleFajrExtra2Alarm(0);
+      // Behavior-preserving cancels (0 = cancel); diffed so steady OFF state
+      // sends no IPC, while a fresh disable still cancels once.
+      await Future.wait([
+        _sendAlarmIfChanged('fajrChallenge', 0,
+            PrayerNotificationHelper.scheduleFajrChallengeAlarm),
+        _sendAlarmIfChanged('fajrExtra1', 0,
+            PrayerNotificationHelper.scheduleFajrExtra1Alarm),
+        _sendAlarmIfChanged('fajrExtra2', 0,
+            PrayerNotificationHelper.scheduleFajrExtra2Alarm),
+      ]);
       await syncAdditionalAlarms();
       return;
     }
     try {
       final fajrPrayer = prayerTimes!.firstWhere((p) => p.name == 'Fajr');
-      DateTime? cTime = await _getFajrChallengeTime(fajrPrayer);
+      DateTime? cTime = await _getCachedFajrChallengeTime(fajrPrayer);
       final now = DateTime.now();
 
       // If today's challenge time passed, schedule for tomorrow's Fajr
       if (cTime != null && cTime.isBefore(now)) {
-        cTime = await _getFajrChallengeTime(fajrPrayer.copyWith(
+        cTime = await _getCachedFajrChallengeTime(fajrPrayer.copyWith(
             time: fajrPrayer.time.add(const Duration(days: 1))));
       }
 
-      await PrayerNotificationHelper.scheduleFajrChallengeAlarm(
-          cTime?.millisecondsSinceEpoch ?? 0);
+      await _sendAlarmIfChanged('fajrChallenge',
+          cTime?.millisecondsSinceEpoch ?? 0,
+          PrayerNotificationHelper.scheduleFajrChallengeAlarm);
       await _syncFajrExtraAlarms(fajrPrayer, DateTime.now());
     } catch (e) {
       if (kDebugMode) print('Error syncing fajr challenge alarm: $e');
@@ -2171,25 +2247,33 @@ class PrayerTimesLogic extends GetxController {
   Future<void> _syncFajrExtraAlarms(
       PrayerTime fajrPrayer, DateTime now) async {
     if (!fajrChallengeEnabled) {
-      await PrayerNotificationHelper.scheduleFajrExtra1Alarm(0);
-      await PrayerNotificationHelper.scheduleFajrExtra2Alarm(0);
+      await Future.wait([
+        _sendAlarmIfChanged('fajrExtra1', 0,
+            PrayerNotificationHelper.scheduleFajrExtra1Alarm),
+        _sendAlarmIfChanged('fajrExtra2', 0,
+            PrayerNotificationHelper.scheduleFajrExtra2Alarm),
+      ]);
       return;
     }
-    Future<void> syncOne(
-        bool enabled, int delayMin, Future<bool> Function(int) schedule) async {
-      if (!enabled) {
-        await schedule(0);
-        return;
-      }
+    int desiredOne(bool enabled, int delayMin) {
+      if (!enabled) return 0;
       var t = fajrPrayer.time.add(Duration(minutes: delayMin.clamp(1, 60)));
       if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-      await schedule(t.isAfter(now) ? t.millisecondsSinceEpoch : 0);
+      return t.isAfter(now) ? t.millisecondsSinceEpoch : 0;
     }
 
-    await syncOne(
-        fajrExtra1Enabled, fajrExtra1Minutes, PrayerNotificationHelper.scheduleFajrExtra1Alarm);
-    await syncOne(
-        fajrExtra2Enabled, fajrExtra2Minutes, PrayerNotificationHelper.scheduleFajrExtra2Alarm);
+    // Batched + diffed: same final alarm state, one parallel IPC burst only
+    // when a desired trigger actually changed.
+    await Future.wait([
+      _sendAlarmIfChanged(
+          'fajrExtra1',
+          desiredOne(fajrExtra1Enabled, fajrExtra1Minutes),
+          PrayerNotificationHelper.scheduleFajrExtra1Alarm),
+      _sendAlarmIfChanged(
+          'fajrExtra2',
+          desiredOne(fajrExtra2Enabled, fajrExtra2Minutes),
+          PrayerNotificationHelper.scheduleFajrExtra2Alarm),
+    ]);
   }
 
   /// Syncs Suhoor / Pre-Fajr / Bedtime native exact alarms from the current
@@ -2206,50 +2290,43 @@ class PrayerTimesLogic extends GetxController {
         fajr = null;
       }
 
-      // Suhoor: Fajr − offset (default 40min). Rolled to tomorrow if passed.
-      if (!suhoorAlarmEnabled || fajr == null) {
-        await PrayerNotificationHelper.scheduleSuhoorAlarm(0);
-      } else {
+      // Compute desired triggers with pure DateTime math (no IPC/isolate),
+      // then send only changed ones in one parallel burst. Final alarm state
+      // is identical to the old sequential version; steady state sends zero
+      // IPC. Rollover to tomorrow keeps firing accuracy across ticks.
+      int suhoorDesired = 0;
+      if (suhoorAlarmEnabled && fajr != null) {
         var t = fajr.time.subtract(Duration(minutes: suhoorOffsetMinutes));
         if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-        await PrayerNotificationHelper.scheduleSuhoorAlarm(
-            t.isAfter(now) ? t.millisecondsSinceEpoch : 0);
+        suhoorDesired = t.isAfter(now) ? t.millisecondsSinceEpoch : 0;
       }
 
-      // Pre-Fajr: Fajr − offset (presets 5/10/15, custom 10–120 preserved).
-      if (!preFajrAlarmEnabled || fajr == null) {
-        await PrayerNotificationHelper.schedulePreFajrAlarm(0);
-      } else {
+      int preFajrDesired = 0;
+      if (preFajrAlarmEnabled && fajr != null) {
         var t = fajr.time.subtract(Duration(minutes: preFajrOffsetMinutes));
         if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-        await PrayerNotificationHelper.schedulePreFajrAlarm(
-            t.isAfter(now) ? t.millisecondsSinceEpoch : 0);
+        preFajrDesired = t.isAfter(now) ? t.millisecondsSinceEpoch : 0;
       }
 
-      // Tahajjud: Last-Third auto (follows computed night boundary) or fixed
-      // clock time. Rolled to tomorrow if passed. Cancel-first like the rest.
-      if (!tahajjudEnabled) {
-        await PrayerNotificationHelper.scheduleTahajjudAlarm(0);
-      } else if (tahajjudMode == 'fixed') {
-        var t = DateTime(
-            now.year, now.month, now.day, tahajjudHour, tahajjudMinute);
-        if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-        await PrayerNotificationHelper.scheduleTahajjudAlarm(
-            t.millisecondsSinceEpoch);
-      } else {
-        PrayerTime? lastThird;
-        try {
-          lastThird = prayerTimes?.firstWhere((p) => p.name == 'Last Third');
-        } catch (_) {
-          lastThird = null;
-        }
-        if (lastThird == null) {
-          await PrayerNotificationHelper.scheduleTahajjudAlarm(0);
-        } else {
-          var t = lastThird.time;
+      int tahajjudDesired = 0;
+      if (tahajjudEnabled) {
+        if (tahajjudMode == 'fixed') {
+          var t = DateTime(
+              now.year, now.month, now.day, tahajjudHour, tahajjudMinute);
           if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-          await PrayerNotificationHelper.scheduleTahajjudAlarm(
-              t.isAfter(now) ? t.millisecondsSinceEpoch : 0);
+          tahajjudDesired = t.millisecondsSinceEpoch;
+        } else {
+          PrayerTime? lastThird;
+          try {
+            lastThird = prayerTimes?.firstWhere((p) => p.name == 'Last Third');
+          } catch (_) {
+            lastThird = null;
+          }
+          if (lastThird != null) {
+            var t = lastThird.time;
+            if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
+            tahajjudDesired = t.isAfter(now) ? t.millisecondsSinceEpoch : 0;
+          }
         }
       }
 
@@ -2257,50 +2334,60 @@ class PrayerTimesLogic extends GetxController {
       // Skip-once only suppresses tonight; the recurring schedule stays on.
       final todayKey =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      if (!bedtimeAlarmEnabled || bedtimeSkipDate == todayKey) {
-        await PrayerNotificationHelper.scheduleBedtimeAlarm(0);
-      } else if (bedtimeRelativeToFajr && fajr != null) {
-        var t = fajr.time.subtract(Duration(hours: bedtimeRelativeHours));
-        if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-        await PrayerNotificationHelper.scheduleBedtimeAlarm(
-            t.millisecondsSinceEpoch);
-      } else {
-        var t =
-            DateTime(now.year, now.month, now.day, bedtimeHour, bedtimeMinute);
-        if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
-        await PrayerNotificationHelper.scheduleBedtimeAlarm(
-            t.millisecondsSinceEpoch);
+      int bedtimeDesired = 0;
+      if (bedtimeAlarmEnabled && bedtimeSkipDate != todayKey) {
+        if (bedtimeRelativeToFajr && fajr != null) {
+          var t = fajr.time.subtract(Duration(hours: bedtimeRelativeHours));
+          if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
+          bedtimeDesired = t.millisecondsSinceEpoch;
+        } else {
+          var t = DateTime(
+              now.year, now.month, now.day, bedtimeHour, bedtimeMinute);
+          if (!t.isAfter(now)) t = t.add(const Duration(days: 1));
+          bedtimeDesired = t.millisecondsSinceEpoch;
+        }
       }
 
-      await _syncPrePostPrayers(now);
+      final prePost = _desiredPrePostPrayers(now);
+      await Future.wait([
+        _sendAlarmIfChanged('suhoor', suhoorDesired,
+            PrayerNotificationHelper.scheduleSuhoorAlarm),
+        _sendAlarmIfChanged('preFajr', preFajrDesired,
+            PrayerNotificationHelper.schedulePreFajrAlarm),
+        _sendAlarmIfChanged('tahajjud', tahajjudDesired,
+            PrayerNotificationHelper.scheduleTahajjudAlarm),
+        _sendAlarmIfChanged('bedtime', bedtimeDesired,
+            PrayerNotificationHelper.scheduleBedtimeAlarm),
+        _sendAlarmIfChanged('pre:${prePost.preName}', prePost.preMillis,
+            (ms) => PrayerNotificationHelper.schedulePrePrayerAlarm(
+                ms, prePost.preName)),
+        _sendAlarmIfChanged('post:${prePost.postName}', prePost.postMillis,
+            (ms) => PrayerNotificationHelper.schedulePostPrayerAlarm(
+                ms, prePost.postName)),
+      ]);
+      // Drop stale name-keyed entries when the prayer name rotated, so a
+      // future rotation back to the old name always resends (no missed arm).
+      _lastScheduledTriggers
+          .removeWhere((k, _) => (k.startsWith('pre:') && k != 'pre:${prePost.preName}') ||
+              (k.startsWith('post:') && k != 'post:${prePost.postName}'));
     } catch (e) {
       if (kDebugMode) print('Error syncing additional alarms: $e');
     }
   }
 
-  /// Skips tonight's bedtime reminder once without disabling the schedule.
-  Future<void> skipBedtimeOnce() async {
-    final now = DateTime.now();
-    bedtimeSkipDate =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final prefs = SharedPrefsCache.instance;
-    await prefs.setString('bedtimeSkipDate', bedtimeSkipDate);
-    await PrayerNotificationHelper.scheduleBedtimeAlarm(0);
-  }
-
-  /// Pre-prayer = next upcoming enabled prayer − offset; post-prayer = most
-  /// recent past enabled prayer + offset (if still in the future). One native
-  /// alarm each, re-armed on every prayer-time refresh.
-  Future<void> _syncPrePostPrayers(DateTime now) async {
+  /// Pure computation of the desired pre/post triggers (no IPC), shared by
+  /// [syncAdditionalAlarms] so all six alarms batch in one [Future.wait].
+  /// Returns 0 millis + '' name for the cancel path (same as before).
+  ({int preMillis, String preName, int postMillis, String postName})
+      _desiredPrePostPrayers(DateTime now) {
     final times = prayerTimes;
     if (times == null || times.isEmpty) {
-      await PrayerNotificationHelper.schedulePrePrayerAlarm(0, '');
-      await PrayerNotificationHelper.schedulePostPrayerAlarm(0, '');
-      return;
+      return (preMillis: 0, preName: '', postMillis: 0, postName: '');
     }
     DateTime? nextTime;
     String nextName = '';
     DateTime? lastTime;
+    DateTime? lastIqama;
     String lastName = '';
     for (final p in times) {
       if (!prePostPrayers.contains(p.name)) continue;
@@ -2312,36 +2399,54 @@ class PrayerTimesLogic extends GetxController {
       } else {
         if (lastTime == null || p.time.isAfter(lastTime)) {
           lastTime = p.time;
+          // Post-prayer reminder is anchored to iqamah: the stored offset
+          // means "N minutes after iqamah". Falls back to the adhan time
+          // when no iqamah data exists for this prayer/mode.
+          lastIqama = p.iqamaTime;
           lastName = p.name;
         }
       }
     }
+    int preMillis = 0;
+    String preName = '';
     if (prePrayerEnabled &&
         nextTime != null &&
         (prePrayerPerPrayer[nextName] ?? true)) {
       final t = nextTime.subtract(Duration(minutes: prePrayerOffsetMinutes));
       if (t.isAfter(now)) {
-        await PrayerNotificationHelper.schedulePrePrayerAlarm(
-            t.millisecondsSinceEpoch, nextName);
-      } else {
-        await PrayerNotificationHelper.schedulePrePrayerAlarm(0, '');
+        preMillis = t.millisecondsSinceEpoch;
+        preName = nextName;
       }
-    } else {
-      await PrayerNotificationHelper.schedulePrePrayerAlarm(0, '');
     }
+    int postMillis = 0;
+    String postName = '';
     if (postPrayerEnabled &&
         lastTime != null &&
         (postPrayerPerPrayer[lastName] ?? true)) {
-      final t = lastTime.add(Duration(minutes: postPrayerOffsetMinutes));
+      final base = lastIqama ?? lastTime;
+      final t = base.add(Duration(minutes: postPrayerOffsetMinutes));
       if (t.isAfter(now)) {
-        await PrayerNotificationHelper.schedulePostPrayerAlarm(
-            t.millisecondsSinceEpoch, lastName);
-      } else {
-        await PrayerNotificationHelper.schedulePostPrayerAlarm(0, '');
+        postMillis = t.millisecondsSinceEpoch;
+        postName = lastName;
       }
-    } else {
-      await PrayerNotificationHelper.schedulePostPrayerAlarm(0, '');
     }
+    return (
+      preMillis: preMillis,
+      preName: preName,
+      postMillis: postMillis,
+      postName: postName
+    );
+  }
+
+  /// Skips tonight's bedtime reminder once without disabling the schedule.
+  Future<void> skipBedtimeOnce() async {
+    final now = DateTime.now();
+    bedtimeSkipDate =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final prefs = SharedPrefsCache.instance;
+    await prefs.setString('bedtimeSkipDate', bedtimeSkipDate);
+    await _sendAlarmIfChanged(
+        'bedtime', 0, PrayerNotificationHelper.scheduleBedtimeAlarm);
   }
 
   Map<String, dynamic> getNextPrayerInfo() {
@@ -2465,6 +2570,20 @@ class PrayerTimesLogic extends GetxController {
     return result;
   }
 
+  /// Batch 1: schedules one adhkar notification only when its effective
+  /// payload (time + text + sound) changed since the last schedule.
+  /// Re-scheduling an identical exact alarm is a no-op for the user, so
+  /// skipping it preserves behavior while saving IPC + Doze-exact slots.
+  /// In-memory only: restarts always reschedule (boot-safe).
+  void _scheduleAdhkarOnce(String key, DateTime time, String title,
+      String body, void Function() schedule) {
+    final fp =
+        '${time.millisecondsSinceEpoch}|$title|$body|$notificationSoundEnabled';
+    if (_lastAdhkarSchedule[key] == fp) return;
+    _lastAdhkarSchedule[key] = fp;
+    schedule();
+  }
+
   void scheduleAdhkarNotifications() {
     if (prayerTimes == null || prayerTimes!.isEmpty) {
       return;
@@ -2477,15 +2596,18 @@ class PrayerTimesLogic extends GetxController {
       if (adhkarTime.isBefore(DateTime.now())) {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
-      NotificationService().showNotification(
-        NotificationIds.morningAdhkar,
-        'أذكار الصباح',
-        'حان الآن وقت أذكار الصباح',
-        adhkarTime,
-        notificationSoundEnabled,
-        payload: NotificationIds.morningAdhkarPayload,
-        isAlarm: false,
-      );
+      _scheduleAdhkarOnce('morning', adhkarTime, 'أذكار الصباح',
+          'حان الآن وقت أذكار الصباح', () {
+        NotificationService().showNotification(
+          NotificationIds.morningAdhkar,
+          'أذكار الصباح',
+          'حان الآن وقت أذكار الصباح',
+          adhkarTime,
+          notificationSoundEnabled,
+          payload: NotificationIds.morningAdhkarPayload,
+          isAlarm: false,
+        );
+      });
     }
 
     if (eveningAdhkarEnabled) {
@@ -2494,15 +2616,18 @@ class PrayerTimesLogic extends GetxController {
       if (adhkarTime.isBefore(DateTime.now())) {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
-      NotificationService().showNotification(
-        NotificationIds.eveningAdhkar,
-        'أذكار المساء',
-        'حان الآن وقت أذكار المساء',
-        adhkarTime,
-        notificationSoundEnabled,
-        payload: NotificationIds.eveningAdhkarPayload,
-        isAlarm: false,
-      );
+      _scheduleAdhkarOnce('evening', adhkarTime, 'أذكار المساء',
+          'حان الآن وقت أذكار المساء', () {
+        NotificationService().showNotification(
+          NotificationIds.eveningAdhkar,
+          'أذكار المساء',
+          'حان الآن وقت أذكار المساء',
+          adhkarTime,
+          notificationSoundEnabled,
+          payload: NotificationIds.eveningAdhkarPayload,
+          isAlarm: false,
+        );
+      });
     } else {
       NotificationService().cancelNotification(NotificationIds.eveningAdhkar);
     }
@@ -2513,15 +2638,18 @@ class PrayerTimesLogic extends GetxController {
       if (adhkarTime.isBefore(DateTime.now())) {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
-      NotificationService().showNotification(
-        NotificationIds.wakeupAdhkar,
-        'أذكار الاستيقاظ',
-        'الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور',
-        adhkarTime,
-        notificationSoundEnabled,
-        payload: NotificationIds.wakeupAdhkarPayload,
-        isAlarm: false,
-      );
+      _scheduleAdhkarOnce('wakeup', adhkarTime, 'أذكار الاستيقاظ',
+          'الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور', () {
+        NotificationService().showNotification(
+          NotificationIds.wakeupAdhkar,
+          'أذكار الاستيقاظ',
+          'الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور',
+          adhkarTime,
+          notificationSoundEnabled,
+          payload: NotificationIds.wakeupAdhkarPayload,
+          isAlarm: false,
+        );
+      });
     } else {
       NotificationService().cancelNotification(NotificationIds.wakeupAdhkar);
     }
@@ -2532,15 +2660,18 @@ class PrayerTimesLogic extends GetxController {
       if (adhkarTime.isBefore(DateTime.now())) {
         adhkarTime = adhkarTime.add(const Duration(days: 1));
       }
-      NotificationService().showNotification(
-        NotificationIds.sleepAdhkar,
-        'أذكار النوم',
-        'باسمك ربي وضعت جنبي وبك أرفعه',
-        adhkarTime,
-        notificationSoundEnabled,
-        payload: NotificationIds.sleepAdhkarPayload,
-        isAlarm: false,
-      );
+      _scheduleAdhkarOnce('sleep', adhkarTime, 'أذكار النوم',
+          'باسمك ربي وضعت جنبي وبك أرفعه', () {
+        NotificationService().showNotification(
+          NotificationIds.sleepAdhkar,
+          'أذكار النوم',
+          'باسمك ربي وضعت جنبي وبك أرفعه',
+          adhkarTime,
+          notificationSoundEnabled,
+          payload: NotificationIds.sleepAdhkarPayload,
+          isAlarm: false,
+        );
+      });
     } else {
       NotificationService().cancelNotification(NotificationIds.sleepAdhkar);
     }
@@ -2568,36 +2699,21 @@ class PrayerTimesLogic extends GetxController {
       } catch (_) {
         // Keep Arabic defaults.
       }
-      NotificationService().showWeeklyNotification(
-        NotificationIds.fridayKahf,
-        kahfTitle,
-        kahfBody,
-        fridayTime,
-        notificationSoundEnabled,
-        payload: NotificationIds.fridayKahfPayload,
-      );
+      _scheduleAdhkarOnce(
+          'kahf', fridayTime, kahfTitle, kahfBody, () {
+        NotificationService().showWeeklyNotification(
+          NotificationIds.fridayKahf,
+          kahfTitle,
+          kahfBody,
+          fridayTime,
+          notificationSoundEnabled,
+          payload: NotificationIds.fridayKahfPayload,
+        );
+      });
     } else {
       NotificationService().cancelNotification(NotificationIds.fridayKahf);
     }
 
-    // Tracker logging reminders: recompute exact one-shot nudges from
-    // today's times. Runs on app start + settings changes; safe no-op when
-    // reminders are off, tracking is paused, or times are missing.
-    try {
-      final order = PrayerReminderService.engineOrder;
-      final moments = <PrayerMoment>[];
-      for (var i = 0; i < order.length; i++) {
-        final match = prayerTimes!.where((p) => p.name == order[i]);
-        if (match.isNotEmpty) {
-          moments.add(PrayerMoment(order[i], match.first.time));
-        }
-      }
-      if (moments.length == 5) {
-        PrayerReminderService.instance.refreshWithMoments(moments);
-      }
-    } catch (_) {
-      // Never break adhkar scheduling over tracker reminders.
-    }
   }
 
   Future<void> _checkFajrChallenge() async {
@@ -2619,7 +2735,8 @@ class PrayerTimesLogic extends GetxController {
         int challengeIndex = NotificationIds.fajrChallengeIndex;
 
         if (!_firedPrayerIndexes.contains(challengeIndex)) {
-          DateTime? challengeTime = await _getFajrChallengeTime(prayer);
+          DateTime? challengeTime =
+              await _getCachedFajrChallengeTime(prayer);
           if (challengeTime != null) {
             final challengeDiff = now.difference(challengeTime);
             if (!challengeTime.isAfter(now) &&

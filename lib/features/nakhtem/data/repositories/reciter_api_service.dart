@@ -60,6 +60,11 @@ class ReciterApiService {
   /// placeholder for the global ayah number.
   final _audioTemplates = <String, List<String>>{};
 
+  // Perf-only: in-flight dedup so N concurrent audioCandidates/surahCandidates
+  // for the same identifier share one GET. Never caches failures; entry
+  // removed in finally so a stuck future cannot wedge later calls.
+  final Map<String, Future<List<String>?>> _templateInflight = {};
+
   /// Ordered per-ayah stream candidates for an API reciter edition.
   ///
   /// The exact streams (bitrate included) come from `GET /v1/ayah/1/<id>`
@@ -72,8 +77,9 @@ class ReciterApiService {
     required int globalAyah,
   }) async {
     try {
-      final templates = _audioTemplates[identifier] ??
-          await _fetchAudioTemplates(identifier);
+      final cached = _audioTemplates[identifier];
+      final templates =
+          cached ?? await _templatesShared(identifier);
       if (templates != null) {
         _audioTemplates[identifier] = templates;
         return templates
@@ -84,6 +90,16 @@ class ReciterApiService {
       // fall through to the guess chain
     }
     return _guessCandidates(identifier, globalAyah);
+  }
+
+  Future<List<String>?> _templatesShared(String identifier) {
+    final existing = _templateInflight[identifier];
+    if (existing != null) return existing;
+    final fut = _fetchAudioTemplates(identifier);
+    _templateInflight[identifier] = fut;
+    // ignore: discarded_futures
+    fut.whenComplete(() => _templateInflight.remove(identifier));
+    return fut;
   }
 
   Future<List<String>?> _fetchAudioTemplates(String identifier) async {
@@ -147,8 +163,9 @@ class ReciterApiService {
   }) async {
     assert(surah >= 1 && surah <= 114);
     try {
-      final templates = _audioTemplates[identifier] ??
-          await _fetchAudioTemplates(identifier);
+      final cached = _audioTemplates[identifier];
+      final templates =
+          cached ?? await _templatesShared(identifier);
       if (templates != null) {
         _audioTemplates[identifier] = templates;
         final exact = <String>[];

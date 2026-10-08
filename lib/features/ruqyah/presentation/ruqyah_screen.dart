@@ -178,7 +178,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
             final treatment = treatments[index];
             return _buildTreatmentCard(
               treatment,
-              Icons.auto_stories_rounded,
+              Icons.shield_rounded,
             );
           },
         ),
@@ -253,7 +253,7 @@ class _RuqyahScreenState extends State<RuqyahScreen> {
                       Row(
                         children: [
                           const Icon(
-                            Icons.auto_stories_rounded,
+                            Icons.shield_outlined,
                             size: 15,
                             color: Colors.grey,
                           ),

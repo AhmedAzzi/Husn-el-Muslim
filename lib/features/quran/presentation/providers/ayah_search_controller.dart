@@ -25,12 +25,18 @@ class AyahSearchHit {
 /// files — no network, no extra assets).
 ///
 /// Smart behaviors:
-/// - Arabic-insensitive matching: tashkeel/tatweel stripped, alef forms,
-///   taa marbuta, hamza seats unified on both sides.
+/// - Arabic-insensitive matching: tashkeel/tatweel/Quranic marks stripped,
+///   alef forms, taa marbuta, hamza seats, kaf/yeh variants unified, bare
+///   hamza dropped — on both sides, so typing without tashkeel just works.
+/// - Uthmani-tolerant tiers: exact phrase → all-words AND → alef-insensitive
+///   skeleton (رحمان finds الرحمن, ذالك finds ذلك) → weak-letter skeleton
+///   (الصلاة finds الصلوة, السماوات finds السموات).
 /// - Multi-word AND: every query word must appear (any order); exact phrase
 ///   matches rank first.
 /// - Direct references: `2:255`, `2-255`, `٢:٢٥٥` jump straight to the ayah.
 /// - Results carry their mushaf page for one-tap opening.
+/// - `totalCount` holds the full match count even when the displayed list is
+///   capped at [resultLimit].
 class AyahSearchController extends GetxController {
   static const int resultLimit = 120;
   static const Duration debounce = Duration(milliseconds: 350);
@@ -39,9 +45,34 @@ class AyahSearchController extends GetxController {
   final hits = <AyahSearchHit>[].obs;
   final isLoading = false.obs;
   final hasSearched = false.obs;
+  final totalCount = 0.obs;
 
   final Map<int, List<TajAya>> _tajCache = {};
   Timer? _debounce;
+
+  // Batch 2 (perf-only): normalized corpus. normAr() per ayah per keystroke
+  // (~6236 × regex recompiles) dominates search cost. Normalization is a pure
+  // function of the ayah text, so cache it once per loaded corpus; rebuilt
+  // only when the corpus grows. Matching logic, order, and caps unchanged.
+  final Map<String, String> _normCache = {};
+  final Map<String, String> _skelCache = {};
+  final Map<String, String> _consCache = {};
+  int _normCacheAyahCount = -1;
+
+  // Hoisted: identical patterns, compiled once instead of per call.
+  // Covers harakat/shadda/sukun/maddah (U+064B-065F), other vocalization
+  // marks (U+0610-061A), superscript alef (U+0670), tatweel (U+0640),
+  // Quranic annotation/waqf signs (U+06D6-06ED), extended Quranic marks
+  // (U+08D3-08FF), and zero-width joiners (U+200C-200D).
+  static final RegExp _diacritics = RegExp(
+    '[\u0610-\u061A\u0640\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF\u200C\u200D]',
+  );
+  static final RegExp _alefForms = RegExp('[أإآٱ\u0672\u0673\u0675]');
+  static final RegExp _kafForms = RegExp('[ك\u06A9]');
+  static final RegExp _yehForms = RegExp('[ي\u06CC\u06D0\u06D2]');
+  static final RegExp _tehForms = RegExp('[ة\u06C3]');
+  static final RegExp _weakLetters = RegExp('[اوي]');
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   void setQuery(String q) {
     query.value = q;
@@ -53,6 +84,7 @@ class AyahSearchController extends GetxController {
     final q = raw.trim();
     if (q.isEmpty) {
       hits.clear();
+      totalCount.value = 0;
       hasSearched.value = false;
       return;
     }
@@ -62,6 +94,7 @@ class AyahSearchController extends GetxController {
       if (ref != null) {
         final hit = await _referenceHit(ref.$1, ref.$2);
         hits.value = hit == null ? [] : [hit];
+        totalCount.value = hits.length;
       } else {
         await _ensureAllLoaded();
         hits.value = _filter(q);
@@ -129,19 +162,61 @@ class AyahSearchController extends GetxController {
     }
   }
 
+  /// Tokenizes a raw query exactly as [_filter] does (shared so highlight
+  /// code never recompiles the splitter per row).
+  static List<String> queryTokens(String q) => normAr(q)
+      .split(_whitespace)
+      .where((t) => t.isNotEmpty)
+      .toList();
+
+  /// Alef-stripped skeleton of a raw string (Uthmani-tolerant: رحمان matches
+  /// الرحمن, ذالك matches ذلك). Derived from [normAr], never for display.
+  static String skeletonAr(String s) => normAr(s).replaceAll('ا', '');
+
+  /// Weak-letter skeleton of a raw string (الصلوة/الصلاة, السموات/السماوات
+  /// converge). Derived from [normAr], never for display.
+  static String consonantAr(String s) =>
+      normAr(s).replaceAll(_weakLetters, '');
+
+  /// Token lists for the skeleton tiers, mirroring [queryTokens].
+  static List<String> skeletonTokens(String q) => skeletonAr(q)
+      .split(_whitespace)
+      .where((t) => t.isNotEmpty)
+      .toList();
+  static List<String> consonantTokens(String q) => consonantAr(q)
+      .split(_whitespace)
+      .where((t) => t.isNotEmpty)
+      .toList();
+
   List<AyahSearchHit> _filter(String q) {
     final normQ = normAr(q);
-    final tokens = normQ
-        .split(RegExp(r'\s+'))
-        .where((t) => t.isNotEmpty)
-        .toList();
-    if (tokens.isEmpty) return [];
+    final tokens = queryTokens(q);
+    if (tokens.isEmpty) {
+      totalCount.value = 0;
+      return [];
+    }
+    final skelQ = skeletonAr(q);
+    final skelTokens = skeletonTokens(q);
+    final consQ = consonantAr(q);
+    final consTokens = consonantTokens(q);
+    _refreshNormCache();
     final ranked = <({AyahSearchHit hit, int rank})>[];
     for (var s = 1; s <= 114; s++) {
       final list = _tajCache[s] ?? const <TajAya>[];
       for (final t in list) {
-        final normT = normAr(t.text);
-        final rank = _rank(normT, normQ, tokens);
+        final key = '$s:${t.a}';
+        final normT = _normCache[key] ?? normAr(t.text);
+        final rank = _rank(
+          normT,
+          normQ,
+          tokens,
+          _skelCache[key] ?? skeletonAr(t.text),
+          skelQ,
+          skelTokens,
+          _consCache[key] ?? consonantAr(t.text),
+          consQ,
+          consTokens,
+        );
         if (rank < 0) continue;
         ranked.add((
           hit: AyahSearchHit(
@@ -152,9 +227,7 @@ class AyahSearchController extends GetxController {
           ),
           rank: rank,
         ));
-        if (ranked.length >= resultLimit * 3) break;
       }
-      if (ranked.length >= resultLimit * 3) break;
     }
     ranked.sort((a, b) {
       final r = a.rank.compareTo(b.rank);
@@ -162,16 +235,78 @@ class AyahSearchController extends GetxController {
       final s = a.hit.surah.compareTo(b.hit.surah);
       return s != 0 ? s : a.hit.ayah.compareTo(b.hit.ayah);
     });
+    totalCount.value = ranked.length;
     return [for (final r in ranked.take(resultLimit)) r.hit];
   }
 
-  /// 0 = exact phrase, 1 = all words, -1 = no match.
-  int _rank(String normText, String normQuery, List<String> tokens) {
-    if (normText.contains(normQuery)) return 0;
-    for (final t in tokens) {
-      if (!normText.contains(t)) return -1;
+  /// Rebuilds the normalized corpus only when ayahs were added since the
+  /// last build (first search, or reference-hit loads racing a full load).
+  /// Covers every cached ayah, so [_filter] hits the cache for all of them.
+  void _refreshNormCache() {
+    var count = 0;
+    for (var s = 1; s <= 114; s++) {
+      count += _tajCache[s]?.length ?? 0;
     }
-    return 1;
+    if (count == _normCacheAyahCount) return;
+    for (var s = 1; s <= 114; s++) {
+      final list = _tajCache[s] ?? const <TajAya>[];
+      for (final t in list) {
+        final key = '$s:${t.a}';
+        final norm = _normCache.putIfAbsent(key, () => normAr(t.text));
+        _skelCache.putIfAbsent(key, () => norm.replaceAll('ا', ''));
+        _consCache.putIfAbsent(key, () => norm.replaceAll(_weakLetters, ''));
+      }
+    }
+    _normCacheAyahCount = count;
+  }
+
+  /// 0 = exact phrase, 1 = all words, 2 = skeleton phrase, 3 = skeleton
+  /// words, 4 = weak-letter phrase, 5 = weak-letter words, -1 = no match.
+  /// Empty skeleton/weak queries are skipped so a bare-alef query can't
+  /// match the whole mushaf.
+  static int _rank(
+    String normText,
+    String normQuery,
+    List<String> tokens,
+    String skelText,
+    String skelQuery,
+    List<String> skelTokens,
+    String consText,
+    String consQuery,
+    List<String> consTokens,
+  ) {
+    if (normText.contains(normQuery)) return 0;
+    var all = true;
+    for (final t in tokens) {
+      if (!normText.contains(t)) {
+        all = false;
+        break;
+      }
+    }
+    if (all) return 1;
+    if (skelQuery.isNotEmpty) {
+      if (skelText.contains(skelQuery)) return 2;
+      if (skelTokens.isNotEmpty) {
+        var sAll = true;
+        for (final t in skelTokens) {
+          if (!skelText.contains(t)) {
+            sAll = false;
+            break;
+          }
+        }
+        if (sAll) return 3;
+      }
+    }
+    if (consQuery.isNotEmpty) {
+      if (consText.contains(consQuery)) return 4;
+      if (consTokens.isNotEmpty) {
+        for (final t in consTokens) {
+          if (!consText.contains(t)) return -1;
+        }
+        return 5;
+      }
+    }
+    return -1;
   }
 
   String _ayahText(List<TajAya> list, int ayah) {
@@ -190,14 +325,22 @@ class AyahSearchController extends GetxController {
   }
 
   /// Arabic-insensitive normalization for search (never touches display).
+  /// Strips tashkeel, tatweel, superscript alef, and Quranic waqf/annotation
+  /// marks; unifies alef seats, taa marbuta, hamza seats, and kaf/yeh
+  /// keyboard variants; drops the bare hamza; collapses whitespace.
   static String normAr(String s) {
-    var o = s.replaceAll(RegExp('[\u064B-\u065F\u0670\u0640]'), '');
-    o = o.replaceAll(RegExp('[أإآٱ]'), 'ا');
-    o = o.replaceAll('ة', 'ه');
-    o = o.replaceAll('ئ', 'ي');
+    var o = s.replaceAll(_diacritics, '');
+    o = o.replaceAll(_alefForms, 'ا');
+    o = o.replaceAll(_kafForms, 'ك');
+    o = o.replaceAll(_yehForms, 'ي');
     o = o.replaceAll('ؤ', 'و');
+    o = o.replaceAll('ئ', 'ي');
+    o = o.replaceAll('ء', '');
+    o = o.replaceAll(_tehForms, 'ه');
+    o = o.replaceAll('ۀ', 'ه');
     o = o.replaceAll('ى', 'ي');
-    return o;
+    o = o.replaceAll(_whitespace, ' ');
+    return o.trim();
   }
 
   @override

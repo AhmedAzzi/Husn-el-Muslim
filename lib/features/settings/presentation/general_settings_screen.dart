@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
-import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
 import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/app_sheets.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
@@ -16,16 +15,11 @@ class GeneralSettingsScreen extends StatefulWidget {
 }
 
 class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
-  final DhikrReminderHelper _reminderHelper = DhikrReminderHelper();
-
   bool _clickSoundEnabled = true;
   bool _vibrationEnabled = true;
   bool _darkModeEnabled = true;
   String _selectedHomeScreen = 'azkar';
   String _appLanguage = 'ar';
-
-  bool _reminderEnabled = false;
-  int _reminderInterval = 15;
 
   @override
   void initState() {
@@ -42,25 +36,24 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       _darkModeEnabled = prefs.getBool('dark_mode') ?? true;
       _selectedHomeScreen = prefs.getString('home_screen') ?? 'azkar';
       _appLanguage = prefs.getString('app_language') ?? 'ar';
-      _reminderEnabled = _reminderHelper.isEnabled;
-      _reminderInterval = _reminderHelper.intervalMinutes;
     });
   }
 
   // Home screen options: every main page (settings excluded — opening
   // the app straight into settings is never useful). Localized at call
   // time — const maps can't use loc. Keys match `fromHomeScreenKey`.
+  // Icons mirror the navigation drawer so each entry is recognizable.
   static Map<String, ({String title, String subtitle, IconData icon})>
       homeScreenMeta(AppLocalizations loc) => {
     'azkar': (
       title: loc.navAdhkar,
       subtitle: loc.stHomeAzkarSub,
-      icon: Icons.menu_book_rounded,
+      icon: Icons.list_rounded,
     ),
     'misbaha': (
       title: loc.navMasbaha,
       subtitle: loc.stHomeMisbahaSub,
-      icon: Icons.touch_app_rounded,
+      icon: Icons.bubble_chart_rounded,
     ),
     'prayer_times': (
       title: loc.navPrayerTimes,
@@ -75,7 +68,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     'khatma': (
       title: loc.navKhatma,
       subtitle: loc.stHomeKhatmaSub,
-      icon: Icons.menu_book_outlined,
+      icon: Icons.menu_book_rounded,
     ),
     'qibla': (
       title: loc.navQibla,
@@ -85,7 +78,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     'dua': (
       title: loc.navDua,
       subtitle: loc.stHomeDuaSub,
-      icon: Icons.favorite_rounded,
+      icon: Icons.auto_stories_rounded,
     ),
     'names': (
       title: loc.navNames,
@@ -95,17 +88,17 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     'ruqyah': (
       title: loc.navRuqyah,
       subtitle: loc.stHomeRuqyahSub,
-      icon: Icons.health_and_safety_rounded,
+      icon: Icons.shield_rounded,
     ),
     'mosque_map': (
       title: loc.navMosqueMap,
       subtitle: loc.stHomeMosqueMapSub,
       icon: Icons.map_rounded,
     ),
-    'tracking': (
-      title: loc.navTracking,
-      subtitle: loc.stHomeTrackingSub,
-      icon: Icons.local_fire_department_rounded,
+    'todo': (
+      title: loc.navTodo,
+      subtitle: loc.stHomeTodoSub,
+      icon: Icons.checklist_rounded,
     ),
   };
 
@@ -153,32 +146,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     Get.updateLocale(Locale(value));
   }
 
-  Future<void> _toggleReminder(bool value) async {
-    if (value) {
-      final loc = AppLocalizations.of(context)!;
-      if (!mounted) return;
-      final proceed = await OverlayGate.ensure(
-        context,
-        title: loc.stOverlayTitle,
-        body: loc.stOverlayBody,
-        laterLabel: loc.sheetLater,
-        activateLabel: loc.stActivateNow,
-      );
-      if (!proceed) return;
-    }
-
-    await _reminderHelper.updateSettings(value, _reminderInterval);
-    setState(() {
-      _reminderEnabled = value;
-    });
-  }
-
-  Future<void> _setReminderInterval(int value) async {
-    await _reminderHelper.updateSettings(_reminderEnabled, value);
-    setState(() {
-      _reminderInterval = value;
-    });
-  }
   void _showHomeScreenPicker() {
     final loc = AppLocalizations.of(context)!;
     AppSheets.show(
@@ -229,26 +196,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
             },
           );
         }).toList(),
-      ),
-    );
-  }
-  void _showIntervalPicker() {
-    final loc = AppLocalizations.of(context)!;
-    final intervals = [1, 2, 3, 5, 10, 15, 30, 60];
-    AppSheets.show(
-      context,
-      title: loc.stIntervalTitle,
-      subtitle: loc.stIntervalSub,
-      child: AppSheets.chipGroup<int>(
-        context: context,
-        values: intervals,
-        selected: _reminderInterval,
-        labelOf: (mins) =>
-            mins >= 60 ? loc.stEveryHour : loc.stEveryMinutes(mins),
-        onSelected: (mins) {
-          Get.back();
-          _setReminderInterval(mins);
-        },
       ),
     );
   }
@@ -350,42 +297,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                       value: _vibrationEnabled,
                       onChanged: _toggleVibration,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Section 3: Periodic Dhikr Reminders (Overlay)
-                SettingsWidgets.buildSectionHeader(
-                  context: context,
-                  title: loc.stReminder,
-                  icon: Icons.notifications_active_outlined,
-                  color: const Color(0xFF10B981),
-                ),
-                SettingsWidgets.buildCardContainer(
-                  context: context,
-                  children: [
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.stFloatingDhikr,
-                      subtitle: loc.stFloatingDhikrSub,
-                      icon: Icons.auto_awesome_rounded,
-                      iconColor: const Color(0xFF10B981),
-                      value: _reminderEnabled,
-                      onChanged: _toggleReminder,
-                    ),
-                    if (_reminderEnabled) ...[
-                      SettingsWidgets.buildDivider(context),
-                      SettingsWidgets.buildValueTile(
-                        context: context,
-                        title: loc.stReminderRate,
-                        subtitle: loc.stReminderRateSub,
-                        icon: Icons.timer_outlined,
-                        iconColor: const Color(0xFF10B981),
-                        valueBadge: _reminderInterval >= 60
-                            ? loc.stEveryHour
-                            : loc.stEveryMinutes(_reminderInterval),
-                        onTap: _showIntervalPicker,
-                      ),
-                    ],
                   ],
                 ),
                 const SizedBox(height: 32),

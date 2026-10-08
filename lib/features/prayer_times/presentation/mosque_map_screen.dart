@@ -510,7 +510,10 @@ class _MosqueMapScreenState extends State<MosqueMapScreen> {
                           fontFamily: 'Amiri'),
                       border: InputBorder.none,
                     ),
-                    onChanged: (_) => setState(() {}),
+                    // NOTE (perf): text changes already notify _searchController
+                    // listeners (_onSearchChanged filters + rebuilds once), so
+                    // no extra setState here — one rebuild per keystroke.
+                    onChanged: null,
                   )
                 : Text(
                     context.loc.mmTitle,

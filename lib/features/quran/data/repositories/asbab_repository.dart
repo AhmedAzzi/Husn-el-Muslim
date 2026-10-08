@@ -1,6 +1,25 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+/// Batch 3 (perf-only): pure parse of the 2MB `nozool-wahidy.json` bundle.
+/// Runs in a `compute()` isolate; asset loading stays on the main isolate.
+/// Same index content and edge rules as the old inline parse.
+Map<String, String>? parseAsbabBundle(String raw) {
+  final decoded = jsonDecode(raw);
+  if (decoded is! List) return null;
+  final index = <String, String>{};
+  for (final e in decoded) {
+    if (e is! Map<String, dynamic>) continue;
+    final s = AsbabRepository.parseNum(e['sura']);
+    final a = AsbabRepository.parseNum(e['aya']);
+    final text = e['text']?.toString() ?? '';
+    if (s == null || a == null || text.isEmpty) continue;
+    index['$s:$a'] = AsbabRepository.clean(text);
+  }
+  return index.isEmpty ? null : index;
+}
 
 /// Asbab al-nuzul (al-Wahidy) from the bundled
 /// `assets/data/nozool-wahidy.json`: one flat list of
@@ -27,30 +46,21 @@ class AsbabRepository {
 
   Future<Map<String, String>?> _load() async {
     try {
+      // AssetBundle needs the main isolate; the 2MB decode+index moves
+      // to a background isolate (same content, same edge rules).
       final raw =
           await _bundle.loadString('assets/data/nozool-wahidy.json');
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return null;
-      final index = <String, String>{};
-      for (final e in decoded) {
-        if (e is! Map<String, dynamic>) continue;
-        final s = _num(e['sura']);
-        final a = _num(e['aya']);
-        final text = e['text']?.toString() ?? '';
-        if (s == null || a == null || text.isEmpty) continue;
-        index['$s:$a'] = _clean(text);
-      }
-      return index.isEmpty ? null : index;
+      return await compute(parseAsbabBundle, raw);
     } catch (_) {
       return null;
     }
   }
 
-  static int? _num(dynamic v) =>
+  static int? parseNum(dynamic v) =>
       v is num ? v.toInt() : int.tryParse('$v');
 
   /// HTML (`<p>`, entities) → plain paragraphs.
-  static String _clean(String html) {
+  static String clean(String html) {
     var t = html.replaceAll(
       RegExp(r'<br\s*/?>', caseSensitive: false),
       '\n',

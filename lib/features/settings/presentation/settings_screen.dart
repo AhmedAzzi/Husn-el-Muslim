@@ -10,18 +10,12 @@ import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
-import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/features/settings/presentation/general_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/quran_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/prayer_data_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/tracking_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/notification_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/fajr_wakeup_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/extra_alarms_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/adhkar_reminders_settings_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/diagnostics_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -36,9 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
   String _appLanguage = 'ar';
-  bool _showAdvanced = false;
-  int _trackingGoal = 5;
-  int _trackingStreak = 0;
 
   @override
   void initState() {
@@ -58,23 +49,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final prefs = SharedPrefsCache.instance;
     await _prayerLogic.loadNotificationPreference();
-    int goal = 5;
-    int streak = 0;
-    try {
-      goal = await PrayerTrackingRepository.instance.dailyGoal();
-      streak = await PrayerTrackingRepository.instance.currentStreak();
-    } catch (_) {}
     if (!mounted) return;
     setState(() {
       _appLanguage = prefs.getString('app_language') ?? 'ar';
-      _showAdvanced = prefs.getBool('show_advanced') ?? false;
-      _trackingGoal = goal;
-      _trackingStreak = streak;
     });
   }
 
   void _openSub(Widget page) {
-    Get.to(() => page)?.then((_) => _loadSettings());
+    // Name the route after the widget type: a bare `() => page` closure
+    // would name every route `/Widget`, making `preventDuplicates`
+    // silently swallow any second-level push (hub -> sub-page did
+    // nothing). The lazy builder keeps GetX's disposal guarantees.
+    Get.to(() => page, routeName: '/${page.runtimeType}')
+        ?.then((_) => _loadSettings());
   }
 
   /// Prev button: back to the previously visited main section inside the
@@ -102,9 +89,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _extraStatus(AppLocalizations loc) {
     final on = <String>[
-      if (_prayerLogic.suhoorAlarmEnabled) loc.nsSuhoor,
-      if (_prayerLogic.preFajrAlarmEnabled) loc.nsPreFajr,
-      if (_prayerLogic.tahajjudEnabled) loc.nsTahajjud,
       if (_prayerLogic.fajrExtra1Enabled || _prayerLogic.fajrExtra2Enabled)
         loc.nsFajrExtra,
       if (_prayerLogic.bedtimeAlarmEnabled) loc.nsBedtime,
@@ -181,70 +165,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
               sub: loc.nsSuhoorSub,
               icon: Icons.notifications_active_outlined,
               color: const Color(0xFF0EA5E9),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
-            ),
-            (
-              title: loc.nsSuhoor,
-              sub: loc.nsSuhoorSub,
-              icon: Icons.restaurant_rounded,
-              color: const Color(0xFF0EA5E9),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
-            ),
-            (
-              title: loc.nsPreFajr,
-              sub: loc.nsPreFajrSub,
-              icon: Icons.alarm_rounded,
-              color: const Color(0xFF8B5CF6),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
-            ),
-            (
-              title: loc.nsTahajjud,
-              sub: loc.nsTahajjudSub,
-              icon: Icons.nightlight_round,
-              color: const Color(0xFF14B8A6),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsBedtime,
               sub: loc.nsBedtimeSub,
               icon: Icons.bedtime_rounded,
               color: const Color(0xFF6366F1),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsPrePrayer,
               sub: loc.nsPrePrayerSub,
               icon: Icons.notifications_outlined,
               color: const Color(0xFF0EA5E9),
-              open: () => _openSub(const ExtraAlarmsSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsAdhkarSection,
               sub: loc.nsMorningSub,
               icon: Icons.wb_twilight_rounded,
               color: const Color(0xFFF59E0B),
-              open: () => _openSub(const AdhkarRemindersSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsMorning,
               sub: loc.nsMorningSub,
               icon: Icons.wb_sunny_rounded,
               color: const Color(0xFFF59E0B),
-              open: () => _openSub(const AdhkarRemindersSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsEvening,
               sub: loc.nsEveningSub,
               icon: Icons.nights_stay_rounded,
               color: const Color(0xFF8B5CF6),
-              open: () => _openSub(const AdhkarRemindersSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.nsFridayKahf,
               sub: loc.nsFridayKahfSub,
               icon: Icons.menu_book_rounded,
               color: const Color(0xFF0EA5E9),
-              open: () => _openSub(const AdhkarRemindersSettingsScreen()),
+              open: () => _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.stPrayerData,
@@ -282,13 +245,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               open: () => _openSub(const PrayerDataSettingsScreen()),
             ),
             (
-              title: loc.navFajrLog,
-              sub: loc.trackDays(_trackingStreak),
-              icon: Icons.local_fire_department_rounded,
-              color: const Color(0xFFD64463),
-              open: () => _openSub(const PrayerTrackingScreen()),
-            ),
-            (
               title: loc.stLanguageTitle,
               sub: loc.settingsLanguageSubtitle,
               icon: Icons.translate_rounded,
@@ -307,14 +263,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               sub: loc.stFloatingDhikrSub,
               icon: Icons.auto_awesome_rounded,
               color: const Color(0xFF10B981),
-              open: () => _openSub(const NotificationSettingsScreen()),
-            ),
-            (
-              title: loc.ptRemindToggle,
-              sub: loc.ptRemindHint,
-              icon: Icons.notifications_active_rounded,
-              color: const Color(0xFFD64463),
-              open: () => _openSub(const NotificationSettingsScreen()),
+              open: () =>
+                  _openSub(const NotificationSettingsScreen()),
             ),
             (
               title: loc.stQuran,
@@ -343,13 +293,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.bug_report_outlined,
               color: const Color(0xFF64748B),
               open: () => _openSub(const DiagnosticsScreen()),
-            ),
-            (
-              title: loc.stAdvancedMode,
-              sub: loc.stAdvancedModeSub,
-              icon: Icons.tune_rounded,
-              color: const Color(0xFF8B5CF6),
-              open: () => _openSub(const AdvancedSettingsScreen()),
             ),
             (
               title: loc.nsDndTitle,
@@ -778,18 +721,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 SettingsWidgets.buildDivider(context),
                                 _menuRow(
                                   loc: loc,
-                                  title: loc.navFajrLog,
-                                  subtitle:
-                                      '🔥 ${loc.trackDays(_trackingStreak)} • $_trackingGoal/5',
-                                  icon: Icons
-                                      .local_fire_department_rounded,
-                                  color: const Color(0xFFD64463),
-                                  page:
-                                      const TrackingSettingsScreen(),
-                                ),
-                                SettingsWidgets.buildDivider(context),
-                                _menuRow(
-                                  loc: loc,
                                   title: loc.stAppearance,
                                   subtitle: languageTitle,
                                   icon: Icons.palette_outlined,
@@ -810,14 +741,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 SettingsWidgets.buildDivider(context),
                                 _menuRow(
                                   loc: loc,
-                                  title: loc.stAdvanced,
-                                  subtitle: _showAdvanced
-                                      ? loc.stAdvancedModeSub
-                                      : loc.stHiddenAdvanced,
-                                  icon: Icons.build_outlined,
+                                  title: loc.stDiagTile,
+                                  subtitle: loc.stDiagTileSub,
+                                  icon: Icons.bug_report_outlined,
                                   color: const Color(0xFF64748B),
                                   page:
-                                      const AdvancedSettingsScreen(),
+                                      const DiagnosticsScreen(),
                                 ),
                               ],
                             ),

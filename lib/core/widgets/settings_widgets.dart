@@ -38,8 +38,6 @@ class SettingsWidgets {
   }
 
   /// The single app-wide card decoration (dark #1E1E28 / white, radius 20).
-  /// Shared by [buildCardContainer] and the tracking screens (which need
-  /// their own padding/margin around the same decoration).
   static BoxDecoration cardDecoration(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
@@ -70,10 +68,13 @@ class SettingsWidgets {
     );
   }
 
+  /// A switch row with the app-wide look. [subtitle] is optional: tiles
+  /// whose title is already self-explanatory omit it instead of showing
+  /// filler text.
   static Widget buildSwitchTile({
     required BuildContext context,
     required String title,
-    required String subtitle,
+    String? subtitle,
     required IconData icon,
     required Color iconColor,
     required bool value,
@@ -98,14 +99,16 @@ class SettingsWidgets {
           color: isDark ? Colors.white : Colors.black87,
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          fontFamily: 'Amiri',
-          fontSize: 13,
-          color: isDark ? Colors.white60 : Colors.black54,
-        ),
-      ),
+      subtitle: (subtitle == null || subtitle.isEmpty)
+          ? null
+          : Text(
+              subtitle,
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 13,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
     );
   }
 
@@ -337,6 +340,8 @@ class SettingsWidgets {
           children: [
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Amiri',
                 fontWeight: FontWeight.bold,
@@ -350,6 +355,8 @@ class SettingsWidgets {
             Text(
               subtitle,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Amiri',
                 fontSize: 11,

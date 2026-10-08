@@ -43,6 +43,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
   bool _hasMag = false;
   Timer? _sensorTimeout;
 
+  // Batch 4 (perf-only): accel + magnetometer fire at ~50-100Hz each, and
+  // every event rebuilt the full compass Scaffold. Sensor fusion still runs
+  // per event (same heading values), but frames are capped at ~15Hz —
+  // visually identical smoothness for a compass needle.
+  int _lastUiUpdateMs = 0;
+  static const int _minFrameIntervalMs = 66;
+
   @override
   void initState() {
     super.initState();
@@ -117,11 +124,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
     if (!_hasMag || !mounted) return;
     final h = QiblaService.heading(_gx, _gy, _gz, _mx, _my, _mz);
     if (h == null) return;
-    setState(() {
-      _heading =
-          _heading == null ? h : QiblaService.smoothHeading(_heading!, h, 0.15);
-      _sensorsDead = false;
-    });
+    _heading =
+        _heading == null ? h : QiblaService.smoothHeading(_heading!, h, 0.15);
+    _sensorsDead = false;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - _lastUiUpdateMs < _minFrameIntervalMs) return;
+    _lastUiUpdateMs = nowMs;
+    setState(() {});
     _sensorTimeout?.cancel();
   }
 

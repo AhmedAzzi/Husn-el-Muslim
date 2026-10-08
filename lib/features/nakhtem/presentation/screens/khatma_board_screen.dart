@@ -11,8 +11,36 @@ import '../controllers/nakhtem_controller.dart';
 
 /// Shows all khatmas (active, paused, completed) and lets the user switch /
 /// resume / pause / finish a pass.
-class KhatmaBoardScreen extends StatelessWidget {
+class KhatmaBoardScreen extends StatefulWidget {
   const KhatmaBoardScreen({super.key});
+
+  @override
+  State<KhatmaBoardScreen> createState() => _KhatmaBoardScreenState();
+}
+
+class _KhatmaBoardScreenState extends State<KhatmaBoardScreen> {
+  // Perf-only: create the combined future once so parent rebuilds do not
+  // re-issue the same DB reads. Refresh still works because setState after
+  // setActive rebuilds list content from the same future identity... plus
+  // explicit refresh below re-creates it.
+  late Future<List<dynamic>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<List<dynamic>> _load() {
+    final service = Get.find<KhatmaService>();
+    return Future.wait([service.all(), service.active()]);
+  }
+
+  void _refresh() {
+    setState(() {
+      _future = _load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +53,7 @@ class KhatmaBoardScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: HusnAppBar.back(title: l.t('khatma')),
         body: FutureBuilder<List<dynamic>>(
-          future: Future.wait([service.all(), service.active()]),
+          future: _future,
           builder: (context, snap) {
             if (!snap.hasData) {
               return const HusnLoading();
@@ -70,6 +98,7 @@ class KhatmaBoardScreen extends StatelessWidget {
                       if (!k.isCompleted) {
                         await service.setActive(k.id);
                         await Get.find<NakhtemController>().refresh();
+                        _refresh();
                       }
                     },
                   ),

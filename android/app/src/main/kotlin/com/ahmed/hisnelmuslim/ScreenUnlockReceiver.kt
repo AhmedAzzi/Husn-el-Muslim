@@ -6,8 +6,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 
 /**
  * Detects genuine phone wake/unlock cycles and shows the Khatma overlay
@@ -31,11 +36,45 @@ import android.provider.Settings
  */
 class ScreenUnlockReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Display ON alone NEVER shows the overlay (Case G): no work at all.
+        if (intent.action == Intent.ACTION_SCREEN_ON) return
+        // Return in <1ms. SCREEN_OFF/USER_PRESENT arrive as FOREGROUND
+        // broadcasts (~10s ANR budget), and on slow devices the main thread
+        // is routinely congested (cold start, engine init): doing binder
+        // (stopService), MediaPlayer (OverlayAudio.stop) or WindowManager
+        // work here risks a "bg anr" kill that takes the receiver — and the
+        // whole overlay feature — down with it. Everything runs on
+        // [OverlayThread], which owns its own Looper so addView/removeView
+        // never touch the main thread. The wake lock bridges the gap while
+        // the screen (and possibly the CPU) is off.
+        val pending = goAsync()
         val appCtx = context.applicationContext
-        when (intent.action) {
-            Intent.ACTION_SCREEN_OFF -> UnlockGate.onScreenOff(appCtx)
-            Intent.ACTION_SCREEN_ON -> UnlockGate.onScreenOn(appCtx)
-            Intent.ACTION_USER_PRESENT -> UnlockGate.onUserPresent(appCtx)
+        val action = intent.action
+        OverlayThread.post {
+            var wakeLock: PowerManager.WakeLock? = null
+            try {
+                val pm = appCtx.getSystemService(Context.POWER_SERVICE) as PowerManager
+                wakeLock = pm.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK, "Husn:UnlockOverlay"
+                ).apply {
+                    setReferenceCounted(false)
+                    acquire(15_000L)
+                }
+                when (action) {
+                    Intent.ACTION_SCREEN_OFF -> UnlockGate.onScreenOff(appCtx)
+                    Intent.ACTION_USER_PRESENT -> UnlockGate.onUserPresent(appCtx)
+                }
+            } catch (_: Exception) {
+            } finally {
+                try {
+                    if (wakeLock?.isHeld == true) wakeLock?.release()
+                } catch (_: Exception) {
+                }
+                try {
+                    pending.finish()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
@@ -54,13 +93,35 @@ class ScreenUnlockReceiver : BroadcastReceiver() {
             }
             val app = ctx.applicationContext
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                app.registerReceiver(r, filter, Context.RECEIVER_NOT_EXPORTED)
+                // MUST be exported: USER_PRESENT is sent by SystemUI
+                // (uid 10045), not system_server (uid 1000), and a
+                // NOT_EXPORTED receiver silently never receives it on
+                // API 33+ — while SCREEN_OFF/ON keep arriving because the
+                // system sends those. Spoof risk is nil: a forged broadcast
+                // can at most show (or dismiss) our own cached ayah card.
+                app.registerReceiver(r, filter, Context.RECEIVER_EXPORTED)
             } else {
                 @Suppress("DEPRECATION")
                 app.registerReceiver(r, filter)
             }
             instance = r
         }
+    }
+}
+
+/** Dedicated Looper thread owning ALL unlock-overlay work (prefs, audio stop,
+ * card inflation, WindowManager add/remove). ViewRootImpl binds to whichever
+ * Looper thread calls addView, so the overlay window lives here — never on
+ * the app main thread. Started lazily on first post, lives with the process.
+ * All entry points funnel through [post] so OFF → unlock sequences stay
+ * ordered even when broadcasts arrive in bursts. */
+object OverlayThread {
+    private val thread = HandlerThread("HusnUnlockOverlay").apply { start() }
+    private val handler = Handler(thread.looper)
+    val main = Handler(Looper.getMainLooper())
+
+    fun post(block: () -> Unit) {
+        handler.post(block)
     }
 }
 
@@ -134,6 +195,7 @@ object OverlayPrefs {
  * so one wake cycle can never produce more than one overlay.
  */
 object UnlockGate {
+    private const val TAG = "UnlockGate"
     private const val DEBOUNCE_MS = 2500L
 
     /** A new OFF cycle starts: arm the gate, drop any stale overlay. */
@@ -148,6 +210,7 @@ object UnlockGate {
         } catch (_: Exception) {
         }
         AyahOverlayUi.removeFallback()
+        Log.d(TAG, "onScreenOff: gate armed")
     }
 
     /**
@@ -161,13 +224,20 @@ object UnlockGate {
     @Synchronized
     fun onUserPresent(ctx: Context) {
         val p = OverlayPrefs.prefs(ctx)
-        if (!p.getBoolean(OverlayPrefs.KEY_ENABLED, false)) return
-        if (!p.getBoolean(OverlayPrefs.KEY_OFF_SEEN, false)) return
-        if (p.getBoolean(OverlayPrefs.KEY_SHOWN_CYCLE, false)) return
-        if (!Settings.canDrawOverlays(ctx)) return
-        if (AyahOverlayService.isShowing || AyahOverlayUi.isFallbackShowing) return
+        val enabled = p.getBoolean(OverlayPrefs.KEY_ENABLED, false)
+        val offSeen = p.getBoolean(OverlayPrefs.KEY_OFF_SEEN, false)
+        val shownCycle = p.getBoolean(OverlayPrefs.KEY_SHOWN_CYCLE, false)
+        val canDraw = Settings.canDrawOverlays(ctx)
+        val bodyLen = (p.getString(OverlayPrefs.KEY_BODY, "") ?: "").length
         val now = SystemClock.elapsedRealtime()
-        if (now - p.getLong(OverlayPrefs.KEY_LAST_SHOW, 0L) < DEBOUNCE_MS) return
+        val sinceLast = now - p.getLong(OverlayPrefs.KEY_LAST_SHOW, 0L)
+        Log.d(TAG, "onUserPresent: enabled=$enabled offSeen=$offSeen shownCycle=$shownCycle canDraw=$canDraw bodyLen=$bodyLen sinceLastMs=$sinceLast showing=${AyahOverlayService.isShowing}/${AyahOverlayUi.isFallbackShowing}")
+        if (!enabled) return
+        if (!offSeen) return
+        if (shownCycle) return
+        if (!canDraw) return
+        if (AyahOverlayService.isShowing || AyahOverlayUi.isFallbackShowing) return
+        if (sinceLast < DEBOUNCE_MS) return
 
         val body = p.getString(OverlayPrefs.KEY_BODY, "") ?: ""
         if (body.isBlank()) return // no cached ayah: keep gate armed, try next cycle
@@ -206,7 +276,8 @@ object UnlockGate {
         } catch (_: Exception) {
         }
         AyahOverlayUi.removeFallback()
-        AyahOverlayUi.showFallback(ctx.applicationContext, data, prev, next)
+        val shown = AyahOverlayUi.showFallback(ctx.applicationContext, data, prev, next)
+        Log.d(TAG, "onUserPresent: showFallback=$shown globalAyah=${data.globalAyah}")
     }
 }
 

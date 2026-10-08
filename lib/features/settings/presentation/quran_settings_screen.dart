@@ -6,24 +6,29 @@ import '../../../../core/theme/husn_style.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/husn_app_bar.dart';
 import '../../../../core/widgets/settings_widgets.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../nakhtem/presentation/controllers/nakhtem_controller.dart';
 import '../../nakhtem/presentation/controllers/nakhtem_settings_controller.dart';
 import '../../nakhtem/presentation/screens/khatma_home_screen.dart';
-import '../../nakhtem/presentation/screens/reciter_picker_screen.dart';
 import '../../prayer_times/services/prayer_notification_helper.dart';
 import '../settings_provider.dart';
 
 /// Quran (Mushaf + Khatma) settings, hosted inside Husn-el-Muslim's
 /// [SettingsScreen] as a sub-page.
 ///
-/// Only the settings the app actually reads are kept: the shared reciter,
-/// the narration (edition) and the tajweed legend. Theme and language live
-/// in Husn-el-Muslim's global settings.
+/// Three groups, each with a single responsibility: narration (edition),
+/// Khatma progress, and Mushaf display. Every setting appears exactly
+/// once. Visuals reuse the shared [SettingsWidgets] like every other
+/// settings page.
+///
+/// Note: the reciter is picked from the Mushaf audio sheets instead, so
+/// it intentionally does not appear here.
 class QuranSettingsScreen extends StatelessWidget {
   const QuranSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final mushafCtl = Get.find<SettingsController>();
     final khatmaCtl = Get.find<NakhtemSettingsController>();
 
@@ -32,89 +37,138 @@ class QuranSettingsScreen extends StatelessWidget {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: HusnAppBar.back(title: 'إعدادات المصحف'),
+          appBar: HusnAppBar.back(title: loc.stQuran),
           body: Obx(() {
             final m = mushafCtl.settings.value;
             final k = khatmaCtl.settings.value;
             final l = L10n.of(khatmaLang());
-            return ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                _sectionHeader('الختمة', Icons.menu_book_outlined),
-                _group([
-                  SettingsWidgets.buildSwitchTile(
+            return SingleChildScrollView(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Narration (edition) only. The reciter is chosen from
+                  // the Mushaf audio sheets, not from settings.
+                  SettingsWidgets.buildSectionHeader(
                     context: context,
-                    icon: Icons.layers_outlined,
-                    iconColor: HusnTheme.primary,
-                    title: l.t('phone_experience'),
-                    subtitle: l.t('overlay_lock_hint'),
-                    value: k.overlayEnabled,
-                    onChanged: (v) =>
-                        _setOverlayEnabled(context, khatmaCtl, v),
+                    title: l.t('narration'),
+                    icon: Icons.volume_up_outlined,
+                    color: const Color(0xFFC9A227),
                   ),
-                  SettingsWidgets.buildSwitchTile(
+                  SettingsWidgets.buildCardContainer(
                     context: context,
-                    icon: Icons.summarize_outlined,
-                    iconColor: HusnTheme.primary,
-                    title: 'ملخص يومي',
-                    subtitle: 'عرض ملخص القراءة مرة واحدة في اليوم',
-                    value: k.showDailySummary,
-                    onChanged: khatmaCtl.setShowDailySummary,
+                    children: [
+                      _editionTile(khatmaCtl, k.edition, l),
+                    ],
                   ),
-                ]),
-                _sectionHeader('المصحف', Icons.auto_stories_outlined),
-                _group([
-                  // Independent from the khatma reciter above.
-                  ListTile(
-                    leading: const Icon(Icons.volume_up_outlined),
-                    title: Text(l.t('reciter')),
-                    subtitle: Text(_reciterName(khatmaCtl, forKhatma: false)),
-                    trailing: const Icon(Icons.chevron_left),
-                    onTap: () => showReciterPickerSheet(forKhatma: false),
-                  ),
-                  _editionTile(khatmaCtl, k.edition, l),
-                  SettingsWidgets.buildSwitchTile(
+                  const SizedBox(height: 20),
+                  // Khatma progress: overlay, daily summary, reset.
+                  SettingsWidgets.buildSectionHeader(
                     context: context,
-                    icon: Icons.summarize_outlined,
-                    iconColor: HusnTheme.primary,
-                    title: 'ملخص يومي',
-                    subtitle: 'عرض ملخص القراءة مرة واحدة في اليوم',
-                    value: k.showDailySummary,
-                    onChanged: khatmaCtl.setShowDailySummary,
+                    title: 'الختمة',
+                    icon: Icons.menu_book_outlined,
+                    color: HusnTheme.primary,
                   ),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_forever_outlined,
-                      color: Colors.red,
-                    ),
-                    title: const Text(
-                      'إعادة تعيين التقدم',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    subtitle: const Text('مسح كل تقدم الختمة نهائياً'),
-                    trailing: const Icon(Icons.chevron_left),
-                    onTap: () => confirmAndResetKhatma(context),
-                  ),
-                  SettingsWidgets.buildSwitchTile(
+                  SettingsWidgets.buildCardContainer(
                     context: context,
-                    icon: Icons.translate,
-                    iconColor: HusnTheme.primary,
-                    title: l.t('translation'),
-                    subtitle: 'تبويب الترجمة في تفاصيل الكلمة',
-                    value: k.translationEnabled,
-                    onChanged: khatmaCtl.setTranslationEnabled,
+                    children: [
+                      SettingsWidgets.buildSwitchTile(
+                        context: context,
+                        icon: Icons.layers_outlined,
+                        iconColor: HusnTheme.primary,
+                        title: l.t('phone_experience'),
+                        subtitle: l.t('overlay_lock_hint'),
+                        value: k.overlayEnabled,
+                        onChanged: (v) =>
+                            _setOverlayEnabled(context, khatmaCtl, v),
+                      ),
+                      SettingsWidgets.buildDivider(context),
+                      SettingsWidgets.buildSwitchTile(
+                        context: context,
+                        icon: Icons.summarize_outlined,
+                        iconColor: HusnTheme.primary,
+                        title: 'ملخص يومي',
+                        subtitle: 'عرض ملخص القراءة مرة واحدة في اليوم',
+                        value: k.showDailySummary,
+                        onChanged: khatmaCtl.setShowDailySummary,
+                      ),
+                      SettingsWidgets.buildDivider(context),
+                      ListTile(
+                        onTap: () => confirmAndResetKhatma(context),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 6),
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.delete_forever_outlined,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        title: const Text(
+                          'إعادة تعيين التقدم',
+                          style: TextStyle(
+                            fontFamily: HusnTheme.fontFamily,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'مسح كل تقدم الختمة نهائياً',
+                          style: TextStyle(
+                            fontFamily: HusnTheme.fontFamily,
+                            fontSize: 13,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  SettingsWidgets.buildSwitchTile(
+                  const SizedBox(height: 20),
+                  // Mushaf display: tajweed legend + word translation tab.
+                  SettingsWidgets.buildSectionHeader(
                     context: context,
-                    icon: Icons.legend_toggle_outlined,
-                    iconColor: HusnTheme.primary,
-                    title: 'دليل ألوان التجويد',
-                    subtitle: 'إظهار الدليل أسفل صفحات المصحف',
-                    value: m.showLegend,
-                    onChanged: (_) => mushafCtl.toggleLegend(),
+                    title: 'المصحف',
+                    icon: Icons.auto_stories_outlined,
+                    color: const Color(0xFF0EA5E9),
                   ),
-                ]),
-              ],
+                  SettingsWidgets.buildCardContainer(
+                    context: context,
+                    children: [
+                      SettingsWidgets.buildSwitchTile(
+                        context: context,
+                        icon: Icons.legend_toggle_outlined,
+                        iconColor: const Color(0xFF0EA5E9),
+                        title: 'دليل ألوان التجويد',
+                        subtitle: 'إظهار الدليل أسفل صفحات المصحف',
+                        value: m.showLegend,
+                        onChanged: (_) => mushafCtl.toggleLegend(),
+                      ),
+                      SettingsWidgets.buildDivider(context),
+                      SettingsWidgets.buildSwitchTile(
+                        context: context,
+                        icon: Icons.translate,
+                        iconColor: const Color(0xFF0EA5E9),
+                        title: l.t('translation'),
+                        subtitle: 'تبويب الترجمة في تفاصيل الكلمة',
+                        value: k.translationEnabled,
+                        onChanged: khatmaCtl.setTranslationEnabled,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
             );
           }),
         ),
@@ -148,83 +202,74 @@ class QuranSettingsScreen extends StatelessWidget {
     await PrayerNotificationHelper.requestOverlayPermission();
   }
 
-  Widget _sectionHeader(String title, IconData icon) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: HusnTheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontFamily: HusnTheme.fontFamily,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: HusnTheme.primary,
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _group(List<Widget> children) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Card(
-          margin: EdgeInsets.zero,
-          child: Column(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i != children.length - 1)
-                  const Divider(height: 1, thickness: 0.3, indent: 56),
-              ],
-            ],
-          ),
-        ),
-      );
-
   Widget _editionTile(
     NakhtemSettingsController ctl,
     String edition,
     L10n l,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          leading: const Icon(Icons.record_voice_over_outlined),
-          title: Text(l.t('narration')),
-        ),
-        RadioGroup<String>(
-          groupValue: edition,
-          onChanged: (v) {
-            if (v != null) ctl.setEdition(v);
-          },
-          child: const Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              RadioListTile<String>(
-                value: 'hafs',
-                title: Text('حفص عن عاصم'),
-                dense: true,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC9A227).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.menu_book_outlined,
+                    color: Color(0xFFC9A227),
+                    size: 20,
+                  ),
+                ),
               ),
-              RadioListTile<String>(
-                value: 'warsh',
-                title: Text('ورش عن نافع (يتطلب حزمة بيانات)'),
-                dense: true,
+              const SizedBox(width: 12),
+              Text(
+                l.t('narration'),
+                style: const TextStyle(
+                  fontFamily: HusnTheme.fontFamily,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          RadioGroup<String>(
+            groupValue: edition,
+            onChanged: (v) {
+              if (v != null) ctl.setEdition(v);
+            },
+            child: const Column(
+              children: [
+                RadioListTile<String>(
+                  value: 'hafs',
+                  title: Text(
+                    'حفص عن عاصم',
+                    style: TextStyle(fontFamily: HusnTheme.fontFamily),
+                  ),
+                  dense: true,
+                  activeColor: Color(0xFFD64463),
+                ),
+                RadioListTile<String>(
+                  value: 'warsh',
+                  title: Text(
+                    'ورش عن نافع (يتطلب حزمة بيانات)',
+                    style: TextStyle(fontFamily: HusnTheme.fontFamily),
+                  ),
+                  dense: true,
+                  activeColor: Color(0xFFD64463),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
-  }
-
-  String _reciterName(NakhtemSettingsController ctl,
-      {required bool forKhatma}) {
-    final r = forKhatma ? ctl.selectedKhatmaReciter : ctl.selectedMushafReciter;
-    if (r == null) {
-      return khatmaLang() == 'ar' ? 'حدد القارئ' : 'Select reciter';
-    }
-    return r.titleFor(khatmaLang());
   }
 }

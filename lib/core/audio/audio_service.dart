@@ -24,10 +24,12 @@ abstract class AudioEngine {
   Future<void> resume();
   Future<void> stop();
   Future<void> seek(Duration position);
+  Future<void> setSpeed(double speed);
   Future<void> dispose();
   Stream<Duration?> get positionStream;
   Stream<Duration?> get durationStream;
   Stream<bool> get playingStream;
+  Stream<double> get speedStream;
   /// Fires each time the current source plays to completion, so callers can
   /// advance a queue (full-surah / full-page playback).
   Stream<void> get completedStream;
@@ -37,6 +39,7 @@ abstract class AudioEngine {
   Duration? get duration;
   bool get playing;
   bool get isDisposed;
+  double get speed;
 }
 
 /// No-op engine (unit/widget tests). Satisfies the contract without a platform.
@@ -77,6 +80,12 @@ class NoopAudioEngine implements AudioEngine {
   bool get playing => false;
   @override
   bool get isDisposed => false;
+  @override
+  Future<void> setSpeed(double speed) async {}
+  @override
+  Stream<double> get speedStream => const Stream.empty();
+  @override
+  double get speed => 1.0;
 }
 
 /// Adaptive engine: uses [AudioPlayer] when a platform is available, otherwise
@@ -151,9 +160,23 @@ class AdaptiveAudioEngine implements AudioEngine {
   @override
   Future<void> seek(Duration position) async {
     try {
-      await _ensure().seek(position);
+      await _player?.seek(position);
     } catch (_) {}
   }
+
+  @override
+  Future<void> setSpeed(double speed) async {
+    try {
+      await _ensure().setSpeed(speed.clamp(0.5, 2.0));
+    } catch (_) {}
+  }
+
+  @override
+  Stream<double> get speedStream =>
+      _player?.speedStream ?? const Stream.empty();
+
+  @override
+  double get speed => _player?.speed ?? 1.0;
 
   @override
   Future<void> dispose() async {
@@ -217,9 +240,11 @@ class AudioService {
   int get currentAyah => _currentAyah;
   Duration? get position => _engine.position;
   Duration? get duration => _engine.duration;
+  double get speed => _engine.speed;
   Stream<bool> get playingStream => _engine.playingStream;
   Stream<Duration?> get positionStream => _engine.positionStream;
   Stream<Duration?> get durationStream => _engine.durationStream;
+  Stream<double> get speedStream => _engine.speedStream;
   Stream<void> get completedStream => _engine.completedStream;
   Stream<int?> get sequenceIndexStream => _engine.sequenceIndexStream;
 
@@ -291,6 +316,8 @@ class AudioService {
   Future<void> stop() => _engine.stop();
 
   Future<void> seek(Duration position) => _engine.seek(position);
+
+  Future<void> setSpeed(double speed) => _engine.setSpeed(speed);
 
   Future<void> dispose() async {
     await _engine.dispose();

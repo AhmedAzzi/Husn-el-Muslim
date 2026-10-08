@@ -60,8 +60,27 @@ class QuranController extends GetxController {
   }
 
   /// Cached page bundle future (replaces `mushafPageProvider(family)`).
+  ///
+  /// Batch 4 (perf-only): capped LRU. An uncapped map retains all 604
+  /// bundles (each with tajweed maps) after a full read-through — tens of
+  /// MB held forever. Evicted pages re-parse on revisit with identical
+  /// content; the PageView working set (±1 page) always stays cached.
+  static const int _maxCachedPages = 12;
+
   Future<PageBundle> pageBundle(int page) {
-    return _pageFutures.putIfAbsent(page, () => repo.loadPageBundle(page));
+    final existing = _pageFutures[page];
+    if (existing != null) {
+      // Refresh recency: reinsert so eviction drops the stalest page.
+      _pageFutures.remove(page);
+      _pageFutures[page] = existing;
+      return existing;
+    }
+    if (_pageFutures.length >= _maxCachedPages) {
+      _pageFutures.remove(_pageFutures.keys.first);
+    }
+    final created = repo.loadPageBundle(page);
+    _pageFutures[page] = created;
+    return created;
   }
 
   /// Test helper: inject a pre-resolved bundle without touching assets.
@@ -72,13 +91,11 @@ class QuranController extends GetxController {
   static QuranController get to => Get.find<QuranController>();
 }
 
-/// Home search / juz-amma filter state (mirrors `+page.svelte` locals).
+/// Home search state (mirrors `+page.svelte` locals).
 class HomeFilterController extends GetxController {
   final query = ''.obs;
-  final juzAmmaOnly = false.obs;
 
   void setQuery(String q) => query.value = q;
-  void toggleJuzAmma() => juzAmmaOnly.toggle();
 
   static HomeFilterController get to => Get.find<HomeFilterController>();
 }

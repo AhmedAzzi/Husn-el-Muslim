@@ -1,7 +1,7 @@
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
+import 'package:small_husn_muslim/features/fajr_challenge/data/fajr_tracking_repository.dart';
 
 import 'support/fake_android_notifications.dart';
 

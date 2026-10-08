@@ -154,18 +154,6 @@ abstract class AppLocalizations {
   /// **'القبلة'**
   String get navQibla;
 
-  /// No description provided for @navFajrLog.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع الصلوات'**
-  String get navFajrLog;
-
-  /// No description provided for @navTracking.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع الطاعات'**
-  String get navTracking;
-
   /// No description provided for @navMushaf.
   ///
   /// In ar, this message translates to:
@@ -195,24 +183,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الإعدادات'**
   String get navSettings;
-
-  /// No description provided for @trackCurrent.
-  ///
-  /// In ar, this message translates to:
-  /// **'السلسلة الحالية'**
-  String get trackCurrent;
-
-  /// No description provided for @trackLongest.
-  ///
-  /// In ar, this message translates to:
-  /// **'أطول سلسلة'**
-  String get trackLongest;
-
-  /// No description provided for @trackToday.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم'**
-  String get trackToday;
 
   /// No description provided for @trackDays.
   ///
@@ -1018,11 +988,23 @@ abstract class AppLocalizations {
   /// **'تجربة التحدي الآن'**
   String get nsTryNow;
 
-  /// No description provided for @nsOpenLog.
+  /// No description provided for @fajrTabChallenge.
   ///
   /// In ar, this message translates to:
-  /// **'سجل الفجر والتقدم'**
-  String get nsOpenLog;
+  /// **'التحدي'**
+  String get fajrTabChallenge;
+
+  /// No description provided for @fajrTabSound.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت'**
+  String get fajrTabSound;
+
+  /// No description provided for @fajrTabRering.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة التنبيه'**
+  String get fajrTabRering;
 
   /// No description provided for @nsAlarmSound.
   ///
@@ -1228,6 +1210,12 @@ abstract class AppLocalizations {
   /// **'الفجر − {h, plural, one {{h} ساعة} two {{h} ساعتان} other {{h} ساعات}}'**
   String nsBedtimeRelativeSub(int h);
 
+  /// No description provided for @nsBedtimeFixed.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت ثابت'**
+  String get nsBedtimeFixed;
+
   /// No description provided for @nsSkipTonight.
   ///
   /// In ar, this message translates to:
@@ -1267,13 +1255,13 @@ abstract class AppLocalizations {
   /// No description provided for @nsPostPrayerSub.
   ///
   /// In ar, this message translates to:
-  /// **'تذكير بالأذكار بعد كل صلاة مختارة'**
+  /// **'تذكير بالأذكار بعد الإقامة لكل صلاة مختارة'**
   String get nsPostPrayerSub;
 
   /// No description provided for @nsAfterPrayerBy.
   ///
   /// In ar, this message translates to:
-  /// **'بعد الصلاة بـ:'**
+  /// **'بعد الإقامة بـ:'**
   String get nsAfterPrayerBy;
 
   /// No description provided for @nsAdhkarSection.
@@ -2037,12 +2025,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مواقيت المساجد القريبة'**
   String get stHomeMosqueMapSub;
-
-  /// No description provided for @stHomeTrackingSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع الصلوات والتحدي'**
-  String get stHomeTrackingSub;
 
   /// No description provided for @stHomeSet.
   ///
@@ -3190,941 +3172,521 @@ abstract class AppLocalizations {
   /// **'غير ممنوح — التطبيق لا يستطيع كتم الهاتف تلقائياً'**
   String get diagDndDenied;
 
-  /// No description provided for @ptTrackerTitle.
+  /// No description provided for @navTodo.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع الصلوات'**
-  String get ptTrackerTitle;
+  /// **'المهام'**
+  String get navTodo;
 
-  /// No description provided for @ptLevelTitle.
+  /// No description provided for @todoTitle.
   ///
   /// In ar, this message translates to:
-  /// **'المستوى {level}'**
-  String ptLevelTitle(int level);
+  /// **'المهام'**
+  String get todoTitle;
 
-  /// No description provided for @ptDailyGoal.
+  /// No description provided for @stHomeTodoSub.
   ///
   /// In ar, this message translates to:
-  /// **'الهدف اليومي'**
-  String get ptDailyGoal;
+  /// **'تنظيم المهام اليومية والعبادات والمواعيد'**
+  String get stHomeTodoSub;
 
-  /// No description provided for @ptEdit.
+  /// No description provided for @todoQuickAddHint.
   ///
   /// In ar, this message translates to:
-  /// **'تعديل'**
-  String get ptEdit;
+  /// **'إضافة مهمة جديدة...'**
+  String get todoQuickAddHint;
 
-  /// No description provided for @ptGoalToday.
+  /// No description provided for @todoFilterAll.
   ///
   /// In ar, this message translates to:
-  /// **'هدف اليوم'**
-  String get ptGoalToday;
+  /// **'الكل'**
+  String get todoFilterAll;
 
-  /// No description provided for @ptOverview.
+  /// No description provided for @todoFilterToday.
   ///
   /// In ar, this message translates to:
-  /// **'نظرة عامة على الصلاة'**
-  String get ptOverview;
+  /// **'اليوم'**
+  String get todoFilterToday;
 
-  /// No description provided for @ptLast30Days.
+  /// No description provided for @todoFilterUpcoming.
   ///
   /// In ar, this message translates to:
-  /// **'آخر ٣٠ يوماً'**
-  String get ptLast30Days;
+  /// **'القادمة'**
+  String get todoFilterUpcoming;
 
-  /// No description provided for @ptEmptyTitle.
+  /// No description provided for @todoFilterImportant.
   ///
   /// In ar, this message translates to:
-  /// **'لا توجد بيانات صلاة مسجلة بعد'**
-  String get ptEmptyTitle;
+  /// **'المهمة'**
+  String get todoFilterImportant;
 
-  /// No description provided for @ptEmptyHint.
+  /// No description provided for @todoFilterOverdue.
   ///
   /// In ar, this message translates to:
-  /// **'ابدأ بتسجيل صلواتك لرؤية النظرة العامة هنا'**
-  String get ptEmptyHint;
+  /// **'المتأخرة'**
+  String get todoFilterOverdue;
 
-  /// No description provided for @ptGoalDialogTitle.
+  /// No description provided for @todoCompletedSection.
   ///
   /// In ar, this message translates to:
-  /// **'هدفك اليومي'**
-  String get ptGoalDialogTitle;
+  /// **'المكتملة'**
+  String get todoCompletedSection;
 
-  /// No description provided for @ptGoalDialogHint.
+  /// No description provided for @todoEmptyAll.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الصلوات المطلوبة يومياً'**
-  String get ptGoalDialogHint;
+  /// **'لا توجد أي مهام بعد'**
+  String get todoEmptyAll;
 
-  /// No description provided for @ptSave.
+  /// No description provided for @todoEmptyAllSub.
   ///
   /// In ar, this message translates to:
-  /// **'حفظ'**
-  String get ptSave;
+  /// **'أضف مهمتك الأولى من الأسفل وابدأ يومك بإنجاز'**
+  String get todoEmptyAllSub;
 
-  /// No description provided for @ptTotalPrayers.
+  /// No description provided for @todoEmptyToday.
   ///
   /// In ar, this message translates to:
-  /// **'مجموع الصلوات'**
-  String get ptTotalPrayers;
+  /// **'لا توجد مهام مستحقة اليوم'**
+  String get todoEmptyToday;
 
-  /// No description provided for @ptOnTimeRate.
+  /// No description provided for @todoEmptyTodaySub.
   ///
   /// In ar, this message translates to:
-  /// **'نسبة الالتزام'**
-  String get ptOnTimeRate;
+  /// **'ما شاء الله! يومك هادئ وخالٍ من الالتزامات'**
+  String get todoEmptyTodaySub;
 
-  /// No description provided for @ptTotalPoints.
+  /// No description provided for @todoEmptyUpcoming.
   ///
   /// In ar, this message translates to:
-  /// **'مجموع النقاط'**
-  String get ptTotalPoints;
+  /// **'لا توجد مهام قادمة'**
+  String get todoEmptyUpcoming;
 
-  /// No description provided for @ptHowPrayed.
+  /// No description provided for @todoEmptyUpcomingSub.
   ///
   /// In ar, this message translates to:
-  /// **'كيف صليت؟'**
-  String get ptHowPrayed;
+  /// **'يمكنك جدولة المهام للأيام القادمة بسهولة'**
+  String get todoEmptyUpcomingSub;
 
-  /// No description provided for @ptOptTakbeer.
+  /// No description provided for @todoEmptyImportant.
   ///
   /// In ar, this message translates to:
-  /// **'تكبيرة الإحرام'**
-  String get ptOptTakbeer;
+  /// **'لا توجد مهام مميزة بنجمة'**
+  String get todoEmptyImportant;
 
-  /// No description provided for @ptOptMosque.
+  /// No description provided for @todoEmptyImportantSub.
   ///
   /// In ar, this message translates to:
-  /// **'في المسجد'**
-  String get ptOptMosque;
+  /// **'اضغط على النجمة لتمييز المهام ذات الأولوية'**
+  String get todoEmptyImportantSub;
 
-  /// No description provided for @ptOptJamaa.
+  /// No description provided for @todoTaskCreated.
   ///
   /// In ar, this message translates to:
-  /// **'جماعة'**
-  String get ptOptJamaa;
+  /// **'تمت إضافة المهمة'**
+  String get todoTaskCreated;
 
-  /// No description provided for @ptOptOnTime.
+  /// No description provided for @todoTaskUpdated.
   ///
   /// In ar, this message translates to:
-  /// **'في الوقت منفرداً'**
-  String get ptOptOnTime;
+  /// **'تم تحديث المهمة'**
+  String get todoTaskUpdated;
 
-  /// No description provided for @ptOptLate.
+  /// No description provided for @todoTaskDeleted.
   ///
   /// In ar, this message translates to:
-  /// **'بعد الوقت'**
-  String get ptOptLate;
+  /// **'تم حذف المهمة'**
+  String get todoTaskDeleted;
 
-  /// No description provided for @ptOptMissed.
+  /// No description provided for @todoTaskRestored.
   ///
   /// In ar, this message translates to:
-  /// **'فائتة'**
-  String get ptOptMissed;
+  /// **'تمت استعادة المهمة'**
+  String get todoTaskRestored;
 
-  /// No description provided for @ptClearEntry.
+  /// No description provided for @todoUndo.
   ///
   /// In ar, this message translates to:
-  /// **'مسح التسجيل'**
-  String get ptClearEntry;
+  /// **'تراجع'**
+  String get todoUndo;
 
-  /// No description provided for @ptPointsNum.
+  /// No description provided for @todoDeleteConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'+{points} نقطة'**
-  String ptPointsNum(int points);
+  /// **'هل تريد حذف هذه المهمة؟'**
+  String get todoDeleteConfirm;
 
-  /// No description provided for @ptDetails.
-  ///
-  /// In ar, this message translates to:
-  /// **'التفاصيل'**
-  String get ptDetails;
-
-  /// No description provided for @ptBasedOn30.
-  ///
-  /// In ar, this message translates to:
-  /// **'بناءً على آخر ٣٠ يومًا'**
-  String get ptBasedOn30;
-
-  /// No description provided for @ptHowItWorks.
-  ///
-  /// In ar, this message translates to:
-  /// **'كيف يعمل'**
-  String get ptHowItWorks;
-
-  /// No description provided for @ptStages.
-  ///
-  /// In ar, this message translates to:
-  /// **'المراحل'**
-  String get ptStages;
-
-  /// No description provided for @ptStagesHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'النقاط المطلوبة لفتح كل مستوى'**
-  String get ptStagesHint;
-
-  /// No description provided for @ptContext.
-  ///
-  /// In ar, this message translates to:
-  /// **'السياق'**
-  String get ptContext;
-
-  /// No description provided for @ptContextHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'تختلف أحكام الصلاة وتؤثر على الحساب'**
-  String get ptContextHint;
-
-  /// No description provided for @ptMan.
-  ///
-  /// In ar, this message translates to:
-  /// **'رجل'**
-  String get ptMan;
-
-  /// No description provided for @ptWoman.
-  ///
-  /// In ar, this message translates to:
-  /// **'امرأة'**
-  String get ptWoman;
-
-  /// No description provided for @ptPointsInApp.
-  ///
-  /// In ar, this message translates to:
-  /// **'النقاط في التطبيق'**
-  String get ptPointsInApp;
-
-  /// No description provided for @ptOptionMeanings.
-  ///
-  /// In ar, this message translates to:
-  /// **'معاني الخيارات'**
-  String get ptOptionMeanings;
-
-  /// No description provided for @ptMultipliers.
-  ///
-  /// In ar, this message translates to:
-  /// **'مضاعف النقاط'**
-  String get ptMultipliers;
-
-  /// No description provided for @ptMultipliersHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'جهد أكبر، نقاط أكثر'**
-  String get ptMultipliersHint;
-
-  /// No description provided for @ptPointsCount.
-  ///
-  /// In ar, this message translates to:
-  /// **'{points} نقطة'**
-  String ptPointsCount(int points);
-
-  /// No description provided for @ptMeanTakbeer.
-  ///
-  /// In ar, this message translates to:
-  /// **'أدركت تكبيرة الإحرام مع الإمام'**
-  String get ptMeanTakbeer;
-
-  /// No description provided for @ptMeanMosque.
-  ///
-  /// In ar, this message translates to:
-  /// **'صليت في المسجد'**
-  String get ptMeanMosque;
-
-  /// No description provided for @ptMeanJamaa.
-  ///
-  /// In ar, this message translates to:
-  /// **'صليت جماعة خارج المسجد'**
-  String get ptMeanJamaa;
-
-  /// No description provided for @ptMeanOnTime.
-  ///
-  /// In ar, this message translates to:
-  /// **'صليت في وقتها منفردًا'**
-  String get ptMeanOnTime;
-
-  /// No description provided for @ptMeanLate.
-  ///
-  /// In ar, this message translates to:
-  /// **'صليتها بعد خروج الوقت'**
-  String get ptMeanLate;
-
-  /// No description provided for @ptMeanMissed.
-  ///
-  /// In ar, this message translates to:
-  /// **'فاتت الصلاة ولم تُصلَّ'**
-  String get ptMeanMissed;
-
-  /// No description provided for @ptOnboardTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع صلواتك'**
-  String get ptOnboardTitle;
-
-  /// No description provided for @ptOnboardHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'حافظ على استمراريتك، وابنِ عادات ذات معنى، واقترب أكثر في عبادتك اليومية'**
-  String get ptOnboardHint;
-
-  /// No description provided for @ptOnboardF1T.
-  ///
-  /// In ar, this message translates to:
-  /// **'سجل كل صلاة بضغطة'**
-  String get ptOnboardF1T;
-
-  /// No description provided for @ptOnboardF1D.
-  ///
-  /// In ar, this message translates to:
-  /// **'بنقرة بسيطة، سجل صلاتك وابقَ على اطلاع دائم'**
-  String get ptOnboardF1D;
-
-  /// No description provided for @ptOnboardF2T.
-  ///
-  /// In ar, this message translates to:
-  /// **'اختر كيف صليت'**
-  String get ptOnboardF2T;
-
-  /// No description provided for @ptOnboardF2D.
-  ///
-  /// In ar, this message translates to:
-  /// **'حدد كيف صليت — تكبيرة الإحرام، جماعة، أو في الوقت'**
-  String get ptOnboardF2D;
-
-  /// No description provided for @ptOnboardF3T.
-  ///
-  /// In ar, this message translates to:
-  /// **'إشعارات ذكية'**
-  String get ptOnboardF3T;
-
-  /// No description provided for @ptOnboardF3D.
-  ///
-  /// In ar, this message translates to:
-  /// **'لا تفوت صلاة — سنرسل لك تذكيرات حتى لا تنسى تسجيلها'**
-  String get ptOnboardF3D;
-
-  /// No description provided for @ptOnboardAccept.
-  ///
-  /// In ar, this message translates to:
-  /// **'نعم، أنا موافق!'**
-  String get ptOnboardAccept;
-
-  /// No description provided for @ptOnboardLater.
-  ///
-  /// In ar, this message translates to:
-  /// **'ليس الآن'**
-  String get ptOnboardLater;
-
-  /// No description provided for @ptMenuSettings.
-  ///
-  /// In ar, this message translates to:
-  /// **'إعدادات التتبع'**
-  String get ptMenuSettings;
-
-  /// No description provided for @ptMenuReplay.
-  ///
-  /// In ar, this message translates to:
-  /// **'الإعداد الأولي'**
-  String get ptMenuReplay;
-
-  /// No description provided for @ptMenuWidget.
-  ///
-  /// In ar, this message translates to:
-  /// **'إضافة تطبيق مصغر'**
-  String get ptMenuWidget;
-
-  /// No description provided for @ptMenuDisable.
-  ///
-  /// In ar, this message translates to:
-  /// **'تعطيل التتبع'**
-  String get ptMenuDisable;
-
-  /// No description provided for @ptMenuEnable.
-  ///
-  /// In ar, this message translates to:
-  /// **'تفعيل التتبع'**
-  String get ptMenuEnable;
-
-  /// No description provided for @ptMenuClear.
-  ///
-  /// In ar, this message translates to:
-  /// **'مسح بيانات التتبع'**
-  String get ptMenuClear;
-
-  /// No description provided for @ptClearTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'مسح بيانات التتبع؟'**
-  String get ptClearTitle;
-
-  /// No description provided for @ptClearHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'سيتم حذف جميع الصلوات المسجلة وسلاسلك. لا يمكن التراجع.'**
-  String get ptClearHint;
-
-  /// No description provided for @ptDelete.
+  /// No description provided for @todoDelete.
   ///
   /// In ar, this message translates to:
   /// **'حذف'**
-  String get ptDelete;
+  String get todoDelete;
 
-  /// No description provided for @ptWidgetTitle.
+  /// No description provided for @todoCancel.
   ///
   /// In ar, this message translates to:
-  /// **'إضافة التطبيق المصغر'**
-  String get ptWidgetTitle;
+  /// **'إلغاء'**
+  String get todoCancel;
 
-  /// No description provided for @ptWidgetHint.
+  /// No description provided for @todoSave.
   ///
   /// In ar, this message translates to:
-  /// **'من الشاشة الرئيسية: اضغط مطولًا على مساحة فارغة، ثم التطبيقات المصغرة، ثم اختر حصن المسلم'**
-  String get ptWidgetHint;
+  /// **'حفظ'**
+  String get todoSave;
 
-  /// No description provided for @ptPausedTitle.
+  /// No description provided for @todoEdit.
   ///
   /// In ar, this message translates to:
-  /// **'التتبع متوقف مؤقتًا'**
-  String get ptPausedTitle;
+  /// **'تعديل'**
+  String get todoEdit;
 
-  /// No description provided for @ptPausedHint.
+  /// No description provided for @todoDetails.
   ///
   /// In ar, this message translates to:
-  /// **'لن تُحتسب الصلوات حتى تُفعّل التتبع مجددًا'**
-  String get ptPausedHint;
+  /// **'تفاصيل المهمة'**
+  String get todoDetails;
 
-  /// No description provided for @ptResume.
+  /// No description provided for @todoTaskTitle.
   ///
   /// In ar, this message translates to:
-  /// **'تفعيل'**
-  String get ptResume;
+  /// **'عنوان المهمة'**
+  String get todoTaskTitle;
 
-  /// No description provided for @ptRemindTitle.
+  /// No description provided for @todoTaskNotes.
   ///
   /// In ar, this message translates to:
-  /// **'تذكير بتسجيل الصلاة'**
-  String get ptRemindTitle;
+  /// **'ملاحظات أو تفاصيل إضافية...'**
+  String get todoTaskNotes;
 
-  /// No description provided for @ptRemindBody.
+  /// No description provided for @todoDueDate.
   ///
   /// In ar, this message translates to:
-  /// **'لم تسجل صلاة {prayer} بعد — سجلها الآن'**
-  String ptRemindBody(String prayer);
+  /// **'تاريخ الاستحقاق'**
+  String get todoDueDate;
 
-  /// No description provided for @ptRemindToggle.
+  /// No description provided for @todoDueTime.
   ///
   /// In ar, this message translates to:
-  /// **'تذكيرات التسجيل'**
-  String get ptRemindToggle;
+  /// **'وقت الاستحقاق'**
+  String get todoDueTime;
 
-  /// No description provided for @ptRemindHint.
+  /// No description provided for @todoTomorrow.
   ///
   /// In ar, this message translates to:
-  /// **'تذكير عند نسيان تسجيل صلاة'**
-  String get ptRemindHint;
+  /// **'غداً'**
+  String get todoTomorrow;
 
-  /// No description provided for @diagFivePrayer.
+  /// No description provided for @todoNextWeek.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع الصلوات الخمس'**
-  String get diagFivePrayer;
+  /// **'الأسبوع القادم'**
+  String get todoNextWeek;
 
-  /// No description provided for @navSunnah.
+  /// No description provided for @todoPickDate.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع السنن'**
-  String get navSunnah;
+  /// **'اختيار تاريخ...'**
+  String get todoPickDate;
 
-  /// No description provided for @snTitle.
+  /// No description provided for @todoPickTime.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع السنن'**
-  String get snTitle;
+  /// **'مخصص'**
+  String get todoPickTime;
 
-  /// No description provided for @snSubtitle.
+  /// No description provided for @todoNoDueDate.
   ///
   /// In ar, this message translates to:
-  /// **'الرواتب • الضحى • الوتر • قيام الليل'**
-  String get snSubtitle;
+  /// **'بدون تاريخ'**
+  String get todoNoDueDate;
 
-  /// No description provided for @snRawatibSection.
+  /// No description provided for @todoClearDate.
   ///
   /// In ar, this message translates to:
-  /// **'السنن الرواتب (12 ركعة)'**
-  String get snRawatibSection;
+  /// **'إزالة التاريخ'**
+  String get todoClearDate;
 
-  /// No description provided for @snExtraSection.
+  /// No description provided for @todoReminder.
   ///
   /// In ar, this message translates to:
-  /// **'الضحى والوتر وقيام الليل'**
-  String get snExtraSection;
+  /// **'تذكير'**
+  String get todoReminder;
 
-  /// No description provided for @snDailyGoal.
+  /// No description provided for @todoReminderSet.
   ///
   /// In ar, this message translates to:
-  /// **'الهدف اليومي'**
-  String get snDailyGoal;
+  /// **'تم ضبط التذكير'**
+  String get todoReminderSet;
 
-  /// No description provided for @snWeekOverview.
+  /// No description provided for @todoNoReminder.
   ///
   /// In ar, this message translates to:
-  /// **'آخر 7 أيام'**
-  String get snWeekOverview;
+  /// **'بدون تذكير'**
+  String get todoNoReminder;
 
-  /// No description provided for @snTotal30.
+  /// No description provided for @todoReminderAtDue.
   ///
   /// In ar, this message translates to:
-  /// **'نقاط آخر 30 يومًا'**
-  String get snTotal30;
+  /// **'في نفس الوقت'**
+  String get todoReminderAtDue;
 
-  /// No description provided for @snEmptyTitle.
+  /// No description provided for @todoReminder15m.
   ///
   /// In ar, this message translates to:
-  /// **'لا توجد سنن مسجلة اليوم'**
-  String get snEmptyTitle;
+  /// **'قبل 15 دقيقة'**
+  String get todoReminder15m;
 
-  /// No description provided for @snEmptyHint.
+  /// No description provided for @todoReminder1h.
   ///
   /// In ar, this message translates to:
-  /// **'ابدأ بسنة الفجر ركعتين — اضغط على أي سنة لتسجيلها'**
-  String get snEmptyHint;
+  /// **'قبل ساعة'**
+  String get todoReminder1h;
 
-  /// No description provided for @snRawatibBonus.
+  /// No description provided for @todoReminder1d.
   ///
   /// In ar, this message translates to:
-  /// **'مكافأة إتمام الرواتب الخمس: +10'**
-  String get snRawatibBonus;
+  /// **'قبل يوم'**
+  String get todoReminder1d;
 
-  /// No description provided for @snOpenSunnah.
+  /// No description provided for @todoRepeat.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع السنن: رواتب • ضحى • وتر'**
-  String get snOpenSunnah;
+  /// **'تكرار'**
+  String get todoRepeat;
 
-  /// No description provided for @snClear.
+  /// No description provided for @todoRepeatNone.
   ///
   /// In ar, this message translates to:
-  /// **'مسح بيانات السنن'**
-  String get snClear;
+  /// **'لا يتكرر'**
+  String get todoRepeatNone;
 
-  /// No description provided for @snClearTitle.
+  /// No description provided for @todoRepeatDaily.
   ///
   /// In ar, this message translates to:
-  /// **'مسح بيانات السنن؟'**
-  String get snClearTitle;
+  /// **'يومياً'**
+  String get todoRepeatDaily;
 
-  /// No description provided for @snClearHint.
+  /// No description provided for @todoRepeatWeekdays.
   ///
   /// In ar, this message translates to:
-  /// **'سيتم حذف جميع السنن المسجلة وسلاسلها. لا يمكن التراجع.'**
-  String get snClearHint;
+  /// **'أيام العمل (الأحد - الخميس)'**
+  String get todoRepeatWeekdays;
 
-  /// No description provided for @snFajrSunnah.
+  /// No description provided for @todoRepeatWeekly.
   ///
   /// In ar, this message translates to:
-  /// **'سنة الفجر'**
-  String get snFajrSunnah;
+  /// **'أسبوعياً'**
+  String get todoRepeatWeekly;
 
-  /// No description provided for @snFajrSunnahSub.
+  /// No description provided for @todoRepeatMonthly.
   ///
   /// In ar, this message translates to:
-  /// **'ركعتان قبل الفجر'**
-  String get snFajrSunnahSub;
+  /// **'شهرياً'**
+  String get todoRepeatMonthly;
 
-  /// No description provided for @snDhuhrBefore.
+  /// No description provided for @todoRepeatYearly.
   ///
   /// In ar, this message translates to:
-  /// **'السنة القبلية للظهر'**
-  String get snDhuhrBefore;
+  /// **'سنوياً'**
+  String get todoRepeatYearly;
 
-  /// No description provided for @snDhuhrBeforeSub.
+  /// No description provided for @todoRepeatCustom.
   ///
   /// In ar, this message translates to:
-  /// **'4 ركعات قبل الظهر'**
-  String get snDhuhrBeforeSub;
+  /// **'مخصص'**
+  String get todoRepeatCustom;
 
-  /// No description provided for @snDhuhrAfter.
-  ///
-  /// In ar, this message translates to:
-  /// **'السنة البعدية للظهر'**
-  String get snDhuhrAfter;
-
-  /// No description provided for @snDhuhrAfterSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعتان بعد الظهر'**
-  String get snDhuhrAfterSub;
-
-  /// No description provided for @snMaghribAfter.
-  ///
-  /// In ar, this message translates to:
-  /// **'سنة المغرب'**
-  String get snMaghribAfter;
-
-  /// No description provided for @snMaghribAfterSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعتان بعد المغرب'**
-  String get snMaghribAfterSub;
-
-  /// No description provided for @snIshaAfter.
-  ///
-  /// In ar, this message translates to:
-  /// **'سنة العشاء'**
-  String get snIshaAfter;
-
-  /// No description provided for @snIshaAfterSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعتان بعد العشاء'**
-  String get snIshaAfterSub;
-
-  /// No description provided for @snDuha.
-  ///
-  /// In ar, this message translates to:
-  /// **'صلاة الضحى'**
-  String get snDuha;
-
-  /// No description provided for @snDuhaSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعتان فأكثر بعد الشروق'**
-  String get snDuhaSub;
-
-  /// No description provided for @snWitr.
-  ///
-  /// In ar, this message translates to:
-  /// **'الوتر'**
-  String get snWitr;
-
-  /// No description provided for @snWitrSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعة أو ثلاث بعد العشاء'**
-  String get snWitrSub;
-
-  /// No description provided for @snQiyam.
-  ///
-  /// In ar, this message translates to:
-  /// **'قيام الليل'**
-  String get snQiyam;
-
-  /// No description provided for @snQiyamSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'ركعات الليل المباركة'**
-  String get snQiyamSub;
-
-  /// No description provided for @snProgress.
-  ///
-  /// In ar, this message translates to:
-  /// **'{done} من {goal}'**
-  String snProgress(int done, int goal);
-
-  /// No description provided for @diagSunnah.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع السنن'**
-  String get diagSunnah;
-
-  /// No description provided for @navWorship.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع الصيام والورد'**
-  String get navWorship;
-
-  /// No description provided for @wtTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'تتبع الصيام والورد'**
-  String get wtTitle;
-
-  /// No description provided for @wtSubtitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'الصيام • الورد • أعمال صالحة'**
-  String get wtSubtitle;
-
-  /// No description provided for @wtFastingSection.
-  ///
-  /// In ar, this message translates to:
-  /// **'صيام التطوع'**
-  String get wtFastingSection;
-
-  /// No description provided for @wtWeekHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاثنين والخميس من الأسبوع المعروض'**
-  String get wtWeekHint;
-
-  /// No description provided for @wtMonday.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاثنين'**
-  String get wtMonday;
-
-  /// No description provided for @wtThursday.
-  ///
-  /// In ar, this message translates to:
-  /// **'الخميس'**
-  String get wtThursday;
-
-  /// No description provided for @wtLogOtherFast.
-  ///
-  /// In ar, this message translates to:
-  /// **'تسجيل صوم آخر'**
-  String get wtLogOtherFast;
-
-  /// No description provided for @wtFastSheetTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'ما نوع الصوم؟'**
-  String get wtFastSheetTitle;
-
-  /// No description provided for @wtKindMonday.
-  ///
-  /// In ar, this message translates to:
-  /// **'صيام الاثنين'**
-  String get wtKindMonday;
-
-  /// No description provided for @wtKindThursday.
-  ///
-  /// In ar, this message translates to:
-  /// **'صيام الخميس'**
-  String get wtKindThursday;
-
-  /// No description provided for @wtKindWhite.
-  ///
-  /// In ar, this message translates to:
-  /// **'الأيام البيض (13-15)'**
-  String get wtKindWhite;
-
-  /// No description provided for @wtKindArafah.
-  ///
-  /// In ar, this message translates to:
-  /// **'يوم عرفة'**
-  String get wtKindArafah;
-
-  /// No description provided for @wtKindAshura.
-  ///
-  /// In ar, this message translates to:
-  /// **'عاشوراء / تاسوعاء'**
-  String get wtKindAshura;
-
-  /// No description provided for @wtKindShawwal.
-  ///
-  /// In ar, this message translates to:
-  /// **'الست من شوال'**
-  String get wtKindShawwal;
-
-  /// No description provided for @wtKindQadaa.
-  ///
-  /// In ar, this message translates to:
-  /// **'قضاء'**
-  String get wtKindQadaa;
-
-  /// No description provided for @wtKindNafl.
-  ///
-  /// In ar, this message translates to:
-  /// **'نفل مطلق'**
-  String get wtKindNafl;
-
-  /// No description provided for @wtWeeksStreak.
-  ///
-  /// In ar, this message translates to:
-  /// **'أسابيع الصيام'**
-  String get wtWeeksStreak;
-
-  /// No description provided for @wtTotalFasts.
-  ///
-  /// In ar, this message translates to:
-  /// **'أيام الصيام (30 يومًا)'**
-  String get wtTotalFasts;
-
-  /// No description provided for @wtWeeksOverview.
-  ///
-  /// In ar, this message translates to:
-  /// **'آخر 8 أسابيع'**
-  String get wtWeeksOverview;
-
-  /// No description provided for @wtWhiteHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم من الأيام البيض — يستحب صيامه'**
-  String get wtWhiteHint;
-
-  /// No description provided for @wtArafahHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم يوم عرفة — صيامه يكفّر سنتين'**
-  String get wtArafahHint;
-
-  /// No description provided for @wtAshuraHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم عاشوراء — يستحب صيامه'**
-  String get wtAshuraHint;
-
-  /// No description provided for @wtMondayHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم الاثنين — ترفع فيه الأعمال'**
-  String get wtMondayHint;
-
-  /// No description provided for @wtThursdayHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'اليوم الخميس — ترفع فيه الأعمال'**
-  String get wtThursdayHint;
-
-  /// No description provided for @wtWirdSection.
-  ///
-  /// In ar, this message translates to:
-  /// **'الورد اليومي'**
-  String get wtWirdSection;
-
-  /// No description provided for @wtDeedsSection.
-  ///
-  /// In ar, this message translates to:
-  /// **'أعمال صالحة'**
-  String get wtDeedsSection;
-
-  /// No description provided for @wtQuran.
-  ///
-  /// In ar, this message translates to:
-  /// **'ورد القرآن'**
-  String get wtQuran;
-
-  /// No description provided for @wtQuranSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'قراءة الورد اليومي'**
-  String get wtQuranSub;
-
-  /// No description provided for @wtMorning.
+  /// No description provided for @todoPreMorning.
   ///
   /// In ar, this message translates to:
   /// **'أذكار الصباح'**
-  String get wtMorning;
+  String get todoPreMorning;
 
-  /// No description provided for @wtMorningSub.
-  ///
-  /// In ar, this message translates to:
-  /// **'بعد الفجر'**
-  String get wtMorningSub;
-
-  /// No description provided for @wtEvening.
+  /// No description provided for @todoPreEvening.
   ///
   /// In ar, this message translates to:
   /// **'أذكار المساء'**
-  String get wtEvening;
+  String get todoPreEvening;
 
-  /// No description provided for @wtEveningSub.
+  /// No description provided for @todoPreSleep.
   ///
   /// In ar, this message translates to:
-  /// **'بعد العصر'**
-  String get wtEveningSub;
+  /// **'أذكار النوم'**
+  String get todoPreSleep;
 
-  /// No description provided for @wtIstighfar.
+  /// No description provided for @todoPreKahf.
   ///
   /// In ar, this message translates to:
-  /// **'الاستغفار (100 مرة)'**
-  String get wtIstighfar;
+  /// **'سورة الكهف'**
+  String get todoPreKahf;
 
-  /// No description provided for @wtIstighfarSub.
+  /// No description provided for @todoPreWird.
   ///
   /// In ar, this message translates to:
-  /// **'أستغفر الله'**
-  String get wtIstighfarSub;
+  /// **'الورد اليومي من القرآن'**
+  String get todoPreWird;
 
-  /// No description provided for @wtSalawat.
+  /// No description provided for @todoPriority.
   ///
   /// In ar, this message translates to:
-  /// **'الصلاة على النبي (100 مرة)'**
-  String get wtSalawat;
+  /// **'الأولوية'**
+  String get todoPriority;
 
-  /// No description provided for @wtSalawatSub.
+  /// No description provided for @todoPriorityNone.
   ///
   /// In ar, this message translates to:
-  /// **'صلى الله عليه وسلم'**
-  String get wtSalawatSub;
+  /// **'عادية'**
+  String get todoPriorityNone;
 
-  /// No description provided for @wtSadaqah.
+  /// No description provided for @todoPriorityLow.
   ///
   /// In ar, this message translates to:
-  /// **'صدقة'**
-  String get wtSadaqah;
+  /// **'منخفضة'**
+  String get todoPriorityLow;
 
-  /// No description provided for @wtSadaqahSub.
+  /// No description provided for @todoPriorityMedium.
   ///
   /// In ar, this message translates to:
-  /// **'ولو بالقليل'**
-  String get wtSadaqahSub;
+  /// **'متوسطة'**
+  String get todoPriorityMedium;
 
-  /// No description provided for @wtSilah.
+  /// No description provided for @todoPriorityHigh.
   ///
   /// In ar, this message translates to:
-  /// **'صلة رحم'**
-  String get wtSilah;
+  /// **'عالية'**
+  String get todoPriorityHigh;
 
-  /// No description provided for @wtSilahSub.
+  /// No description provided for @todoSubtasks.
   ///
   /// In ar, this message translates to:
-  /// **'اتصال أو زيارة'**
-  String get wtSilahSub;
+  /// **'المهام الفرعية'**
+  String get todoSubtasks;
 
-  /// No description provided for @wtBirr.
+  /// No description provided for @todoAddSubtask.
   ///
   /// In ar, this message translates to:
-  /// **'بر الوالدين'**
-  String get wtBirr;
+  /// **'إضافة خطوة فرعية...'**
+  String get todoAddSubtask;
 
-  /// No description provided for @wtBirrSub.
+  /// No description provided for @todoCategory.
   ///
   /// In ar, this message translates to:
-  /// **'قول أو فعل حسن'**
-  String get wtBirrSub;
+  /// **'القائمة'**
+  String get todoCategory;
 
-  /// No description provided for @wtDailyGoal.
+  /// No description provided for @todoCategoryWorship.
   ///
   /// In ar, this message translates to:
-  /// **'الهدف اليومي'**
-  String get wtDailyGoal;
+  /// **'عبادات'**
+  String get todoCategoryWorship;
 
-  /// No description provided for @wtTotal30.
+  /// No description provided for @todoCategoryPersonal.
   ///
   /// In ar, this message translates to:
-  /// **'نقاط آخر 30 يومًا'**
-  String get wtTotal30;
+  /// **'شخصي'**
+  String get todoCategoryPersonal;
 
-  /// No description provided for @wtClear.
+  /// No description provided for @todoCategoryWork.
   ///
   /// In ar, this message translates to:
-  /// **'مسح بيانات العبادات'**
-  String get wtClear;
+  /// **'عمل'**
+  String get todoCategoryWork;
 
-  /// No description provided for @wtClearTitle.
+  /// No description provided for @todoCategoryGeneral.
   ///
   /// In ar, this message translates to:
-  /// **'مسح بيانات العبادات؟'**
-  String get wtClearTitle;
+  /// **'عام'**
+  String get todoCategoryGeneral;
 
-  /// No description provided for @wtClearHint.
+  /// No description provided for @todoNewCategory.
   ///
   /// In ar, this message translates to:
-  /// **'سيتم حذف الورد والصيام المسجل وسلاسلهما. لا يمكن التراجع.'**
-  String get wtClearHint;
+  /// **'قائمة جديدة'**
+  String get todoNewCategory;
 
-  /// No description provided for @wtOpenWorship.
+  /// No description provided for @todoCategoryName.
   ///
   /// In ar, this message translates to:
-  /// **'الصيام والورد: اثنين وخميس • ورد • صدقة'**
-  String get wtOpenWorship;
+  /// **'اسم القائمة'**
+  String get todoCategoryName;
 
-  /// No description provided for @diagWorship.
+  /// No description provided for @todoSortBy.
   ///
   /// In ar, this message translates to:
-  /// **'تتبع الصيام والورد'**
-  String get diagWorship;
+  /// **'ترتيب حسب'**
+  String get todoSortBy;
+
+  /// No description provided for @todoSortManual.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترتيب اليدوي'**
+  String get todoSortManual;
+
+  /// No description provided for @todoSortDueDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الاستحقاق'**
+  String get todoSortDueDate;
+
+  /// No description provided for @todoSortPriority.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأولوية'**
+  String get todoSortPriority;
+
+  /// No description provided for @todoSortTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبجدياً'**
+  String get todoSortTitle;
+
+  /// No description provided for @todoSortCreatedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الإنشاء'**
+  String get todoSortCreatedAt;
+
+  /// No description provided for @todoShowCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المكتملة'**
+  String get todoShowCompleted;
+
+  /// No description provided for @todoHideCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء المكتملة'**
+  String get todoHideCompleted;
+
+  /// No description provided for @todoClearCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المهام المكتملة'**
+  String get todoClearCompleted;
+
+  /// No description provided for @todoSearchTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث في المهام...'**
+  String get todoSearchTasks;
+
+  /// No description provided for @todoOverdue.
+  ///
+  /// In ar, this message translates to:
+  /// **'متأخرة'**
+  String get todoOverdue;
+
+  /// No description provided for @todoRescheduleToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل إلى اليوم'**
+  String get todoRescheduleToday;
+
+  /// No description provided for @todoCompletedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, one {{count} مهمة مكتملة} two {{count} مهمتان مكتملتان} other {{count} مهام مكتملة}}'**
+  String todoCompletedCount(int count);
 }
 
 class _AppLocalizationsDelegate

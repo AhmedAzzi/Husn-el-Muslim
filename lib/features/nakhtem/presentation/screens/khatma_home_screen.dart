@@ -7,6 +7,7 @@ import '../../../../core/theme/husn_style.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/husn_app_bar.dart';
+import '../../../../core/widgets/settings_widgets.dart';
 import '../../../prayer_times/services/prayer_notification_helper.dart';
 import '../../domain/services/reading_service.dart';
 import '../controllers/nakhtem_controller.dart';
@@ -186,7 +187,7 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
                     foregroundColor: HusnTheme.primaryDark,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   onPressed: () => Get.back(),
@@ -256,61 +257,24 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
           // Main section inside MainShell: drawer is the primary navigation.
           drawer: const AppDrawer(),
           appBar: HusnAppBar(title: l.t('app_name')),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              await ctl.refresh();
-              await statsCtl.refresh();
-              _syncSelectorsFromProgress();
-            },
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+          // Single screen, no scroll: overlay controls on top, then the
+          // position pickers and the reading stats. Everything is compact
+          // so it fits without scrolling.
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
               children: [
+                _overlayCard(context, ctl, settingsCtl),
+                const SizedBox(height: 12),
                 _currentAyahCard(context, ctl, settingsCtl, l),
                 const SizedBox(height: 12),
                 _statsGrid(context, statsCtl),
-                const SizedBox(height: 12),
-                _startButton(ctl, settingsCtl, l),
-                const SizedBox(height: 12),
-                _resetButton(ctl),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-
-  /// Danger-zone reset, only when something exists to wipe.
-  Widget _resetButton(NakhtemController ctl) {
-    return Obx(() {
-      if (ctl.khatma.value == null) return const SizedBox.shrink();
-      return SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.red,
-            side: const BorderSide(color: Colors.red),
-            minimumSize: const Size.fromHeight(50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          icon: const Icon(Icons.delete_forever_outlined),
-          label: const Text(
-            'إعادة تعيين الختمة',
-            style: TextStyle(
-              fontFamily: HusnTheme.fontFamily,
-              fontSize: 16,
-            ),
-          ),
-          onPressed: () async {
-            if (await confirmAndResetKhatma(context)) {
-              _syncSelectorsFromProgress();
-            }
-          },
-        ),
-      );
-    });
   }
 
   // ---------- sections ----------
@@ -322,8 +286,8 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
     IconData icon,
   ) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: SettingsWidgets.cardDecoration(context),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Column(
@@ -370,42 +334,53 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
   }
 
   Widget _statsGrid(BuildContext context, StatisticsController statsCtl) {
-    return Obx(() {
-      final cum = statsCtl.cumulative.value;
-      final tiles = [
-        ('اليوم', '${statsCtl.todayCount.value}', Icons.today_outlined),
-        (
-          'هذا الأسبوع',
-          '${statsCtl.weekCount.value}',
-          Icons.date_range_outlined,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsWidgets.buildSectionHeader(
+          context: context,
+          title: 'إحصائيات القراءة',
+          icon: Icons.bar_chart_outlined,
+          color: HusnTheme.gold,
         ),
-        (
-          'هذا الشهر',
-          '${statsCtl.monthCount.value}',
-          Icons.calendar_month_outlined,
-        ),
-        (
-          'منذ استخدام البرنامج',
-          '${cum?.totalVerses ?? 0}',
-          Icons.menu_book_outlined,
-        ),
-      ];
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.8,
-        ),
-        itemCount: tiles.length,
-        itemBuilder: (context, i) {
-          final t = tiles[i];
-          return _statCard(context, t.$1, t.$2, t.$3);
-        },
-      );
-    });
+        Obx(() {
+          final cum = statsCtl.cumulative.value;
+          final tiles = [
+            ('اليوم', '${statsCtl.todayCount.value}', Icons.today_outlined),
+            (
+              'هذا الأسبوع',
+              '${statsCtl.weekCount.value}',
+              Icons.date_range_outlined,
+            ),
+            (
+              'هذا الشهر',
+              '${statsCtl.monthCount.value}',
+              Icons.calendar_month_outlined,
+            ),
+            (
+              'منذ استخدام البرنامج',
+              '${cum?.totalVerses ?? 0}',
+              Icons.menu_book_outlined,
+            ),
+          ];
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.2,
+            ),
+            itemCount: tiles.length,
+            itemBuilder: (context, i) {
+              final t = tiles[i];
+              return _statCard(context, t.$1, t.$2, t.$3);
+            },
+          );
+        }),
+      ],
+    );
   }
 
   /// The current ayah card: surah, ayah text, reciter + listen, progress.
@@ -415,25 +390,191 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
     NakhtemSettingsController settingsCtl,
     L10n l,
   ) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Obx(() {
-          final k = ctl.khatma.value;
-          if (k == null) {
-            return _khatmaSetupCard(context, ctl, settingsCtl, l,
-                hasKhatma: false);
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _khatmaSetupCard(context, ctl, settingsCtl, l, hasKhatma: true)
-            ],
-          );
-        }),
-      ),
+    return SettingsWidgets.buildCardContainer(
+      context: context,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Obx(() {
+            final k = ctl.khatma.value;
+            if (k == null) {
+              return _khatmaSetupCard(context, ctl, settingsCtl, l,
+                  hasKhatma: false);
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _khatmaSetupCard(context, ctl, settingsCtl, l, hasKhatma: true)
+              ],
+            );
+          }),
+        ),
+      ],
     );
+  }
+
+  /// Floating-ayah overlay controls: enable (show the current ayah over
+  /// other apps now) or stop/disable (dismiss the visible overlay and
+  /// switch the master flag off so it never draws). The enable/disable
+  /// state is the same flag the Quran settings page edits.
+  Widget _overlayCard(
+    BuildContext context,
+    NakhtemController ctl,
+    NakhtemSettingsController settingsCtl,
+  ) {
+    return Obx(() {
+      final hasKhatma = ctl.khatma.value != null;
+      final enabled = settingsCtl.settings.value.overlayEnabled;
+      final status = !hasKhatma
+          ? 'اضغط تشغيل لبدء الختمة وعرض الآية'
+          : enabled
+              ? 'مفعّلة • تظهر الآية فوق التطبيقات'
+              : 'متوقفة';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SettingsWidgets.buildSectionHeader(
+            context: context,
+            title: 'الآية العائمة',
+            icon: Icons.layers_outlined,
+            color: HusnTheme.gold,
+          ),
+          SettingsWidgets.buildCardContainer(
+            context: context,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: !hasKhatma
+                            ? Colors.grey
+                            : enabled
+                                ? Colors.green
+                                : Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        status,
+                        style: const TextStyle(
+                          fontFamily: HusnTheme.fontFamily,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: HusnTheme.gold,
+                          foregroundColor: HusnTheme.primaryDark,
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text(
+                          'تشغيل',
+                          style: TextStyle(
+                            fontFamily: HusnTheme.fontFamily,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onPressed: () => _enableOverlay(ctl, settingsCtl),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.stop),
+                        label: const Text(
+                          'إيقاف',
+                          style: TextStyle(
+                            fontFamily: HusnTheme.fontFamily,
+                            fontSize: 16,
+                          ),
+                        ),
+                        onPressed: () => _disableOverlay(ctl, settingsCtl),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    });
+  }
+
+  /// Starts the overlay: when no khatma exists yet, one is created at
+  /// the selected position first — so this single button covers both
+  /// cases. Then the master flag is switched on and the current ayah is
+  /// shown over other apps right away (permission flow included).
+  Future<void> _enableOverlay(
+    NakhtemController ctl,
+    NakhtemSettingsController settingsCtl,
+  ) async {
+    if (ctl.khatma.value == null) {
+      final globalIndex = QuranIndex.instance.globalIndex(
+        _selectedSurah,
+        _selectedAyah,
+      );
+      if (globalIndex == null) return;
+      final ok = await ctl.startKhatma(
+        startingGlobalAyah: globalIndex,
+        edition: settingsCtl.settings.value.edition,
+      );
+      if (!ok) {
+        AppFeedback.getSnack(
+          'الختمة',
+          'تعذّر بدء الختمة',
+          type: AppFeedbackType.error,
+        );
+        return;
+      }
+      _syncSelectorsFromProgress();
+    }
+    await settingsCtl.setOverlayEnabled(true);
+    try {
+      await ctl.syncOverlayCache();
+    } catch (_) {}
+    await _startPhoneExperience(ctl);
+  }
+
+  /// Stops the overlay: dismisses any visible surface and switches the
+  /// master flag off so it never draws until enabled again.
+  Future<void> _disableOverlay(
+    NakhtemController ctl,
+    NakhtemSettingsController settingsCtl,
+  ) async {
+    await settingsCtl.setOverlayEnabled(false);
+    try {
+      await ctl.syncOverlayCache();
+    } catch (_) {}
+    if (!mounted) return;
+    AppFeedback.snack(context, 'تم إيقاف الآية العائمة');
   }
 
   Widget _khatmaSetupCard(
@@ -452,19 +593,20 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
       children: [
         Icon(
           Icons.menu_book_outlined,
-          size: 42,
+          size: 30,
           color: dark ? HusnTheme.gold : HusnTheme.primary,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           hasKhatma ? 'موضعك الحالي' : 'ابدأ ختمة جديدة',
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontFamily: HusnTheme.fontFamily,
-            fontSize: HusnTheme.fontSize18,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 8),
         _selectionDropdown<int>(
           context,
           label: 'السورة',
@@ -488,7 +630,7 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
             _applySelectorPosition();
           },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         _selectionDropdown<int>(
           context,
           label: 'الآية',
@@ -509,7 +651,7 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
             _applySelectorPosition();
           },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Obx(() {
           final selectedId = settingsCtl.settings.value.khatmaReciterId;
           final reciterIds = settingsCtl.reciters.map((r) => r.id);
@@ -555,6 +697,7 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
     return DropdownButtonFormField<T>(
       initialValue: value,
       isExpanded: true,
+      isDense: true,
       style: TextStyle(
         fontFamily: HusnTheme.fontFamily,
         color: dark ? Colors.white : Theme.of(context).colorScheme.onSurface,
@@ -564,6 +707,8 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
         labelText: label,
         filled: true,
         fillColor: dark ? Colors.white10 : Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         labelStyle: TextStyle(
           fontFamily: HusnTheme.fontFamily,
           color: dark ? Colors.white : HusnTheme.primary,
@@ -584,73 +729,6 @@ class _KhatmaHomeScreenState extends State<KhatmaHomeScreen> {
       items: items,
       onChanged: onChanged,
     );
-  }
-
-  Widget _startButton(
-    NakhtemController ctl,
-    NakhtemSettingsController settingsCtl,
-    L10n l,
-  ) {
-    return Obx(() {
-      final hasKhatma = ctl.khatma.value != null;
-      return SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: HusnTheme.gold,
-            foregroundColor: HusnTheme.primaryDark,
-            minimumSize: const Size.fromHeight(58),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          icon: Icon(hasKhatma ? Icons.play_arrow : Icons.add),
-          label: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(
-              hasKhatma ? 'ابدأ الآن' : l.t('start_khatma'),
-              style: const TextStyle(
-                fontFamily: HusnTheme.fontFamily,
-                fontSize: 18,
-              ),
-            ),
-          ),
-          onPressed: () {
-            if (!hasKhatma) {
-              _startSelectedKhatma(ctl, settingsCtl, l);
-            } else {
-              _startPhoneExperience(ctl);
-            }
-          },
-        ),
-      );
-    });
-  }
-
-  Future<void> _startSelectedKhatma(
-    NakhtemController ctl,
-    NakhtemSettingsController settingsCtl,
-    L10n l,
-  ) async {
-    final globalIndex = QuranIndex.instance.globalIndex(
-      _selectedSurah,
-      _selectedAyah,
-    );
-    if (globalIndex == null) return;
-
-    final ok = await ctl.startKhatma(
-      startingGlobalAyah: globalIndex,
-      edition: settingsCtl.settings.value.edition,
-    );
-    if (!ok) {
-      AppFeedback.getSnack(
-        l.t('start_khatma'),
-        'تعذّر بدء الختمة',
-        type: AppFeedbackType.error,
-      );
-      return;
-    }
-    await _startPhoneExperience(ctl);
   }
 
   Future<void> _startPhoneExperience(NakhtemController ctl) async {

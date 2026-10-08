@@ -18,6 +18,9 @@ import 'mushaf_screen.dart';
 /// Surah index, styled after Husn-el-Muslim's `MyHomePageScreen`:
 /// image-header AppBar with toggleable search, then a plain
 /// `ListTile` + thin-divider list — powered by GetX.
+// Batch 2 (perf-only): compiled once; the filter runs it per surah per build.
+final RegExp _digitsOnly = RegExp(r'^\d+$');
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -86,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: TextField(
+                      child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
                       autofocus: true,
@@ -112,30 +115,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   )
                 : null,
+            // Single search action: while a query is present the button
+            // clears it; once the field is empty it exits search mode.
+            // (Previously a clear ✕ inside the field sat next to this ✕.)
             actions: _searching
                 ? [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => _stopSearching(filterCtl),
-                    ),
-                    Obx(
-                      () => filterCtl.query.value.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _debounce?.cancel();
-                                _searchController.clear();
-                                filterCtl.setQuery('');
-                              },
-                            )
-                          : const SizedBox.shrink(),
-                    ),
+                    Obx(() {
+                      final hasQuery = filterCtl.query.value.isNotEmpty;
+                      return IconButton(
+                        icon: Icon(hasQuery ? Icons.clear : Icons.close),
+                        tooltip: hasQuery ? 'مسح البحث' : 'إغلاق البحث',
+                        onPressed: () {
+                          if (hasQuery) {
+                            _debounce?.cancel();
+                            _searchController.clear();
+                            filterCtl.setQuery('');
+                          } else {
+                            _stopSearching(filterCtl);
+                          }
+                        },
+                      );
+                    }),
                   ]
                 : [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: IconButton(
                         icon: const Icon(Icons.search),
+                        tooltip: 'بحث',
                         onPressed: () => setState(() => _searching = true),
                       ),
                     ),
@@ -143,7 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           body: Column(
             children: [
-              const _Toolbar(),
               Expanded(
                 child: Obx(() {
                   if (quranCtl.isLoadingSurahs.value &&
@@ -168,16 +174,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   // matches "ٱلْفَاتِحَة", "إبراهيم" matches "ابراهيم".
                   final q = AyahSearchController.normAr(rawQ.toLowerCase());
                   final numQ = _latinDigits(rawQ);
-                  final juzOnly = filterCtl.juzAmmaOnly.value;
                   final scored = <({Surah s, int rank})>[];
                   for (final s in list) {
-                    if (juzOnly && s.id < 78) continue;
                     if (q.isEmpty) {
                       scored.add((s: s, rank: 3));
                       continue;
                     }
                     // Surah number (Latin or Arabic-Indic digits).
-                    if (RegExp(r'^\d+$').hasMatch(numQ) &&
+                    if (_digitsOnly.hasMatch(numQ) &&
                         s.id == int.tryParse(numQ)) {
                       scored.add((s: s, rank: 0));
                       continue;
@@ -217,15 +221,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
                   return ListView.builder(
+                    padding: EdgeInsets.zero,
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final surah = filtered[index];
                       final page = resolveSurahPage(quranCtl, surah.id);
                       return Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           ListTile(
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            minLeadingWidth: 0,
+                            minVerticalPadding: 2,
                             leading: NumberMedallion(
                               label: '${surah.id}',
+                              size: 30,
                               ringColor: HusnTheme.primary,
                               fillColor:
                                   dark ? HusnTheme.scaffoldDark : Colors.white,
@@ -235,7 +249,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               QuranIndex.instance.surahMeta(surah.id)?.nameAr ??
                                   surah.suratText,
                               style: const TextStyle(
-                                fontSize: HusnTheme.fontSize22,
+                                fontSize: HusnTheme.fontSize18,
+                                fontWeight: FontWeight.w600,
                                 fontFamily: HusnTheme.fontFamily,
                               ),
                             ),
@@ -245,10 +260,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : '${surah.countAyat} آية',
                               style: const TextStyle(
                                 fontFamily: HusnTheme.fontFamily,
+                                fontSize: 12,
                               ),
                             ),
                             trailing: Icon(
                               Icons.chevron_right,
+                              size: 20,
                               color: dark ? Colors.grey[400] : Colors.grey,
                             ),
                             onTap: () async {
@@ -296,41 +313,4 @@ int resolveSurahPage(QuranController quranCtl, int surahId) {
   return meta.aya['$surahId:1'] ?? meta.start['$surahId'] ?? 0;
 }
 
-/// Slim action row under the AppBar: Juz-Amma filter.
-/// Khatma / Settings / Info now live in the single app drawer.
-class _Toolbar extends StatelessWidget {
-  const _Toolbar();
 
-  @override
-  Widget build(BuildContext context) {
-    final filterCtl = Get.find<HomeFilterController>();
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: dark ? Colors.white12 : Colors.black12),
-        ),
-      ),
-      child: Obx(
-        () => Row(
-          children: [
-            FilterChip(
-              label: const Text(
-                'جزء عمّ',
-                style: TextStyle(
-                  fontFamily: HusnTheme.fontFamily,
-                  fontSize: 14,
-                ),
-              ),
-              selected: filterCtl.juzAmmaOnly.value,
-              onSelected: (_) => filterCtl.toggleJuzAmma(),
-              selectedColor: HusnTheme.primary.withValues(alpha: 0.15),
-              checkmarkColor: HusnTheme.primary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

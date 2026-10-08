@@ -11,4 +11,4 @@ const String homeScreenDua = 'dua';
 const String homeScreenNames = 'names';
 const String homeScreenRuqyah = 'ruqyah';
 const String homeScreenMosqueMap = 'mosque_map';
-const String homeScreenTracking = 'tracking';
+const String homeScreenTodo = 'todo';

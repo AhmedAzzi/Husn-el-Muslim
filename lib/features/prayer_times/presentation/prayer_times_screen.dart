@@ -502,6 +502,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final targetDate = DateTime.now().add(Duration(days: diffDays));
     final future = _logic.getPrayerSummaryForDate(targetDate);
     _pageFutures[diffDays] = future;
+    // Batch 4 (perf-only): bound the swipe cache to ±60 days around the
+    // current position. Distant days re-resolve on revisit with identical
+    // content; normal swiping never leaves the window.
+    if (_pageFutures.length > 121) {
+      _pageFutures.removeWhere((k, _) => (k - _currentSwipeDiff.value).abs() > 60);
+    }
     return future;
   }
 
@@ -814,13 +820,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   /// Shared adopt step: fetches the mosque schedule and sets it as the
   /// default. Returns true on success, false when the schedule fails.
   Future<bool> _fetchAndAdopt(MosquePoint m) async {
+    final api = MawaqitApi();
     try {
-      final api = MawaqitApi();
       final feed = await api.scheduleBySlug(m.slug, forceRefresh: true);
       await _logic.setSelectedMosque(m, schedule: feed);
       return true;
     } catch (_) {
       return false;
+    } finally {
+      api.dispose();
     }
   }
 

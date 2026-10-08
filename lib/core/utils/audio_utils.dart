@@ -50,13 +50,22 @@ class ClickFeedback {
   }
 }
 
+// Batch 4 (perf-only): the error listener is a stateless no-op, but every
+// headset tap added another permanent subscription to a long-lived player.
+// Hook once per player (Expando = weak keys, never blocks player disposal);
+// audio-source setup runs every call, exactly as before.
+final Expando<bool> _hookedPlayers = Expando<bool>('audioErrorHook');
+
 Future<void> setupAudioPlayer(AudioPlayer player, String url) async {
-  player.playbackEventStream.listen((event) {},
-      onError: (Object e, StackTrace stacktrace) {
-    if (kDebugMode) {
-      print("A stream error occurred: $e");
-    }
-  });
+  if (_hookedPlayers[player] != true) {
+    _hookedPlayers[player] = true;
+    player.playbackEventStream.listen((event) {},
+        onError: (Object e, StackTrace stacktrace) {
+      if (kDebugMode) {
+        print("A stream error occurred: $e");
+      }
+    });
+  }
   try {
     await player.setAudioSource(AudioSource.uri(Uri.parse(url)));
   } catch (e) {

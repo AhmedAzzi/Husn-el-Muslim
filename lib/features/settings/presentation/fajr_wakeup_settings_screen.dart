@@ -1,27 +1,28 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
+import 'package:small_husn_muslim/core/widgets/husn_number_dropdown.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
-import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
+
 class FajrWakeupSettingsScreen extends StatefulWidget {
   const FajrWakeupSettingsScreen({super.key});
 
   @override
-  State<FajrWakeupSettingsScreen> createState() => _FajrWakeupSettingsScreenState();
+  State<FajrWakeupSettingsScreen> createState() =>
+      _FajrWakeupSettingsScreenState();
 }
 
 class _FajrWakeupSettingsScreenState extends State<FajrWakeupSettingsScreen> {
   final PrayerTimesLogic _logic = PrayerTimesLogic();
-  bool _showAdvanced = false;
+
+  static const _accent = Color(0xFFD64463);
+  static const _delayOptions = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
 
   @override
   void initState() {
@@ -31,11 +32,8 @@ class _FajrWakeupSettingsScreenState extends State<FajrWakeupSettingsScreen> {
 
   Future<void> _loadSettings() async {
     await _logic.loadNotificationPreference();
-    final prefs = SharedPrefsCache.instance;
     if (!mounted) return;
-    setState(() {
-      _showAdvanced = prefs.getBool('show_advanced') ?? false;
-    });
+    setState(() {});
   }
 
   Future<void> _saveSettings(
@@ -109,8 +107,7 @@ class _FajrWakeupSettingsScreenState extends State<FajrWakeupSettingsScreen> {
       challengeDifficulty:
           challengeDifficulty ?? _logic.fajrChallengeDifficulty,
       challengePool: challengePool ?? _logic.fajrRandomPool,
-      shakeSensitivity:
-          shakeSensitivity ?? _logic.fajrShakeSensitivity,
+      shakeSensitivity: shakeSensitivity ?? _logic.fajrShakeSensitivity,
       wakeUpConfirmationValue:
           wakeUpConfirmationValue ?? _logic.wakeUpConfirmationEnabled,
       morningAdhkarValue: morningAdhkarValue ?? _logic.morningAdhkarEnabled,
@@ -161,8 +158,6 @@ class _FajrWakeupSettingsScreenState extends State<FajrWakeupSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -170,690 +165,561 @@ class _FajrWakeupSettingsScreenState extends State<FajrWakeupSettingsScreen> {
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: HusnAppBar.back(title: loc.sheetTitle),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            physics: const BouncingScrollPhysics(),
+          body: DefaultTabController(
+            length: 3,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SettingsWidgets.buildCardContainer(
-                  context: context,
-                  children: [
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.nsFajrEnable,
-                      subtitle: loc.nsFajrEnableSub,
-                      icon: Icons.alarm_on_rounded,
-                      iconColor: const Color(0xFFD64463),
-                      value: _logic.fajrChallengeEnabled,
-                      onChanged: (value) {
-                        setState(() => _logic.fajrChallengeEnabled = value);
-                        _saveSettings(fajrChallengeValue: value);
-                      },
-                    ),
-                    if (_logic.fajrChallengeEnabled) ...[
-                      SettingsWidgets.buildDivider(context),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Questions count slider
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  loc.sheetQuestionCount,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFD64463)
-                                        .withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    loc.sheetQuestions(_logic.fajrChallengeQuestionsCount),
-                                    style: const TextStyle(
-                                      fontFamily: 'Amiri',
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFD64463),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Slider(
-                              value:
-                                  _logic.fajrChallengeQuestionsCount.toDouble(),
-                              min: 1,
-                              max: 10,
-                              divisions: 9,
-                              activeColor: const Color(0xFFD64463),
-                              inactiveColor: isDark
-                                  ? Colors.white12
-                                  : Colors.grey.shade300,
-                              label:
-                                  loc.sheetQuestions(_logic.fajrChallengeQuestionsCount),
-                              onChanged: (double value) {
-                                setState(() {
-                                  _logic.fajrChallengeQuestionsCount =
-                                      value.toInt();
-                                });
-                              },
-                              onChangeEnd: (double value) {
-                                _saveSettings(
-                                    challengeQuestionsCount: value.toInt());
-                              },
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Text Input switch (advanced: harder typing mode)
-                            if (_showAdvanced) ...[
-                              SwitchListTile(
-                                activeThumbColor: const Color(0xFFD64463),
-                                activeTrackColor: const Color(0xFFD64463)
-                                    .withValues(alpha: 0.3),
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  loc.sheetTextMode,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  loc.sheetTextModeSub,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white60
-                                        : Colors.black54,
-                                  ),
-                                ),
-                                value: _logic.fajrChallengeIsTextInput,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _logic.fajrChallengeIsTextInput = value;
-                                  });
-                                  _saveSettings(challengeIsTextInput: value);
-                                },
-                              ),
-                              const Divider(height: 24),
-                            ],
-
-                            // Wake Up Mode Segmented Selection
-                            Text(
-                              loc.sheetRingTime,
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SettingsWidgets.buildChoiceCard(
-                                    context: context,
-                                    title: loc.sheetLastThird,
-                                    subtitle: loc.sheetLastThirdSub,
-                                    isSelected:
-                                        _logic.fajrChallengeWakeUpMode == 'auto',
-                                    onTap: () {
-                                      setState(() => _logic
-                                          .fajrChallengeWakeUpMode = 'auto');
-                                      _saveSettings(
-                                          challengeWakeUpMode: 'auto');
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: SettingsWidgets.buildChoiceCard(
-                                    context: context,
-                                    title: loc.sheetCustom,
-                                    subtitle: loc.sheetCustomSub,
-                                    isSelected: _logic
-                                            .fajrChallengeWakeUpMode ==
-                                        'custom',
-                                    onTap: () {
-                                      setState(() => _logic
-                                          .fajrChallengeWakeUpMode = 'custom');
-                                      _saveSettings(
-                                          challengeWakeUpMode: 'custom');
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // Custom Offset Slider
-                            if (_logic.fajrChallengeWakeUpMode == 'custom') ...[
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    loc.sheetBeforeFajrBy,
-                                    style: TextStyle(
-                                      fontFamily: 'Amiri',
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    loc.sheetMinutes(_logic.fajrChallengeCustomOffsetMinutes),
-                                    style: const TextStyle(
-                                      fontFamily: 'Amiri',
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFD64463),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Slider(
-                                value: _logic.fajrChallengeCustomOffsetMinutes
-                                    .toDouble(),
-                                min: 10,
-                                max: 120,
-                                divisions: 11,
-                                activeColor: const Color(0xFFD64463),
-                                inactiveColor: isDark
-                                    ? Colors.white12
-                                    : Colors.grey.shade300,
-                                label:
-                                    loc.sheetMinutes(_logic.fajrChallengeCustomOffsetMinutes),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _logic.fajrChallengeCustomOffsetMinutes =
-                                        val.toInt();
-                                  });
-                                },
-                                onChangeEnd: (val) {
-                                  _saveSettings(
-                                      challengeCustomOffset: val.toInt());
-                                },
-                              ),
-                            ],
-
-                            const SizedBox(height: 16),
-                            Text(
-                              loc.nsChallengeType,
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                for (final t in [
-                                  ('questions', loc.nsTypeQuestions, loc.nsTypeQuestionsSub),
-                                  ('math', loc.nsTypeMath, loc.nsTypeMathSub),
-                                  ('memory', loc.nsTypeMemory, loc.nsTypeMemorySub),
-                                  ('shake', loc.nsTypeShake, loc.nsTypeShakeSub),
-                                  ('random', loc.nsTypeRandom, loc.nsTypeRandomSub),
-                                ])
-                                  SizedBox(
-                                    width: (MediaQuery.of(context).size.width -
-                                            72) /
-                                        2,
-                                    child: SettingsWidgets.buildChoiceCard(
-                                      context: context,
-                                      title: t.$2,
-                                      subtitle: t.$3,
-                                      isSelected:
-                                          _logic.fajrChallengeType == t.$1,
-                                      onTap: () {
-                                        setState(() =>
-                                            _logic.fajrChallengeType = t.$1);
-                                        _saveSettings(challengeType: t.$1);
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            if (_showAdvanced &&
-                                _logic.fajrChallengeType == 'random') ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                loc.nsRandomPool,
-                                style: TextStyle(
-                                  fontFamily: 'Amiri',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              for (final t in [
-                                ('questions', loc.nsTypeQuestions),
-                                ('math', loc.nsTypeMath),
-                                ('memory', loc.nsTypeMemory),
-                                ('shake', loc.nsTypeShake),
-                              ])
-                                CheckboxListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(t.$2,
-                                      style: const TextStyle(
-                                          fontFamily: 'Amiri')),
-                                  value: _logic.fajrRandomPool.contains(t.$1),
-                                  activeColor: const Color(0xFFD64463),
-                                  onChanged: (v) {
-                                    final pool = List<String>.of(
-                                        _logic.fajrRandomPool);
-                                    if (v == true) {
-                                      if (!pool.contains(t.$1)) {
-                                        pool.add(t.$1);
-                                      }
-                                    } else {
-                                      pool.remove(t.$1);
-                                    }
-                                    if (pool.isEmpty) return;
-                                    setState(
-                                        () => _logic.fajrRandomPool = pool);
-                                    _saveSettings(challengePool: pool);
-                                  },
-                                ),
-                            ],
-                            if (_showAdvanced &&
-                                (_logic.fajrChallengeType == 'shake' ||
-                                    _logic.fajrChallengeType ==
-                                        'random')) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                loc.nsShakeSensitivity,
-                                style: TextStyle(
-                                  fontFamily: 'Amiri',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  for (final s in [
-                                    ('low', loc.nsLow),
-                                    ('medium', loc.nsShakeMedium),
-                                    ('high', loc.nsHigh),
-                                  ])
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4),
-                                        child:
-                                            SettingsWidgets.buildChoiceCard(
-                                          context: context,
-                                          title: s.$2,
-                                          subtitle: '',
-                                          isSelected:
-                                              _logic.fajrShakeSensitivity ==
-                                                  s.$1,
-                                          onTap: () {
-                                            setState(() => _logic
-                                                    .fajrShakeSensitivity =
-                                                s.$1);
-                                            _saveSettings(
-                                                shakeSensitivity: s.$1);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            Text(
-                              loc.nsDifficulty,
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                for (final d in [
-                                  ('easy', loc.nsEasy),
-                                  ('medium', loc.nsDiffMedium),
-                                  ('hard', loc.nsHard),
-                                ])
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4),
-                                      child: SettingsWidgets.buildChoiceCard(
-                                        context: context,
-                                        title: d.$2,
-                                        subtitle: d.$1 == 'hard'
-                                            ? loc.nsHardSub
-                                            : '',
-                                        isSelected:
-                                            _logic.fajrChallengeDifficulty ==
-                                                d.$1,
-                                        onTap: () {
-                                          setState(() =>
-                                              _logic.fajrChallengeDifficulty =
-                                                  d.$1);
-                                          _saveSettings(
-                                              challengeDifficulty: d.$1);
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (_showAdvanced) ...[
-                              SwitchListTile(
-                                activeThumbColor: const Color(0xFFD64463),
-                                activeTrackColor: const Color(0xFFD64463)
-                                    .withValues(alpha: 0.3),
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  loc.nsWakeConfirm,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  loc.nsWakeConfirmSub,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white60
-                                        : Colors.black54,
-                                  ),
-                                ),
-                                value: _logic.wakeUpConfirmationEnabled,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _logic.wakeUpConfirmationEnabled = value;
-                                  });
-                                  _saveSettings(
-                                      wakeUpConfirmationValue: value);
-                                },
-                              ),
-                            ],
-                            const Divider(height: 24),
-                            Text(
-                              loc.nsAlarmSound,
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                for (final s in [
-                                  ('adhan', loc.nsSoundAdhan, loc.nsSoundAdhanSub),
-                                  ('system', loc.nsSoundSystem, loc.nsSoundSystemSub),
-                                  ('custom', loc.nsSoundCustom, loc.nsSoundCustomSub),
-                                ])
-                                  SizedBox(
-                                    width: (MediaQuery.of(context).size.width -
-                                            72) /
-                                        2,
-                                    child: SettingsWidgets.buildChoiceCard(
-                                      context: context,
-                                      title: s.$2,
-                                      subtitle: s.$3,
-                                      isSelected:
-                                          _logic.alarmSound == s.$1,
-                                      onTap: () {
-                                        setState(() =>
-                                            _logic.alarmSound = s.$1);
-                                        _saveSettings(alarmSoundValue: s.$1);
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            if (_logic.alarmSound == 'custom') ...[
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final res = await FilePicker.platform
-                                        .pickFiles(type: FileType.audio);
-                                    final path =
-                                        res?.files.single.path;
-                                    if (path != null && path.isNotEmpty) {
-                                      setState(() => _logic.alarmCustomPath =
-                                          path);
-                                      await _saveSettings(
-                                          alarmCustomPathValue: path);
-                                    }
-                                  },
-                                  icon: const Icon(
-                                      Icons.audio_file_outlined),
-                                  label: Text(
-                                    _logic.alarmCustomPath.isEmpty
-                                        ? loc.nsPickAudio
-                                        : loc.nsChangeAudio,
-                                    style: const TextStyle(
-                                        fontFamily: 'Amiri'),
-                                  ),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  await PrayerNotificationHelper
-                                      .previewAlarmSound();
-                                  if (!context.mounted) return;
-                                  AppFeedback.snack(
-                                    context,
-                                    loc.nsPreviewPlaying,
-                                    action: SnackBarAction(
-                                      label: loc.nsStop,
-                                      textColor: Colors.white,
-                                      onPressed: () =>
-                                          PrayerNotificationHelper
-                                              .stopAlarmPreview(),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.hearing_rounded),
-                                label: Text(loc.nsPreviewSound,
-                                    style:
-                                        TextStyle(fontFamily: 'Amiri')),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(loc.nsAlarmVolume,
-                                    style: TextStyle(
-                                        fontFamily: 'Amiri', fontSize: 15)),
-                                Text('${_logic.alarmVolumePercent}٪',
-                                    style: const TextStyle(
-                                        fontFamily: 'Amiri',
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFFD64463))),
-                              ],
-                            ),
-                            Slider(
-                              value: _logic.alarmVolumePercent.toDouble(),
-                              min: 20,
-                              max: 100,
-                              divisions: 8,
-                              activeColor: const Color(0xFFD64463),
-                              label: '${_logic.alarmVolumePercent}٪',
-                              onChanged: (v) => setState(() =>
-                                  _logic.alarmVolumePercent = v.toInt()),
-                              onChangeEnd: (v) => _saveSettings(
-                                  alarmVolumeValue: v.toInt()),
-                            ),
-                            if (_showAdvanced) ...[
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(loc.nsAlarmVibrate,
-                                    style:
-                                        TextStyle(fontFamily: 'Amiri')),
-                                value: _logic.alarmVibrate,
-                                activeThumbColor: const Color(0xFFD64463),
-                                onChanged: (v) {
-                                  setState(
-                                      () => _logic.alarmVibrate = v);
-                                  _saveSettings(alarmVibrateValue: v);
-                                },
-                              ),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(loc.nsAlarmLoop,
-                                    style:
-                                        TextStyle(fontFamily: 'Amiri')),
-                                value: _logic.alarmLoop,
-                                activeThumbColor: const Color(0xFFD64463),
-                                onChanged: (v) {
-                                  setState(
-                                      () => _logic.alarmLoop = v);
-                                  _saveSettings(alarmLoopValue: v);
-                                },
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                loc.nsGentleWake,
-                                style: TextStyle(
-                                  fontFamily: 'Amiri',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  for (final g in [
-                                    (0, loc.nsInstant),
-                                    (30, loc.sheetSeconds(30)),
-                                    (60, loc.sheetSeconds(60)),
-                                    (120, loc.sheetSeconds(120)),
-                                  ])
-                                    Expanded(
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 3),
-                                        child: SettingsWidgets
-                                            .buildChoiceCard(
-                                          context: context,
-                                          title: g.$2,
-                                          subtitle: '',
-                                          isSelected:
-                                              _logic.gentleWakeSeconds ==
-                                                  g.$1,
-                                          onTap: () {
-                                            setState(() => _logic
-                                                .gentleWakeSeconds = g.$1);
-                                            _saveSettings(
-                                                gentleWakeValue: g.$1);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Get.to(() => const FajrChallengeScreen());
-                                },
-                                icon: const Icon(Icons.play_arrow_rounded,
-                                    size: 22),
-                                label: Text(
-                                  loc.nsTryNow,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFD64463),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  Get.to(() => const PrayerTrackingScreen());
-                                },
-                                icon: const Icon(Icons.local_fire_department,
-                                    size: 22),
-                                label: Text(
-                                  loc.nsOpenLog,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                // Master switch stays pinned on top of every tab.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  child: SettingsWidgets.buildCardContainer(
+                    context: context,
+                    children: [
+                      SettingsWidgets.buildSwitchTile(
+                        context: context,
+                        title: loc.nsFajrEnable,
+                        subtitle: loc.nsFajrEnableSub,
+                        icon: Icons.alarm_on_rounded,
+                        iconColor: _accent,
+                        value: _logic.fajrChallengeEnabled,
+                        onChanged: (value) {
+                          setState(() => _logic.fajrChallengeEnabled = value);
+                          _saveSettings(fajrChallengeValue: value);
+                        },
                       ),
                     ],
-                  ],
+                  ),
                 ),
-                if (!_showAdvanced) ...[
-                  const SizedBox(height: 4),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () => Get.to(
-                          () => const AdvancedSettingsScreen()),
-                      icon: const Icon(Icons.tune_rounded, size: 18),
-                      label: Text(
-                        loc.stHiddenAdvanced,
-                        style:
-                            HusnText.body,
+                if (_logic.fajrChallengeEnabled) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                    child: Container(
+                      decoration: SettingsWidgets.cardDecoration(context),
+                      child: TabBar(
+                        labelColor: _accent,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: _accent,
+                        indicatorWeight: 2.5,
+                        // Tight padding so long labels (e.g. "إعادة التنبيه")
+                        // stay inside their tab instead of painting over
+                        // the neighbour tab on narrow screens.
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        labelStyle: const TextStyle(
+                          fontFamily: 'Amiri',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontFamily: 'Amiri',
+                          fontSize: 14,
+                        ),
+                        tabs: [
+                          for (final t in [
+                            loc.fajrTabChallenge,
+                            loc.fajrTabSound,
+                            loc.fajrTabRering,
+                          ])
+                            Tab(
+                              child: Text(
+                                t,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _buildChallengeTab(context, loc),
+                        _buildSoundTab(context, loc),
+                        _buildReringTab(context, loc),
+                      ],
+                    ),
+                  ),
                 ],
-                const SizedBox(height: 32),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// One tab page: compact card, fits on screen without scrolling.
+  Widget _tabPage(BuildContext context, List<Widget> children) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      physics: const BouncingScrollPhysics(),
+      child: SettingsWidgets.buildCardContainer(
+        context: context,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const _labelStyle = TextStyle(
+    fontFamily: 'Amiri',
+    fontWeight: FontWeight.bold,
+    fontSize: 15,
+  );
+
+  /// Grey one-line caption under pill rows (selected option's hint).
+  static Widget _caption(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontFamily: 'Amiri',
+          fontSize: 12,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------- Tab 1: Challenge -------------------------------
+
+  Widget _buildChallengeTab(BuildContext context, AppLocalizations loc) {
+    return _tabPage(context, [
+      Text(loc.sheetRingTime, style: _labelStyle),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: SettingsWidgets.buildChoiceCard(
+              context: context,
+              title: loc.sheetLastThird,
+              subtitle: loc.sheetLastThirdSub,
+              isSelected: _logic.fajrChallengeWakeUpMode == 'auto',
+              onTap: () {
+                setState(() => _logic.fajrChallengeWakeUpMode = 'auto');
+                _saveSettings(challengeWakeUpMode: 'auto');
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SettingsWidgets.buildChoiceCard(
+              context: context,
+              title: loc.sheetCustom,
+              subtitle: loc.sheetCustomSub,
+              isSelected: _logic.fajrChallengeWakeUpMode == 'custom',
+              onTap: () {
+                setState(() => _logic.fajrChallengeWakeUpMode = 'custom');
+                _saveSettings(challengeWakeUpMode: 'custom');
+              },
+            ),
+          ),
+        ],
+      ),
+      if (_logic.fajrChallengeWakeUpMode == 'custom') ...[
+        const SizedBox(height: 10),
+        HusnNumberPickerRow(
+          title: loc.sheetBeforeFajrBy,
+          value: _logic.fajrChallengeCustomOffsetMinutes,
+          options: const [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120],
+          accentColor: _accent,
+          labelOf: (v) => loc.sheetMinutes(v),
+          onChanged: (v) {
+            setState(() => _logic.fajrChallengeCustomOffsetMinutes = v);
+            _saveSettings(challengeCustomOffset: v);
+          },
+        ),
+      ],
+      const SizedBox(height: 10),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      HusnNumberPickerRow(
+        title: loc.sheetQuestionCount,
+        value: _logic.fajrChallengeQuestionsCount,
+        options: const [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        accentColor: _accent,
+        labelOf: (v) => loc.sheetQuestions(v),
+        onChanged: (v) {
+          setState(() => _logic.fajrChallengeQuestionsCount = v);
+          _saveSettings(challengeQuestionsCount: v);
+        },
+      ),
+      SettingsWidgets.buildSwitchTile(
+        context: context,
+        title: loc.sheetTextMode,
+        subtitle: loc.sheetTextModeSub,
+        icon: Icons.keyboard_outlined,
+        iconColor: _accent,
+        value: _logic.fajrChallengeIsTextInput,
+        onChanged: (value) {
+          setState(() => _logic.fajrChallengeIsTextInput = value);
+          _saveSettings(challengeIsTextInput: value);
+        },
+      ),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      Text(loc.nsChallengeType, style: _labelStyle),
+      const SizedBox(height: 8),
+      HusnChoicePills(
+        values: const ['questions', 'math', 'memory', 'shake', 'random'],
+        accentColor: _accent,
+        labelOf: (t) => switch (t) {
+          'math' => loc.nsTypeMath,
+          'memory' => loc.nsTypeMemory,
+          'shake' => loc.nsTypeShake,
+          'random' => loc.nsTypeRandom,
+          _ => loc.nsTypeQuestions,
+        },
+        isSelected: (t) => _logic.fajrChallengeType == t,
+        onToggle: (t, _) {
+          setState(() => _logic.fajrChallengeType = t);
+          _saveSettings(challengeType: t);
+        },
+      ),
+      const SizedBox(height: 10),
+      _caption(switch (_logic.fajrChallengeType) {
+        'math' => loc.nsTypeMathSub,
+        'memory' => loc.nsTypeMemorySub,
+        'shake' => loc.nsTypeShakeSub,
+        'random' => loc.nsTypeRandomSub,
+        _ => loc.nsTypeQuestionsSub,
+      }),
+      if (_logic.fajrChallengeType == 'random') ...[
+        const SizedBox(height: 10),
+        Text(loc.nsRandomPool, style: _labelStyle),
+        const SizedBox(height: 8),
+        HusnChoicePills(
+          values: const ['questions', 'math', 'memory', 'shake'],
+          accentColor: _accent,
+          labelOf: (t) => switch (t) {
+            'math' => loc.nsTypeMath,
+            'memory' => loc.nsTypeMemory,
+            'shake' => loc.nsTypeShake,
+            _ => loc.nsTypeQuestions,
+          },
+          isSelected: (t) => _logic.fajrRandomPool.contains(t),
+          onToggle: (t, selected) {
+            final pool = List<String>.of(_logic.fajrRandomPool);
+            if (selected) {
+              if (!pool.contains(t)) pool.add(t);
+            } else {
+              pool.remove(t);
+            }
+            if (pool.isEmpty) return;
+            setState(() => _logic.fajrRandomPool = pool);
+            _saveSettings(challengePool: pool);
+          },
+        ),
+      ],
+      if (_logic.fajrChallengeType == 'shake' ||
+          _logic.fajrChallengeType == 'random') ...[
+        const SizedBox(height: 10),
+        Text(loc.nsShakeSensitivity, style: _labelStyle),
+        const SizedBox(height: 8),
+        HusnChoicePills(
+          values: const ['low', 'medium', 'high'],
+          accentColor: _accent,
+          labelOf: (s) => switch (s) {
+            'low' => loc.nsLow,
+            'high' => loc.nsHigh,
+            _ => loc.nsShakeMedium,
+          },
+          isSelected: (s) => _logic.fajrShakeSensitivity == s,
+          onToggle: (s, _) {
+            setState(() => _logic.fajrShakeSensitivity = s);
+            _saveSettings(shakeSensitivity: s);
+          },
+        ),
+      ],
+      const SizedBox(height: 10),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      Text(loc.nsDifficulty, style: _labelStyle),
+      const SizedBox(height: 8),
+      HusnChoicePills(
+        values: const ['easy', 'medium', 'hard'],
+        accentColor: _accent,
+        labelOf: (d) => switch (d) {
+          'easy' => loc.nsEasy,
+          'hard' => loc.nsHard,
+          _ => loc.nsDiffMedium,
+        },
+        isSelected: (d) => _logic.fajrChallengeDifficulty == d,
+        onToggle: (d, _) {
+          setState(() => _logic.fajrChallengeDifficulty = d);
+          _saveSettings(challengeDifficulty: d);
+        },
+      ),
+      if (_logic.fajrChallengeDifficulty == 'hard') _caption(loc.nsHardSub),
+      SettingsWidgets.buildSwitchTile(
+        context: context,
+        title: loc.nsWakeConfirm,
+        subtitle: loc.nsWakeConfirmSub,
+        icon: Icons.check_circle_outlined,
+        iconColor: _accent,
+        value: _logic.wakeUpConfirmationEnabled,
+        onChanged: (value) {
+          setState(() => _logic.wakeUpConfirmationEnabled = value);
+          _saveSettings(wakeUpConfirmationValue: value);
+        },
+      ),
+    ]);
+  }
+
+  // ------------------------------- Tab 2: Sound -------------------------------
+
+  Widget _buildSoundTab(BuildContext context, AppLocalizations loc) {
+    return _tabPage(context, [
+      Text(loc.nsAlarmSound, style: _labelStyle),
+      const SizedBox(height: 8),
+      HusnChoicePills(
+        values: const ['adhan', 'system', 'custom'],
+        accentColor: _accent,
+        labelOf: (s) => switch (s) {
+          'system' => loc.nsSoundSystem,
+          'custom' => loc.nsSoundCustom,
+          _ => loc.nsSoundAdhan,
+        },
+        isSelected: (s) => _logic.alarmSound == s,
+        onToggle: (s, _) {
+          setState(() => _logic.alarmSound = s);
+          _saveSettings(alarmSoundValue: s);
+        },
+      ),
+      _caption(switch (_logic.alarmSound) {
+        'system' => loc.nsSoundSystemSub,
+        'custom' => loc.nsSoundCustomSub,
+        _ => loc.nsSoundAdhanSub,
+      }),
+      if (_logic.alarmSound == 'custom') ...[
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final res =
+                  await FilePicker.platform.pickFiles(type: FileType.audio);
+              final path = res?.files.single.path;
+              if (path != null && path.isNotEmpty) {
+                setState(() => _logic.alarmCustomPath = path);
+                await _saveSettings(alarmCustomPathValue: path);
+              }
+            },
+            icon: const Icon(Icons.audio_file_outlined, size: 18),
+            label: Text(
+              _logic.alarmCustomPath.isEmpty
+                  ? loc.nsPickAudio
+                  : loc.nsChangeAudio,
+              style: const TextStyle(fontFamily: 'Amiri'),
+            ),
+          ),
+        ),
+      ],
+      const SizedBox(height: 10),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () async {
+            await PrayerNotificationHelper.previewAlarmSound();
+            if (!context.mounted) return;
+            AppFeedback.snack(
+              context,
+              loc.nsPreviewPlaying,
+              action: SnackBarAction(
+                label: loc.nsStop,
+                textColor: Colors.white,
+                onPressed: () => PrayerNotificationHelper.stopAlarmPreview(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.hearing_rounded, size: 18),
+          label: Text(loc.nsPreviewSound,
+              style: const TextStyle(fontFamily: 'Amiri')),
+        ),
+      ),
+      const SizedBox(height: 10),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      HusnNumberPickerRow(
+        title: loc.nsAlarmVolume,
+        value: _logic.alarmVolumePercent,
+        options: const [20, 30, 40, 50, 60, 70, 80, 90, 100],
+        accentColor: _accent,
+        labelOf: (v) => '$v٪',
+        onChanged: (v) {
+          setState(() => _logic.alarmVolumePercent = v);
+          _saveSettings(alarmVolumeValue: v);
+        },
+      ),
+      SettingsWidgets.buildSwitchTile(
+        context: context,
+        title: loc.nsAlarmVibrate,
+        icon: Icons.vibration_rounded,
+        iconColor: _accent,
+        value: _logic.alarmVibrate,
+        onChanged: (v) {
+          setState(() => _logic.alarmVibrate = v);
+          _saveSettings(alarmVibrateValue: v);
+        },
+      ),
+      const SizedBox(height: 10),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      SettingsWidgets.buildSwitchTile(
+        context: context,
+        title: loc.nsAlarmLoop,
+        icon: Icons.loop_rounded,
+        iconColor: _accent,
+        value: _logic.alarmLoop,
+        onChanged: (v) {
+          setState(() => _logic.alarmLoop = v);
+          _saveSettings(alarmLoopValue: v);
+        },
+      ),
+      const SizedBox(height: 10),
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+      Text(loc.nsGentleWake, style: _labelStyle),
+      const SizedBox(height: 8),
+      HusnChoicePills(
+        values: const ['0', '30', '60', '120'],
+        accentColor: _accent,
+        labelOf: (g) =>
+            g == '0' ? loc.nsInstant : loc.sheetSeconds(int.parse(g)),
+        isSelected: (g) => _logic.gentleWakeSeconds == int.parse(g),
+        onToggle: (g, _) {
+          final v = int.parse(g);
+          setState(() => _logic.gentleWakeSeconds = v);
+          _saveSettings(gentleWakeValue: v);
+        },
+      ),
+    ]);
+  }
+
+  // ------------------------------- Tab 3: Re-ring -------------------------------
+
+  Widget _buildReringTab(BuildContext context, AppLocalizations loc) {
+    return _tabPage(context, [
+      // Heavy-sleeper re-ring: re-fires the Fajr challenge after Fajr.
+      Text(loc.nsFajrExtra, style: _labelStyle),
+      _caption(loc.nsFajrExtraSub),
+      const SizedBox(height: 12),
+      _extraRow(
+        loc: loc,
+        enabled: _logic.fajrExtra1Enabled,
+        minutes: _logic.fajrExtra1Minutes,
+        onToggle: (v) {
+          setState(() => _logic.fajrExtra1Enabled = v);
+          _saveSettings(fajrExtra1Value: v);
+        },
+        onDelay: (v) {
+          setState(() => _logic.fajrExtra1Minutes = v);
+          _saveSettings(fajrExtra1Delay: v);
+        },
+      ),
+      const SizedBox(height: 10),
+      _extraRow(
+        loc: loc,
+        enabled: _logic.fajrExtra2Enabled,
+        minutes: _logic.fajrExtra2Minutes,
+        onToggle: (v) {
+          setState(() => _logic.fajrExtra2Enabled = v);
+          _saveSettings(fajrExtra2Value: v);
+        },
+        onDelay: (v) {
+          setState(() => _logic.fajrExtra2Minutes = v);
+          _saveSettings(fajrExtra2Delay: v);
+        },
+      ),
+      const SizedBox(height: 20),
+
+      SettingsWidgets.buildDivider(context),
+      const SizedBox(height: 10),
+
+      SizedBox(
+        width: double.infinity,
+        height: 44,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Get.to(() => const FajrChallengeScreen());
+          },
+          icon: const Icon(Icons.play_arrow_rounded, size: 22),
+          label: Text(
+            loc.nsTryNow,
+            style: const TextStyle(
+              fontFamily: 'Amiri',
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _accent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  /// One re-ring row: switch + live label on the first line, delay
+  /// dropdown on its own centered line when enabled. Two lines guarantee
+  /// the switch, label and (wide) dropdown never collide on narrow screens.
+  Widget _extraRow({
+    required AppLocalizations loc,
+    required bool enabled,
+    required int minutes,
+    required ValueChanged<bool> onToggle,
+    required ValueChanged<int> onDelay,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Switch(
+              value: enabled,
+              onChanged: onToggle,
+              activeThumbColor: _accent,
+              activeTrackColor: _accent.withValues(alpha: 0.3),
+            ),
+            Expanded(
+              child: Text(
+                '+${loc.sheetMinutes(minutes)}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 14,
+                  color: enabled ? null : Colors.grey,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (enabled)
+          Center(
+            child: HusnNumberDropdown(
+              value: minutes,
+              options: _delayOptions,
+              accentColor: _accent,
+              labelOf: (v) => '+${loc.sheetMinutes(v)}',
+              onChanged: onDelay,
+            ),
+          ),
+      ],
     );
   }
 }

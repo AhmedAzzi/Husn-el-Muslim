@@ -246,7 +246,9 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                           final file =
                               await File('${tempDir.path}/AllAboutFlutter.png')
                                   .create();
-                          file.writeAsBytesSync(list);
+                          // Perf-only: async write, same bytes/order/completion
+                          // before share. Awaited, so no race.
+                          await file.writeAsBytes(list);
                           if (!context.mounted) return;
                           await ShareHelper.shareText(
                             context.loc.azSharePrefix(widget.azkarInfo.category),
@@ -389,7 +391,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                   ? context.loc.azTimesHundred(marrat)
                                   : context.loc.azTimes(marrat),
                               style: TextStyle(
-                                fontSize: double.parse(fontSize18),
+                                fontSize: fontSize18d,
                                 color: bgLight,
                                 fontFamily: fontFamily,
                               ),
@@ -404,7 +406,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                 '${widget.azkarInfo.array[currentPageIndex].count}',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    fontSize: double.parse(fontSize22),
+                                    fontSize: fontSize22d,
                                     fontFamily: fontFamily,
                                     fontWeight: FontWeight.bold),
                               ),
@@ -415,7 +417,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                               context.loc.azOfTotal(currentPageIndex + 1, widget.azkarInfo.array.length),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  fontSize: double.parse(fontSize18),
+                                  fontSize: fontSize18d,
                                   color: bgLight,
                                   fontFamily: fontFamily),
                             ),
@@ -486,7 +488,7 @@ class AzkarDetailsScreenState extends State<AzkarDetailsScreen> {
                                   widget.azkarInfo.array[index].text,
                                   style: TextStyle(
                                     fontFamily: fontFamily,
-                                    fontSize: double.parse(fontSize24),
+                                    fontSize: fontSize24d,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),

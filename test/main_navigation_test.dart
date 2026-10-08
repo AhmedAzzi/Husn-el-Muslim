@@ -70,8 +70,12 @@ void main() {
         MainDestination.mosqueMap,
       );
       expect(
+        MainDestinationX.fromHomeScreenKey('todo'),
+        MainDestination.todo,
+      );
+      expect(
         MainDestinationX.fromHomeScreenKey('tracking'),
-        MainDestination.tracking,
+        MainDestination.adhkar,
       );
       expect(
         MainDestinationX.fromHomeScreenKey('unknown'),

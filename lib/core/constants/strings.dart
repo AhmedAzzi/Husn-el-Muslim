@@ -23,3 +23,8 @@ String fontSize18 = '18';
 String fontSize23 = '22';
 String fontSize22 = '22';
 String fontSize24 = '24';
+// Perf-only const counterparts: same numeric values, avoids double.parse()
+// per row per rebuild. Existing String values kept for compatibility.
+const double fontSize18d = 18;
+const double fontSize22d = 22;
+const double fontSize24d = 24;

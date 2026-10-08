@@ -5,8 +5,7 @@ import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
-import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
-import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
+import 'package:small_husn_muslim/features/fajr_challenge/data/fajr_tracking_repository.dart';
 import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 
 /// Advanced diagnostics for the alarm engine (bake-in / support screen).
@@ -14,8 +13,7 @@ import 'package:small_husn_muslim/core/utils/l10n_ext.dart';
 /// Everything shown is live data, never canned text:
 /// - exact-alarm / battery / overlay permission states (native, real)
 /// - armed AlarmManager alarms (`AlarmScheduler.diagnostics()` via native)
-/// - Fajr streak truth (legacy tracking repository)
-/// - 5-prayer tracker snapshot (streaks, level inputs, flags, reminder cache)
+/// - Fajr wake-up streak truth (fajr challenge repository)
 /// - a real 5-second test of the Fajr challenge alarm path
 ///
 /// Follows the existing settings design language (cards, Amiri, RTL).
@@ -35,7 +33,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   String _diag = '…';
   int _currentStreak = 0;
   int _longestStreak = 0;
-  Map<String, Object> _five = const {};
   bool _rescheduling = false;
   bool _testingAlarm = false;
 
@@ -56,7 +53,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         FajrTrackingRepository.instance.currentStreak(),
         FajrTrackingRepository.instance.longestStreak(),
         PrayerNotificationHelper.isDndAccessGranted(),
-        PrayerTrackingRepository.instance.diagnosticsSnapshot(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -67,7 +63,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         _currentStreak = results[4] as int;
         _longestStreak = results[5] as int;
         _dndGranted = results[6] as bool;
-        _five = results[7] as Map<String, Object>;
         _loading = false;
       });
     } catch (_) {
@@ -307,57 +302,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                                 ],
                               ),
                             ),
-                            SettingsWidgets.buildDivider(context),
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
-                                children: [
-                                  Text(
-                                    loc.diagFivePrayer,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        fontFamily: 'Amiri',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      _streakStat(loc.diagCurrent,
-                                          _five['current'] as int? ?? 0),
-                                      _streakStat(loc.diagLongest,
-                                          _five['longest'] as int? ?? 0),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '${loc.ptLevelTitle(_five['level'] as int? ?? 1)}'
-                                    ' · ${loc.ptPointsCount(_five['points30'] as int? ?? 0)}'
-                                    ' · ${loc.ptDailyGoal} ${_five['goal'] ?? 5}/5',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        fontFamily: 'Amiri', fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _fiveFlagsLine(),
-                                    textDirection: TextDirection.ltr,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 12,
-                                      color: isDark
-                                          ? Colors.white60
-                                          : Colors.black54,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -467,18 +411,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         ],
       ),
     );
-  }
-
-  /// Dev-facing flags line (English, LTR): reminder opt-in, pause state,
-  /// man/woman context, today's time-cache presence, today's logged count.
-  String _fiveFlagsLine() {
-    String onOff(Object? v) => v == true ? 'on' : 'off';
-    final cache = (_five['cacheToday'] as bool?) == true ? 'today' : 'none';
-    return 'rem=${onOff(_five['reminders'])}'
-        ' dis=${onOff(_five['disabled'])}'
-        " ctx=${_five['context'] ?? '?'}"
-        ' cache=$cache'
-        " today=${_five['todayLogged'] ?? 0}/5";
   }
 
   Widget _streakStat(String label, int value) {

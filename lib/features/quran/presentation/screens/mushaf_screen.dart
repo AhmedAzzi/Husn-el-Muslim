@@ -33,13 +33,14 @@ class MushafScreen extends StatefulWidget {
 class _MushafScreenState extends State<MushafScreen> {
   /// Mushaf-only brightness override key: when true the reader stays on
   /// the light paper even if the rest of the app is dark. Defaults to
-  /// false = the mushaf follows the app theme (historical behavior).
+  /// true = the mushaf opens in light mode for readability; the toggle
+  /// in the AppBar switches back to following the app theme.
   static const _mushafLightKey = 'mushaf_force_light';
 
   late final PageController _pages;
   final _currentPage = 1.obs;
   Worker? _audioFollowWorker;
-  bool _mushafLight = false;
+  bool _mushafLight = true;
 
   @override
   void initState() {
@@ -292,17 +293,17 @@ class _MushafScreenState extends State<MushafScreen> {
     );
   }
 
-  /// Loads the mushaf-only brightness override (defaults to false =
-  /// follow the app theme, i.e. the historical behavior).
+  /// Loads the mushaf-only brightness override (defaults to true =
+  /// the reader opens on the light paper for readability).
   Future<void> _loadMushafBrightness() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
       setState(() {
-        _mushafLight = prefs.getBool(_mushafLightKey) ?? false;
+        _mushafLight = prefs.getBool(_mushafLightKey) ?? true;
       });
     } catch (_) {
-      // Keep following the app theme when storage is unavailable.
+      // Keep the light paper default when storage is unavailable.
     }
   }
 
@@ -529,10 +530,34 @@ class _MushafPageLoader extends StatelessWidget {
 /// Bottom mini-player shown only while mushaf audio is loading/playing.
 /// Uses the shared reciter ([MushafAudioController]) so it always matches
 /// the Khatma selection. Follows the mushaf paper toggle.
-class _MushafMiniPlayer extends StatelessWidget {
+///
+/// States: loading (spinner while preparing), playing (pause button +
+/// live progress), paused (play button, progress held), stopped (hidden +
+/// state reset), error (message + dismiss).
+class _MushafMiniPlayer extends StatefulWidget {
   const _MushafMiniPlayer({this.forceLight = false});
 
   final bool forceLight;
+
+  @override
+  State<_MushafMiniPlayer> createState() => _MushafMiniPlayerState();
+}
+
+class _MushafMiniPlayerState extends State<_MushafMiniPlayer> {
+  /// Slider drag value (0..1) while the user scrubs; null otherwise so the
+  /// live position drives the thumb without fighting the gesture.
+  double? _dragValue;
+
+  String _title(MushafAudioController audio) {
+    if (audio.playingAyah.value == 0) {
+      return audio.trackedAyah.value > 0
+          ? 'سورة ${audio.queueLabel.value} • الآية ${audio.playingSurah.value}:${audio.trackedAyah.value}'
+          : 'سورة ${audio.queueLabel.value}';
+    }
+    return audio.queueLabel.value.isNotEmpty
+        ? '${audio.queueLabel.value} • الآية ${audio.playingSurah.value}:${audio.playingAyah.value}'
+        : 'الآية ${audio.playingSurah.value}:${audio.playingAyah.value}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -546,90 +571,256 @@ class _MushafMiniPlayer extends StatelessWidget {
       final hasNakhtem = Get.isRegistered<NakhtemSettingsController>();
       final lang = hasNakhtem ? khatmaLang() : 'ar';
       final reciterName = hasNakhtem ? audio.reciterLabel(lang) : '';
+      final loading = audio.isLoading.value && !audio.isPlaying.value;
+      final err = audio.error.value;
       return mushafOverlayTheme(
-        forceLight: forceLight,
+        forceLight: widget.forceLight,
         child: Card(
           margin: EdgeInsets.zero,
-          color: forceLight ? AppPalette.paper : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: [
-              // Spinner only while preparing — never once playback runs.
-              if (audio.isLoading.value && !audio.isPlaying.value)
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                IconButton(
-                  icon: Icon(
-                    audio.isPlaying.value
-                        ? Icons.pause_circle_filled
-                        : Icons.play_circle_filled,
-                    color: HusnTheme.primary,
-                    size: 32,
-                  ),
-                  tooltip: audio.isPlaying.value ? 'إيقاف مؤقت' : 'تشغيل',
-                  onPressed: () {
-                    if (audio.isPlaying.value) {
-                      audio.pause();
-                    } else {
-                      audio.resume();
-                    }
-                  },
-                ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          color: widget.forceLight ? AppPalette.paper : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      audio.playingAyah.value == 0
-                          ? audio.trackedAyah.value > 0
-                              ? 'سورة ${audio.queueLabel.value} • الآية ${audio.playingSurah.value}:${audio.trackedAyah.value}'
-                              : 'سورة ${audio.queueLabel.value}'
-                          : audio.queueLabel.value.isNotEmpty
-                              ? '${audio.queueLabel.value} • الآية ${audio.playingSurah.value}:${audio.playingAyah.value}'
-                              : 'الآية ${audio.playingSurah.value}:${audio.playingAyah.value}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: HusnTheme.fontFamily,
-                        fontWeight: FontWeight.bold,
+                    // Spinner only while preparing — never once playback runs.
+                    if (loading)
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      IconButton(
+                        icon: Icon(
+                          audio.isPlaying.value
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_filled,
+                          color: HusnTheme.primary,
+                          size: 32,
+                        ),
+                        tooltip:
+                            audio.isPlaying.value ? 'إيقاف مؤقت' : 'تشغيل',
+                        onPressed: () {
+                          if (audio.isPlaying.value) {
+                            audio.pause();
+                          } else {
+                            audio.resume();
+                          }
+                        },
+                      ),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _title(audio),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: HusnTheme.fontFamily,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            [
+                              if (audio.queueProgress != null)
+                                audio.queueProgress!,
+                              reciterName,
+                            ].join(' • '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: HusnTheme.fontFamily,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      [
-                        if (audio.queueProgress != null) audio.queueProgress!,
-                        reciterName,
-                      ].join(' • '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: HusnTheme.fontFamily,
-                        fontSize: 12,
+                    // Playback speed: applies live, no restart needed.
+                    PopupMenuButton<double>(
+                      tooltip: 'سرعة التلاوة',
+                      initialValue: audio.speed.value,
+                      onSelected: audio.setSpeed,
+                      itemBuilder: (_) => [
+                        for (final s in MushafAudioController.speedPresets)
+                          CheckedPopupMenuItem<double>(
+                            value: s,
+                            checked: (s - audio.speed.value).abs() < 0.001,
+                            child: Text(
+                              s == s.truncateToDouble()
+                                  ? '${s.toInt()}x'
+                                  : '${s}x',
+                              style: const TextStyle(
+                                fontFamily: HusnTheme.fontFamily,
+                              ),
+                            ),
+                          ),
+                      ],
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: HusnTheme.primary.withValues(alpha: 0.4),
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          audio.speed.value ==
+                                  audio.speed.value.truncateToDouble()
+                              ? '${audio.speed.value.toInt()}x'
+                              : '${audio.speed.value}x',
+                          style: const TextStyle(
+                            fontFamily: HusnTheme.fontFamily,
+                            fontSize: 12,
+                            color: HusnTheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
+                    ),
+                    if (audio.hasQueue)
+                      IconButton(
+                        icon: const Icon(Icons.skip_next_outlined),
+                        tooltip: 'الآية التالية',
+                        onPressed: audio.skipNext,
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.stop_circle_outlined),
+                      tooltip: 'إيقاف',
+                      onPressed: audio.stop,
                     ),
                   ],
                 ),
-              ),
-              if (audio.hasQueue)
-                IconButton(
-                  icon: const Icon(Icons.skip_next_outlined),
-                  tooltip: 'الآية التالية',
-                  onPressed: audio.skipNext,
+                if (err != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            err == 'no_reciter'
+                                ? 'اختر القارئ أولًا'
+                                : 'تعذّر تشغيل الصوت',
+                            style: const TextStyle(
+                              fontFamily: HusnTheme.fontFamily,
+                              fontSize: 12,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          tooltip: 'إغلاق',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: audio.stop,
+                        ),
+                      ],
+                    ),
+                  ),
+                // Smooth live progress with seek; indeterminate while the
+                // duration is still unknown (stream metadata pending).
+                _ProgressRow(
+                  audio: audio,
+                  dragValue: _dragValue,
+                  onDrag: (v) => setState(() => _dragValue = v),
+                  onSeekEnd: (v) {
+                    final total =
+                        audio.duration.value?.inMilliseconds ?? 0;
+                    if (total > 0) {
+                      audio.seek(
+                        Duration(milliseconds: (total * v).round()),
+                      );
+                    }
+                    setState(() => _dragValue = null);
+                  },
                 ),
-              IconButton(
-                icon: const Icon(Icons.stop_circle_outlined),
-                tooltip: 'إيقاف',
-                onPressed: audio.stop,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        ),
+      );
+    });
+  }
+}
+
+/// Progress line under the mini-player controls: time labels + a
+/// seekable slider when the duration is known, otherwise a slim
+/// indeterminate bar so progress never jumps or freezes.
+class _ProgressRow extends StatelessWidget {
+  const _ProgressRow({
+    required this.audio,
+    required this.dragValue,
+    required this.onDrag,
+    required this.onSeekEnd,
+  });
+
+  final MushafAudioController audio;
+  final double? dragValue;
+  final ValueChanged<double> onDrag;
+  final ValueChanged<double> onSeekEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final total = audio.duration.value?.inMilliseconds ?? 0;
+      final pos = audio.position.value;
+      if (total <= 0) {
+        return const Padding(
+          padding: EdgeInsets.only(top: 2),
+          child: LinearProgressIndicator(minHeight: 2),
+        );
+      }
+      final fraction = dragValue ??
+          (pos.inMilliseconds / total).clamp(0.0, 1.0);
+      return Row(
+        children: [
+          Text(
+            MushafAudioController.formatDuration(pos),
+            style: const TextStyle(
+              fontFamily: HusnTheme.fontFamily,
+              fontSize: 11,
+            ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(
+                  enabledThumbRadius: 6,
+                ),
+                overlayShape: const RoundSliderOverlayShape(
+                  overlayRadius: 12,
+                ),
+              ),
+              child: Slider(
+                value: fraction,
+                onChanged: onDrag,
+                onChangeEnd: onSeekEnd,
+              ),
+            ),
+          ),
+          Text(
+            MushafAudioController.formatDuration(audio.duration.value!),
+            style: const TextStyle(
+              fontFamily: HusnTheme.fontFamily,
+              fontSize: 11,
+            ),
+          ),
+        ],
       );
     });
   }

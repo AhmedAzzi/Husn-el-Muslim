@@ -17,7 +17,7 @@ enum MainDestination {
   names,
   ruqyah,
   mosqueMap,
-  tracking,
+  todo,
 }
 
 extension MainDestinationX on MainDestination {
@@ -34,7 +34,7 @@ extension MainDestinationX on MainDestination {
         MainDestination.names => 8,
         MainDestination.ruqyah => 9,
         MainDestination.mosqueMap => 10,
-        MainDestination.tracking => 11,
+        MainDestination.todo => 11,
       };
 
   /// Default destination for a page index (used when only the page is known).
@@ -49,12 +49,13 @@ extension MainDestinationX on MainDestination {
         8 => MainDestination.names,
         9 => MainDestination.ruqyah,
         10 => MainDestination.mosqueMap,
-        11 => MainDestination.tracking,
+        11 => MainDestination.todo,
         _ => MainDestination.adhkar,
       };
 
   /// Maps the persisted `home_screen` preference (see `app_config.dart`)
   /// to a drawer destination. Unknown keys fall back to adhkar.
+  /// Legacy 'tracking' key falls back to adhkar (tracking removed).
   static MainDestination fromHomeScreenKey(String key) => switch (key) {
         'misbaha' => MainDestination.tasbih,
         'prayer_times' => MainDestination.mawaqit,
@@ -65,7 +66,7 @@ extension MainDestinationX on MainDestination {
         'names' => MainDestination.names,
         'ruqyah' => MainDestination.ruqyah,
         'mosque_map' => MainDestination.mosqueMap,
-        'tracking' => MainDestination.tracking,
+        'todo' => MainDestination.todo,
         _ => MainDestination.adhkar,
       };
 
@@ -79,9 +80,11 @@ extension MainDestinationX on MainDestination {
         MainDestination.settings => Icons.settings,
         MainDestination.dua => Icons.auto_stories_rounded,
         MainDestination.names => Icons.all_inclusive_rounded,
-        MainDestination.ruqyah => Icons.health_and_safety_rounded,
+        // Shield = protection/healing: fits Ruqyah best and stays
+        // distinct from every other drawer entry in both themes.
+        MainDestination.ruqyah => Icons.shield_rounded,
         MainDestination.mosqueMap => Icons.map_rounded,
-        MainDestination.tracking => Icons.local_fire_department_rounded,
+        MainDestination.todo => Icons.checklist_rounded,
       };
 
   /// Arabic-first label via the existing localizations.
@@ -97,7 +100,7 @@ extension MainDestinationX on MainDestination {
         MainDestination.names => loc.navNames,
         MainDestination.ruqyah => loc.navRuqyah,
         MainDestination.mosqueMap => loc.navMosqueMap,
-        MainDestination.tracking => loc.navTracking,
+        MainDestination.todo => loc.navTodo,
       };
 
   /// Stable key for tests and semantics.

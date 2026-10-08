@@ -50,13 +50,13 @@ void main() {
   // and they must still land on the mock instead of throwing
   // MissingPluginException. Each test file runs in its own isolate.
 
-  test('new categories default OFF, legacy morning/evening stay ON', () {
+  test('all adhkar reminders default ON for fresh installs', () {
     final logic = PrayerTimesLogic();
     expect(logic.morningAdhkarEnabled, isTrue);
     expect(logic.eveningAdhkarEnabled, isTrue);
-    expect(logic.wakeupAdhkarEnabled, isFalse);
-    expect(logic.sleepAdhkarEnabled, isFalse);
-    expect(logic.fridayKahfEnabled, isFalse);
+    expect(logic.wakeupAdhkarEnabled, isTrue);
+    expect(logic.sleepAdhkarEnabled, isTrue);
+    expect(logic.fridayKahfEnabled, isTrue);
   });
 
   test('stored prefs override defaults (migration-safe opt-in)', () async {

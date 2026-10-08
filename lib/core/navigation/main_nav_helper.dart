@@ -24,9 +24,9 @@ class MainNavHelper {
 
   static void goToMawaqit() => goTo(MainDestination.mawaqit);
 
-  static void goToMosqueMap() => goTo(MainDestination.mosqueMap);
+  static void goToTodo() => goTo(MainDestination.todo);
 
-  static void goToTracking() => goTo(MainDestination.tracking);
+  static void goToMosqueMap() => goTo(MainDestination.mosqueMap);
 
   static void goToSettings() => goTo(MainDestination.settings);
 

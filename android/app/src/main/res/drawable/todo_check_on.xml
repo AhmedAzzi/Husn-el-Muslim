@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Checked circle for the todo widget (Islamic green, matches app). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <size android:width="26dp" android:height="26dp" />
+    <solid android:color="#2E6B34" />
+</shape>

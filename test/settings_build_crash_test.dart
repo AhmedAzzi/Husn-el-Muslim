@@ -75,9 +75,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Screen rendered with its sections, including the tracker one.
+    // Screen rendered with its sections (tracking removed).
     expect(find.text('الإعدادات والتفضيلات'), findsOneWidget);
-    expect(find.text('تتبع الصلوات'), findsOneWidget);
+    expect(find.text('مواقيت الصلاة ومصدر البيانات'), findsOneWidget);
     // Loader results applied.
     expect(
         PrayerTimesLogic()

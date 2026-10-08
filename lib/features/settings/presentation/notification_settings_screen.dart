@@ -1,22 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:small_husn_muslim/core/l10n/l10n.dart';
-import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
-import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/nakhtem_controller.dart';
-import 'package:small_husn_muslim/features/nakhtem/presentation/controllers/nakhtem_settings_controller.dart';
-import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
-import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
-import 'package:small_husn_muslim/features/tracking/data/prayer_reminder_service.dart';
-import 'package:small_husn_muslim/features/tracking/data/prayer_tracking_repository.dart';
 import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/app_sheets.dart';
+import 'package:small_husn_muslim/features/overlays/presentation/dhikr_reminder_helper.dart';
+import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
+import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
-import 'package:small_husn_muslim/features/settings/presentation/fajr_wakeup_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/extra_alarms_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/adhkar_reminders_settings_screen.dart';
-import 'package:small_husn_muslim/features/settings/presentation/quran_settings_screen.dart';
-import 'package:small_husn_muslim/core/services/battery_optimization_helper.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
+import 'package:small_husn_muslim/core/widgets/husn_number_dropdown.dart';
 import 'package:small_husn_muslim/core/widgets/settings_widgets.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -31,50 +22,99 @@ class _NotificationSettingsScreenState
     extends State<NotificationSettingsScreen> {
   final PrayerTimesLogic _logic = PrayerTimesLogic();
   final DhikrReminderHelper _reminderHelper = DhikrReminderHelper();
-  bool _isBatteryOptimizationEnabled = false;
-  bool _isCheckingBattery = true;
   bool _isDndGranted = false;
   bool _floatingEnabled = false;
   int _floatingInterval = 15;
-  bool _trackingReminders = false;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
-    _checkBatteryOptimization();
     _checkDndPermission();
   }
 
   Future<void> _loadSettings() async {
     await _logic.loadNotificationPreference();
-    bool tracking = false;
-    try {
-      tracking = await PrayerTrackingRepository.instance.remindersEnabled();
-    } catch (_) {}
+    // Removed alarms (pre-Fajr, Suhoor, Tahajjud): make sure a
+    // previously-enabled one can never keep ringing with no UI left
+    // to switch it off. The Fajr challenge covers the wake-up.
+    if (_logic.preFajrAlarmEnabled ||
+        _logic.suhoorAlarmEnabled ||
+        _logic.tahajjudEnabled) {
+      await _saveSettings(
+        preFajrValue: false,
+        suhoorValue: false,
+        tahajjudValue: false,
+      );
+    }
     if (!mounted) return;
     setState(() {
       _floatingEnabled = _reminderHelper.isEnabled;
       _floatingInterval = _reminderHelper.intervalMinutes;
-      _trackingReminders = tracking;
     });
+  }
+
+  String _arabicPrayer(BuildContext context, String en) {
+    final loc = AppLocalizations.of(context)!;
+    return switch (en) {
+      'Fajr' => loc.nsPrayerFajr,
+      'Dhuhr' => loc.nsPrayerDhuhr,
+      'Asr' => loc.nsPrayerAsr,
+      'Maghrib' => loc.nsPrayerMaghrib,
+      'Isha' => loc.nsPrayerIsha,
+      _ => en,
+    };
+  }
+
+  /// Periodic floating dhikr: lives only here, next to the other adhkar
+  /// reminders.
+  Future<void> _toggleFloating(bool value) async {
+    if (value) {
+      final loc = AppLocalizations.of(context)!;
+      if (!mounted) return;
+      final proceed = await OverlayGate.ensure(
+        context,
+        title: loc.stOverlayTitle,
+        body: loc.stOverlayBody,
+        laterLabel: loc.sheetLater,
+        activateLabel: loc.stActivateNow,
+      );
+      if (!proceed) return;
+    }
+    await _reminderHelper.updateSettings(value, _floatingInterval);
+    if (mounted) setState(() => _floatingEnabled = value);
+  }
+
+  Future<void> _setFloatingInterval(int value) async {
+    await _reminderHelper.updateSettings(_floatingEnabled, value);
+    if (mounted) setState(() => _floatingInterval = value);
+  }
+
+  void _showIntervalPicker() {
+    final loc = AppLocalizations.of(context)!;
+    const intervals = [1, 2, 3, 5, 10, 15, 30, 60];
+    AppSheets.show(
+      context,
+      title: loc.stIntervalTitle,
+      subtitle: loc.stIntervalSub,
+      child: AppSheets.chipGroup<int>(
+        context: context,
+        values: intervals,
+        selected: _floatingInterval,
+        labelOf: (mins) =>
+            mins >= 60 ? loc.stEveryHour : loc.stEveryMinutes(mins),
+        onSelected: (mins) {
+          Get.back();
+          _setFloatingInterval(mins);
+        },
+      ),
+    );
   }
 
   Future<void> _checkDndPermission() async {
     final granted = await PrayerNotificationHelper.isDndAccessGranted();
     if (mounted) {
       setState(() => _isDndGranted = granted);
-    }
-  }
-
-  Future<void> _checkBatteryOptimization() async {
-    final isEnabled =
-        await BatteryOptimizationHelper.isBatteryOptimizationEnabled();
-    if (mounted) {
-      setState(() {
-        _isBatteryOptimizationEnabled = isEnabled;
-        _isCheckingBattery = false;
-      });
     }
   }
 
@@ -152,8 +192,7 @@ class _NotificationSettingsScreenState
       challengeDifficulty:
           challengeDifficulty ?? _logic.fajrChallengeDifficulty,
       challengePool: challengePool ?? _logic.fajrRandomPool,
-      shakeSensitivity:
-          shakeSensitivity ?? _logic.fajrShakeSensitivity,
+      shakeSensitivity: shakeSensitivity ?? _logic.fajrShakeSensitivity,
       wakeUpConfirmationValue:
           wakeUpConfirmationValue ?? _logic.wakeUpConfirmationEnabled,
       morningAdhkarValue: morningAdhkarValue ?? _logic.morningAdhkarEnabled,
@@ -201,152 +240,9 @@ class _NotificationSettingsScreenState
     if (mounted) setState(() {});
   }
 
-  String _fajrStatus(AppLocalizations loc) {
-    if (!_logic.fajrChallengeEnabled) return loc.sheetEnabledOff;
-    final t = switch (_logic.fajrChallengeType) {
-      'math' => loc.nsTypeMath,
-      'memory' => loc.nsTypeMemory,
-      'shake' => loc.nsTypeShake,
-      'random' => loc.nsTypeRandom,
-      _ => loc.nsTypeQuestions,
-    };
-    return '${loc.sheetEnabledOn} • $t • ${loc.sheetQuestions(_logic.fajrChallengeQuestionsCount)}';
-  }
-
-  String _extraStatus(AppLocalizations loc) {
-    final on = <String>[
-      if (_logic.suhoorAlarmEnabled) loc.nsSuhoor,
-      if (_logic.preFajrAlarmEnabled) loc.nsPreFajr,
-      if (_logic.tahajjudEnabled) loc.nsTahajjud,
-      if (_logic.fajrExtra1Enabled || _logic.fajrExtra2Enabled) loc.nsFajrExtra,
-      if (_logic.bedtimeAlarmEnabled) loc.nsBedtime,
-      if (_logic.prePrayerEnabled) loc.nsPrePrayer,
-      if (_logic.postPrayerEnabled) loc.nsPostPrayer,
-    ];
-    if (on.isEmpty) return loc.sheetEnabledOff;
-    if (on.length <= 2) return on.join(' • ');
-    return '${on.take(2).join(' • ')} • +${on.length - 2}';
-  }
-
-  String _adhkarStatus(AppLocalizations loc) {
-    final on = <String>[
-      if (_logic.morningAdhkarEnabled) loc.nsMorning,
-      if (_logic.eveningAdhkarEnabled) loc.nsEvening,
-      if (_logic.wakeupAdhkarEnabled) loc.nsWakeupAdhkar,
-      if (_logic.sleepAdhkarEnabled) loc.nsSleepAdhkar,
-      if (_logic.fridayKahfEnabled) loc.nsFridayKahf,
-    ];
-    if (on.isEmpty) return loc.sheetEnabledOff;
-    if (on.length <= 2) return on.join(' • ');
-    return '${on.take(2).join(' • ')} • +${on.length - 2}';
-  }
-
-  void _openSub(Widget page) {
-    Get.to(() => page)?.then((_) => _loadSettings());
-  }
-
-  String _othersStatus(AppLocalizations loc) {
-    final on = <String>[
-      if (_floatingEnabled) loc.stFloatingDhikr,
-      if (_trackingReminders) loc.ptRemindToggle,
-    ];
-    if (Get.isRegistered<NakhtemSettingsController>()) {
-      try {
-        final k = Get.find<NakhtemSettingsController>().settings.value;
-        if (k.overlayEnabled) on.add(loc.diagOverlayTitle);
-        if (k.showDailySummary) on.add(loc.stQuran);
-      } catch (_) {}
-    }
-    if (on.isEmpty) return loc.sheetEnabledOff;
-    if (on.length <= 2) return on.join(' • ');
-    return '${on.take(2).join(' • ')} • +${on.length - 2}';
-  }
-
-  Future<void> _toggleFloating(bool value) async {
-    if (value) {
-      final loc = AppLocalizations.of(context)!;
-      if (!mounted) return;
-      final proceed = await OverlayGate.ensure(
-        context,
-        title: loc.stOverlayTitle,
-        body: loc.stOverlayBody,
-        laterLabel: loc.sheetLater,
-        activateLabel: loc.stActivateNow,
-      );
-      if (!proceed) return;
-    }
-    await _reminderHelper.updateSettings(value, _floatingInterval);
-    if (mounted) setState(() => _floatingEnabled = value);
-  }
-
-  Future<void> _setFloatingInterval(int value) async {
-    await _reminderHelper.updateSettings(_floatingEnabled, value);
-    if (mounted) setState(() => _floatingInterval = value);
-  }
-
-  void _showIntervalPicker() {
-    final loc = AppLocalizations.of(context)!;
-    const intervals = [1, 2, 3, 5, 10, 15, 30, 60];
-    AppSheets.show(
-      context,
-      title: loc.stIntervalTitle,
-      subtitle: loc.stIntervalSub,
-      child: AppSheets.chipGroup<int>(
-        context: context,
-        values: intervals,
-        selected: _floatingInterval,
-        labelOf: (mins) =>
-            mins >= 60 ? loc.stEveryHour : loc.stEveryMinutes(mins),
-        onSelected: (mins) {
-          Get.back();
-          _setFloatingInterval(mins);
-        },
-      ),
-    );
-  }
-
-  Future<void> _toggleTrackingReminders(bool value) async {
-    await PrayerTrackingRepository.instance.setReminders(value);
-    try {
-      if (value) {
-        await PrayerReminderService.instance.refreshFromCache();
-      } else {
-        await PrayerReminderService.instance.cancelAll();
-      }
-    } catch (_) {}
-    if (mounted) setState(() => _trackingReminders = value);
-  }
-
-  Future<void> _setQuranOverlay(bool value) async {
-    if (!Get.isRegistered<NakhtemSettingsController>()) return;
-    final ctl = Get.find<NakhtemSettingsController>();
-    await ctl.setOverlayEnabled(value);
-    try {
-      await Get.find<NakhtemController>().syncOverlayCache();
-    } catch (_) {}
-    if (value && mounted) {
-      bool granted = true;
-      try {
-        granted = await PrayerNotificationHelper.checkOverlayPermission();
-      } catch (_) {}
-      if (!granted) {
-        await PrayerNotificationHelper.requestOverlayPermission();
-      }
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _setDailySummary(bool value) async {
-    if (!Get.isRegistered<NakhtemSettingsController>()) return;
-    await Get.find<NakhtemSettingsController>().setShowDailySummary(value);
-    if (mounted) setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -360,11 +256,8 @@ class _NotificationSettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Battery Optimization Warning Banner
-                if (!_isCheckingBattery && _isBatteryOptimizationEnabled)
-                  _buildBatteryBanner(isDark, loc),
-
-                // Section 1: Persistent Status Bar Notification
+                // Pinned system notifications: the persistent status-bar
+                // notification plus the periodic floating dhikr.
                 SettingsWidgets.buildSectionHeader(
                   context: context,
                   title: loc.nsPersistentSection,
@@ -382,54 +275,40 @@ class _NotificationSettingsScreenState
                       iconColor: const Color(0xFF3B82F6),
                       value: _logic.persistentNotificationEnabled,
                       onChanged: (value) {
-                        setState(() =>
-                            _logic.persistentNotificationEnabled = value);
+                        setState(
+                            () => _logic.persistentNotificationEnabled = value);
                         _saveSettings(persistentValue: value);
                       },
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Section 2: Wake-up challenge — quick toggle + details.
-                SettingsWidgets.buildSectionHeader(
-                  context: context,
-                  title: loc.sheetTitle,
-                  icon: Icons.alarm_rounded,
-                  color: const Color(0xFFD64463),
-                ),
-                SettingsWidgets.buildCardContainer(
-                  context: context,
-                  children: [
+                    SettingsWidgets.buildDivider(context),
                     SettingsWidgets.buildSwitchTile(
                       context: context,
-                      title: loc.nsFajrEnable,
-                      subtitle: loc.nsFajrEnableSub,
-                      icon: Icons.alarm_on_rounded,
-                      iconColor: const Color(0xFFD64463),
-                      value: _logic.fajrChallengeEnabled,
-                      onChanged: (value) {
-                        setState(() => _logic.fajrChallengeEnabled = value);
-                        _saveSettings(fajrChallengeValue: value);
-                      },
+                      title: loc.stFloatingDhikr,
+                      subtitle: loc.stFloatingDhikrSub,
+                      icon: Icons.book,
+                      iconColor: const Color(0xFF3B82F6),
+                      value: _floatingEnabled,
+                      onChanged: _toggleFloating,
                     ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildActionTile(
-                      context: context,
-                      title: loc.sheetTitle,
-                      subtitle: _fajrStatus(loc),
-                      icon: Icons.tune_rounded,
-                      iconColor: const Color(0xFFD64463),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 16, color: Colors.grey),
-                      onTap: () =>
-                          _openSub(const FajrWakeupSettingsScreen()),
-                    ),
+                    if (_floatingEnabled) ...[
+                      SettingsWidgets.buildDivider(context),
+                      SettingsWidgets.buildValueTile(
+                        context: context,
+                        title: loc.stReminderRate,
+                        subtitle: loc.stReminderRateSub,
+                        icon: Icons.timer_outlined,
+                        iconColor: const Color(0xFF3B82F6),
+                        valueBadge: _floatingInterval >= 60
+                            ? loc.stEveryHour
+                            : loc.stEveryMinutes(_floatingInterval),
+                        onTap: _showIntervalPicker,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // Section 3: Extra prayer alarms — individual toggles.
+                // Extra prayer alarms — everything inline, no nested page.
                 SettingsWidgets.buildSectionHeader(
                   context: context,
                   title: loc.nsExtraAlarms,
@@ -439,66 +318,6 @@ class _NotificationSettingsScreenState
                 SettingsWidgets.buildCardContainer(
                   context: context,
                   children: [
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.nsSuhoor,
-                      subtitle: loc.nsSuhoorSub,
-                      icon: Icons.restaurant_rounded,
-                      iconColor: const Color(0xFF0EA5E9),
-                      value: _logic.suhoorAlarmEnabled,
-                      onChanged: (value) {
-                        setState(() => _logic.suhoorAlarmEnabled = value);
-                        _saveSettings(suhoorValue: value);
-                      },
-                    ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.nsPreFajr,
-                      subtitle: loc.nsPreFajrSub,
-                      icon: Icons.alarm_rounded,
-                      iconColor: const Color(0xFF8B5CF6),
-                      value: _logic.preFajrAlarmEnabled,
-                      onChanged: (value) {
-                        setState(() => _logic.preFajrAlarmEnabled = value);
-                        _saveSettings(preFajrValue: value);
-                      },
-                    ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.nsTahajjud,
-                      subtitle: loc.nsTahajjudSub,
-                      icon: Icons.nightlight_round,
-                      iconColor: const Color(0xFF14B8A6),
-                      value: _logic.tahajjudEnabled,
-                      onChanged: (value) {
-                        setState(() => _logic.tahajjudEnabled = value);
-                        _saveSettings(tahajjudValue: value);
-                      },
-                    ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.nsFajrExtra,
-                      subtitle: loc.nsFajrExtraSub,
-                      icon: Icons.snooze_rounded,
-                      iconColor: const Color(0xFFF59E0B),
-                      value: _logic.fajrExtra1Enabled ||
-                          _logic.fajrExtra2Enabled,
-                      onChanged: (value) {
-                        setState(() {
-                          _logic.fajrExtra1Enabled = value;
-                          if (!value) _logic.fajrExtra2Enabled = false;
-                        });
-                        _saveSettings(
-                          fajrExtra1Value: value,
-                          fajrExtra2Value:
-                              value ? _logic.fajrExtra2Enabled : false,
-                        );
-                      },
-                    ),
-                    SettingsWidgets.buildDivider(context),
                     SettingsWidgets.buildSwitchTile(
                       context: context,
                       title: loc.nsBedtime,
@@ -511,6 +330,142 @@ class _NotificationSettingsScreenState
                         _saveSettings(bedtimeValue: value);
                       },
                     ),
+                    // Bedtime mode cards: "relative to Fajr" or a fixed
+                    // clock time. One tap picks the mode; the single
+                    // control below edits it. No second switch.
+                    if (_logic.bedtimeAlarmEnabled) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SettingsWidgets.buildChoiceCard(
+                                context: context,
+                                title: loc.nsBedtimeRelative,
+                                subtitle: loc.nsBedtimeRelativeSub(
+                                    _logic.bedtimeRelativeHours),
+                                isSelected: _logic.bedtimeRelativeToFajr,
+                                onTap: () {
+                                  setState(() =>
+                                      _logic.bedtimeRelativeToFajr = true);
+                                  _saveSettings(bedtimeRelative: true);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: SettingsWidgets.buildChoiceCard(
+                                context: context,
+                                title: loc.nsBedtimeFixed,
+                                subtitle: TimeOfDay(
+                                  hour: _logic.bedtimeHour,
+                                  minute: _logic.bedtimeMinute,
+                                ).format(context),
+                                isSelected: !_logic.bedtimeRelativeToFajr,
+                                onTap: () {
+                                  setState(() =>
+                                      _logic.bedtimeRelativeToFajr = false);
+                                  _saveSettings(bedtimeRelative: false);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Center(
+                          child: _logic.bedtimeRelativeToFajr
+                              // Hours-before-Fajr picker (4-12h).
+                              ? HusnNumberDropdown(
+                                  value: _logic.bedtimeRelativeHours
+                                      .clamp(4, 12),
+                                  options: const [
+                                    4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                  ],
+                                  accentColor: const Color(0xFF6366F1),
+                                  icon: Icons.bedtime_outlined,
+                                  labelOf: (v) =>
+                                      loc.nsBedtimeRelativeSub(v),
+                                  onChanged: (v) {
+                                    setState(() =>
+                                        _logic.bedtimeRelativeHours = v);
+                                    _saveSettings(bedtimeRelHours: v);
+                                  },
+                                )
+                              // Fixed clock time: standard time picker.
+                              : OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay(
+                                        hour: _logic.bedtimeHour,
+                                        minute: _logic.bedtimeMinute,
+                                      ),
+                                    );
+                                    if (picked == null) return;
+                                    setState(() {
+                                      _logic.bedtimeHour = picked.hour;
+                                      _logic.bedtimeMinute = picked.minute;
+                                    });
+                                    await _saveSettings(
+                                      bedtimeH: picked.hour,
+                                      bedtimeM: picked.minute,
+                                    );
+                                  },
+                                  icon: const Icon(
+                                      Icons.schedule_rounded,
+                                      size: 18),
+                                  label: Text(
+                                    TimeOfDay(
+                                      hour: _logic.bedtimeHour,
+                                      minute: _logic.bedtimeMinute,
+                                    ).format(context),
+                                    style: const TextStyle(
+                                        fontFamily: 'Amiri',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor:
+                                        const Color(0xFF6366F1),
+                                    side: const BorderSide(
+                                        color: Color(0xFF6366F1),
+                                        width: 1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      // Quiet skip link instead of a full-width button.
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            await _logic.skipBedtimeOnce();
+                            if (!context.mounted) return;
+                            setState(() {});
+                            AppFeedback.snack(
+                              context,
+                              loc.nsSkippedTonight,
+                              type: AppFeedbackType.warn,
+                            );
+                          },
+                          icon: const Icon(Icons.skip_next_rounded, size: 16),
+                          label: Text(loc.nsSkipTonight,
+                              style:
+                                  const TextStyle(fontFamily: 'Amiri')),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                          ),
+                        ),
+                      ),
+                    ],
                     SettingsWidgets.buildDivider(context),
                     SettingsWidgets.buildSwitchTile(
                       context: context,
@@ -524,6 +479,45 @@ class _NotificationSettingsScreenState
                         _saveSettings(prePrayerValue: value);
                       },
                     ),
+                    if (_logic.prePrayerEnabled)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            HusnNumberPickerRow(
+                              title: loc.nsBeforePrayerBy,
+                              value: _logic.prePrayerOffsetMinutes,
+                              options: const [
+                                5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60,
+                              ],
+                              accentColor: const Color(0xFF10B981),
+                              labelOf: (v) => loc.sheetMinutes(v),
+                              onChanged: (v) {
+                                setState(() =>
+                                    _logic.prePrayerOffsetMinutes = v);
+                                _saveSettings(prePrayerOffset: v);
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            HusnPrayerToggleRow(
+                              prayers: PrayerTimesLogic.prePostPrayers,
+                              accentColor: const Color(0xFF10B981),
+                              labelOf: (p) => _arabicPrayer(context, p),
+                              isSelected: (p) =>
+                                  _logic.prePrayerPerPrayer[p] ?? true,
+                              onToggle: (p, selected) {
+                                final map = Map<String, bool>.of(
+                                    _logic.prePrayerPerPrayer);
+                                map[p] = selected;
+                                setState(() =>
+                                    _logic.prePrayerPerPrayer[p] = selected);
+                                _saveSettings(prePrayerMap: map);
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
                     SettingsWidgets.buildDivider(context),
                     SettingsWidgets.buildSwitchTile(
                       context: context,
@@ -537,23 +531,50 @@ class _NotificationSettingsScreenState
                         _saveSettings(postPrayerValue: value);
                       },
                     ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildActionTile(
-                      context: context,
-                      title: loc.nsExtraAlarms,
-                      subtitle: _extraStatus(loc),
-                      icon: Icons.tune_rounded,
-                      iconColor: const Color(0xFF0EA5E9),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 16, color: Colors.grey),
-                      onTap: () =>
-                          _openSub(const ExtraAlarmsSettingsScreen()),
-                    ),
+                    if (_logic.postPrayerEnabled)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            HusnNumberPickerRow(
+                              title: loc.nsAfterPrayerBy,
+                              value: _logic.postPrayerOffsetMinutes,
+                              options: const [
+                                5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60,
+                              ],
+                              accentColor: const Color(0xFFF59E0B),
+                              labelOf: (v) => loc.sheetMinutes(v),
+                              onChanged: (v) {
+                                setState(() =>
+                                    _logic.postPrayerOffsetMinutes = v);
+                                _saveSettings(postPrayerOffset: v);
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            HusnPrayerToggleRow(
+                              prayers: PrayerTimesLogic.prePostPrayers,
+                              accentColor: const Color(0xFFF59E0B),
+                              labelOf: (p) => _arabicPrayer(context, p),
+                              isSelected: (p) =>
+                                  _logic.postPrayerPerPrayer[p] ?? true,
+                              onToggle: (p, selected) {
+                                final map = Map<String, bool>.of(
+                                    _logic.postPrayerPerPrayer);
+                                map[p] = selected;
+                                setState(() => _logic.postPrayerPerPrayer[p] =
+                                    selected);
+                                _saveSettings(postPrayerMap: map);
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // Section 4: Adhkar reminders — individual toggles.
+                // Adhkar reminders — everything inline, no nested page.
                 SettingsWidgets.buildSectionHeader(
                   context: context,
                   title: loc.nsAdhkarSection,
@@ -588,7 +609,18 @@ class _NotificationSettingsScreenState
                         _saveSettings(eveningAdhkarValue: value);
                       },
                     ),
-                    SettingsWidgets.buildDivider(context),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SettingsWidgets.buildSectionHeader(
+                  context: context,
+                  title: loc.nsExtraAdhkarSection,
+                  icon: Icons.auto_stories_rounded,
+                  color: const Color(0xFF10B981),
+                ),
+                SettingsWidgets.buildCardContainer(
+                  context: context,
+                  children: [
                     SettingsWidgets.buildSwitchTile(
                       context: context,
                       title: loc.nsWakeupAdhkar,
@@ -627,131 +659,11 @@ class _NotificationSettingsScreenState
                         _saveSettings(fridayKahfValue: value);
                       },
                     ),
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.stFloatingDhikr,
-                      subtitle: loc.stFloatingDhikrSub,
-                      icon: Icons.auto_awesome_rounded,
-                      iconColor: const Color(0xFF10B981),
-                      value: _floatingEnabled,
-                      onChanged: _toggleFloating,
-                    ),
-                    if (_floatingEnabled) ...[
-                      SettingsWidgets.buildDivider(context),
-                      SettingsWidgets.buildValueTile(
-                        context: context,
-                        title: loc.stReminderRate,
-                        subtitle: loc.stReminderRateSub,
-                        icon: Icons.timer_outlined,
-                        iconColor: const Color(0xFF10B981),
-                        valueBadge: _floatingInterval >= 60
-                            ? loc.stEveryHour
-                            : loc.stEveryMinutes(_floatingInterval),
-                        onTap: _showIntervalPicker,
-                      ),
-                    ],
-                    SettingsWidgets.buildDivider(context),
-                    SettingsWidgets.buildActionTile(
-                      context: context,
-                      title: loc.nsAdhkarSection,
-                      subtitle: _adhkarStatus(loc),
-                      icon: Icons.tune_rounded,
-                      iconColor: const Color(0xFFF59E0B),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 16, color: Colors.grey),
-                      onTap: () =>
-                          _openSub(const AdhkarRemindersSettingsScreen()),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                // Section 5: Tracking + Quran notifications.
-                SettingsWidgets.buildSectionHeader(
-                  context: context,
-                  title: loc.navFajrLog,
-                  icon: Icons.local_fire_department_rounded,
-                  color: const Color(0xFFD64463),
-                ),
-                SettingsWidgets.buildCardContainer(
-                  context: context,
-                  children: [
-                    SettingsWidgets.buildSwitchTile(
-                      context: context,
-                      title: loc.ptRemindToggle,
-                      subtitle: loc.ptRemindHint,
-                      icon: Icons.notifications_active_rounded,
-                      iconColor: const Color(0xFFD64463),
-                      value: _trackingReminders,
-                      onChanged: _toggleTrackingReminders,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SettingsWidgets.buildSectionHeader(
-                  context: context,
-                  title: loc.stQuran,
-                  icon: Icons.auto_stories_outlined,
-                  color: const Color(0xFFC9A227),
-                ),
-                SettingsWidgets.buildCardContainer(
-                  context: context,
-                  children: [
-                    if (Get.isRegistered<NakhtemSettingsController>())
-                      Obx(() {
-                        final k = Get.find<NakhtemSettingsController>()
-                            .settings
-                            .value;
-                        final l = L10n.of(khatmaLang());
-                        return Column(
-                          children: [
-                            SettingsWidgets.buildSwitchTile(
-                              context: context,
-                              title: l.t('phone_experience'),
-                              subtitle: l.t('overlay_lock_hint'),
-                              icon: Icons.layers_outlined,
-                              iconColor: const Color(0xFFC9A227),
-                              value: k.overlayEnabled,
-                              onChanged: _setQuranOverlay,
-                            ),
-                            SettingsWidgets.buildDivider(context),
-                            SettingsWidgets.buildSwitchTile(
-                              context: context,
-                              title: khatmaLang() == 'ar'
-                                  ? 'ملخص يومي'
-                                  : (khatmaLang() == 'fr'
-                                      ? 'Résumé quotidien'
-                                      : 'Daily summary'),
-                              subtitle: khatmaLang() == 'ar'
-                                  ? 'عرض ملخص القراءة مرة واحدة في اليوم'
-                                  : (khatmaLang() == 'fr'
-                                      ? 'Afficher le résumé de lecture une fois par jour'
-                                      : 'Show the reading summary once a day'),
-                              icon: Icons.summarize_outlined,
-                              iconColor: const Color(0xFFC9A227),
-                              value: k.showDailySummary,
-                              onChanged: _setDailySummary,
-                            ),
-                            SettingsWidgets.buildDivider(context),
-                          ],
-                        );
-                      }),
-                    SettingsWidgets.buildActionTile(
-                      context: context,
-                      title: loc.stQuran,
-                      subtitle: _othersStatus(loc),
-                      icon: Icons.tune_rounded,
-                      iconColor: const Color(0xFFC9A227),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 16, color: Colors.grey),
-                      onTap: () => _openSub(const QuranSettingsScreen()),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Section 5: Do Not Disturb (DND) Automation
+                // Do Not Disturb (DND) Automation
                 SettingsWidgets.buildSectionHeader(
                   context: context,
                   title: loc.nsDndSection,
@@ -836,8 +748,7 @@ class _NotificationSettingsScreenState
                                       backgroundColor: Colors.amber,
                                       foregroundColor: Colors.black87,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
                                   ),
@@ -850,46 +761,20 @@ class _NotificationSettingsScreenState
                       SettingsWidgets.buildDivider(context),
                       Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              loc.nsDndDuration,
-                              style: const TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 14,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444)
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                loc.nsDndMinutes(_logic.dndDurationMinutes),
-                                style: const TextStyle(
-                                  fontFamily: 'Amiri',
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFEF4444),
-                                ),
-                              ),
-                            ),
+                        child: HusnNumberPickerRow(
+                          title: loc.nsDndDuration,
+                          value: _logic.dndDurationMinutes,
+                          options: const [
+                            10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60,
                           ],
+                          accentColor: const Color(0xFFEF4444),
+                          labelOf: (v) => loc.nsDndMinutes(v),
+                          onChanged: (v) {
+                            setState(
+                                () => _logic.dndDurationMinutes = v);
+                            _saveSettings(dndDurationMinutesValue: v);
+                          },
                         ),
-                      ),
-                      Slider(
-                        value: _logic.dndDurationMinutes.toDouble(),
-                        min: 10,
-                        max: 60,
-                        divisions: 10,
-                        activeColor: const Color(0xFFEF4444),
-                        onChanged: (v) => setState(
-                            () => _logic.dndDurationMinutes = v.toInt()),
-                        onChangeEnd: (v) => _saveSettings(
-                            dndDurationMinutesValue: v.toInt()),
                       ),
                     ],
                   ],
@@ -899,80 +784,6 @@ class _NotificationSettingsScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBatteryBanner(bool isDark, AppLocalizations loc) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded,
-                  color: Colors.amber, size: 26),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  loc.nsBatteryTitle,
-                  style: const TextStyle(
-                    fontFamily: 'Amiri',
-                    color: Colors.amber,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            loc.nsBatteryBody,
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              color: isDark ? Colors.white70 : Colors.black87,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await BatteryOptimizationHelper
-                    .requestIgnoreBatteryOptimization();
-                Future.delayed(const Duration(seconds: 2), () {
-                  _checkBatteryOptimization();
-                });
-              },
-              icon: const Icon(Icons.battery_saver_rounded, size: 18),
-              label: Text(
-                loc.nsBatteryButton,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                foregroundColor: Colors.black87,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

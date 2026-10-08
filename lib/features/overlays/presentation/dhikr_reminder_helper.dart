@@ -12,14 +12,15 @@ class DhikrReminderHelper {
   factory DhikrReminderHelper() => _instance;
   DhikrReminderHelper._internal();
 
-  bool isEnabled = false;
+  // Default ON for fresh installs; an explicit stored OFF is respected.
+  bool isEnabled = true;
   int intervalMinutes = 15; // Default 15 minutes
   List<String> _adhkar = [];
   List<String> get adhkar => _adhkar;
 
   Future<void> init() async {
     final prefs = SharedPrefsCache.instance;
-    isEnabled = prefs.getBool('dhikr_reminder_enabled') ?? false;
+    isEnabled = prefs.getBool('dhikr_reminder_enabled') ?? true;
     intervalMinutes = prefs.getInt('dhikr_reminder_interval') ?? 15;
 
     await _loadAdhkarFromJson();

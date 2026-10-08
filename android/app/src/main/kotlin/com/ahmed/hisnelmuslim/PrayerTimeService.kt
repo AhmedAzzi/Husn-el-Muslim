@@ -37,6 +37,14 @@ class PrayerTimeService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var lastWidgetUpdate: Long = 0
 
+    // Batch 1 (perf-only): skip redundant notification rebuilds/IPC when the
+    // user-visible content is unchanged. Time-critical triggers
+    // (challenge/prayer/dhikr/roll-forward/widgets) still run every tick.
+    private var lastPostedKey: String? = null
+    private var needsRepost: Boolean = true
+    private var cachedOpenAppIntent: PendingIntent? = null
+    private var cachedRefreshGpsIntent: PendingIntent? = null
+
     // Properties
     private var hijriDate: String = ""
     private var prayerInfoOriginal: String = ""
@@ -131,6 +139,11 @@ class PrayerTimeService : Service() {
             }
 
             saveData()
+            // New extras may change visible content or service config:
+            // force the next tick to re-evaluate and repost.
+            needsRepost = true
+            cachedOpenAppIntent = null
+            cachedRefreshGpsIntent = null
         }
 
         createNotificationChannel()
@@ -266,6 +279,17 @@ class PrayerTimeService : Service() {
         }
 
         val remainingWithComma = if (remainingTimeText.isNotEmpty()) "  - $remainingTimeText" else ""
+        // Diff: the 1s countdown text changes every second while active, so a
+        // live countdown still reposts every second (same visible accuracy).
+        // Stable states ("الآن" window, expired "", same hijri/prayer/mode)
+        // skip the RemoteViews rebuild + startForeground IPC entirely.
+        val uiMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val postKey = "$hijriDate|$prayerInfoOriginal|$remainingWithComma|$uiMode|$notificationMode"
+        if (!needsRepost && postKey == lastPostedKey) {
+            return
+        }
+        needsRepost = false
+        lastPostedKey = postKey
         val notification = buildNotification(prayerInfoOriginal, remainingWithComma)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -276,26 +300,33 @@ class PrayerTimeService : Service() {
     }
 
     private fun buildNotification(prayerInfo: String, remainingTime: String): Notification {
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-            putExtra("screen_to_open", "prayer_times")
+        // Cached: both intents are static (same action/extras every post), so
+        // reuse them instead of a Binder round-trip per notification rebuild.
+        // Invalidated in onStartCommand whenever new extras arrive.
+        val openAppPendingIntent = cachedOpenAppIntent ?: run {
+            val openAppIntent = Intent(this, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                putExtra("screen_to_open", "prayer_times")
+            }
+
+            PendingIntent.getActivity(
+                this, 0, openAppIntent,
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
+            ).also { cachedOpenAppIntent = it }
         }
 
-        val openAppPendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent,
-            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        val refreshGpsPendingIntent = cachedRefreshGpsIntent ?: run {
+            val refreshGpsIntent = Intent(this, RefreshGpsReceiver::class.java).apply {
+                action = "com.ahmed.hisnelmuslim.ACTION_REFRESH_GPS"
+            }
 
-        val refreshGpsIntent = Intent(this, RefreshGpsReceiver::class.java).apply {
-            action = "com.ahmed.hisnelmuslim.ACTION_REFRESH_GPS"
+            PendingIntent.getBroadcast(
+                this, 1, refreshGpsIntent,
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
+            ).also { cachedRefreshGpsIntent = it }
         }
-
-        val refreshGpsPendingIntent = PendingIntent.getBroadcast(
-            this, 1, refreshGpsIntent,
-            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
-        )
 
         val collapsedView = RemoteViews(packageName, R.layout.notification_prayer_times).apply {
             setTextViewText(R.id.hijri_date, hijriDate)
@@ -470,7 +501,7 @@ class PrayerTimeService : Service() {
                 PrayerAlertUi.fitContentToHeight(this, inflated)
                 alertBinding = inflated
                 wm.addView(inflated.root, PrayerAlertUi.overlayParams())
-                iconPulse = PrayerAlertUi.startIconPulse(inflated.prayerAlertIcon)
+                iconPulse = PrayerAlertUi.startIconPulse(inflated.prayerAlertBadge)
                 PrayerAlertUi.animateEntrance(inflated, resources.displayMetrics.density)
             } catch (e: Exception) {
                 Log.e("PrayerTimeService", "Overlay failed: ${e.message}")

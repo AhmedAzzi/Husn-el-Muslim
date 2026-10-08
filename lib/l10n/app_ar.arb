@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "@@last_modified": "2026-09-03T00:00:00.000",
+  "@@last_modified": "2026-09-03T00:00:00",
   "appTitle": "حصن المسلم",
   "navAdhkar": "الأذكار",
   "navDua": "دعاء",
@@ -10,19 +10,16 @@
   "navPrayerTimes": "مواقيت الصلاة",
   "navMosqueMap": "خريطة المساجد",
   "navQibla": "القبلة",
-  "navFajrLog": "تتبع الصلوات",
-  "navTracking": "تتبع الطاعات",
   "navMushaf": "المصحف",
   "navKhatma": "الختمة",
   "stQuran": "المصحف والختمة",
   "stQuranSub": "إعدادات التلاوة والتجويد والهدف اليومي",
   "navSettings": "الإعدادات",
-  "trackCurrent": "السلسلة الحالية",
-  "trackLongest": "أطول سلسلة",
-  "trackToday": "اليوم",
   "@trackDays": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "trackDays": "{count, plural, one {{count} يوم} two {{count} يومان} other {{count} أيام}}",
@@ -30,21 +27,29 @@
   "qiblaNorth": "ش",
   "@qiblaBearing": {
     "placeholders": {
-      "deg": { "type": "String" }
+      "deg": {
+        "type": "String"
+      }
     }
   },
   "qiblaBearing": "اتجاه القبلة: {deg}°",
   "@qiblaDistance": {
     "placeholders": {
-      "km": { "type": "String" }
+      "km": {
+        "type": "String"
+      }
     }
   },
   "qiblaDistance": "المسافة إلى الكعبة: {km} كم",
   "qiblaFacing": "أنت متجه نحو القبلة ✓",
   "@qiblaTurn": {
     "placeholders": {
-      "deg": { "type": "String" },
-      "direction": { "type": "String" }
+      "deg": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      }
     }
   },
   "qiblaTurn": "استدر {deg}° {direction}",
@@ -97,7 +102,9 @@
   "chAnswerToStop": "أجب عن السؤال لإيقاف المنبه",
   "@chRemaining": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "chRemaining": "المتبقي: {count}",
@@ -113,8 +120,12 @@
   "chMemorySubtitle": "اقلب البطاقات وطابق الأزواج الأربعة",
   "@chMatched": {
     "placeholders": {
-      "done": { "type": "int" },
-      "total": { "type": "int" }
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "chMatched": "المطابق: {done} / {total}",
@@ -124,13 +135,17 @@
   "chSwitchToQuestions": "التبديل إلى تحدي الأسئلة",
   "@chCardHidden": {
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "chCardHidden": "بطاقة مقلوبة {n}",
   "@chCardShown": {
     "placeholders": {
-      "face": { "type": "String" }
+      "face": {
+        "type": "String"
+      }
     }
   },
   "chCardShown": "بطاقة {face}",
@@ -153,14 +168,18 @@
   "sheetBeforeFajrBy": "الرنين قبل أذان الفجر بـ:",
   "@sheetMinutes": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "sheetMinutes": "{count, plural, one {{count} دقيقة} two {{count} دقيقتان} other {{count} دقائق}}",
   "sheetQuestionCount": "عدد أسئلة التحدي",
   "@sheetQuestions": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "sheetQuestions": "{count, plural, one {{count} سؤال} two {{count} سؤالان} other {{count} أسئلة}}",
@@ -169,14 +188,18 @@
   "sheetTestAt": "موعد اختبار الرنين:",
   "@sheetSeconds": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "sheetSeconds": "{count} ث",
   "sheetTestScheduled": "تم جدولة اختبار المنبه",
   "@sheetTestWillRing": {
     "placeholders": {
-      "seconds": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "sheetTestWillRing": "سيرن منبه تحدي الفجر فعلياً خلال {seconds} ثوانٍ",
@@ -216,7 +239,9 @@
   "nsWakeConfirm": "تأكيد الاستيقاظ",
   "nsWakeConfirmSub": "بعد التحدي: هل أنت مستيقظ؟ ثم تسجيل النجاح",
   "nsTryNow": "تجربة التحدي الآن",
-  "nsOpenLog": "سجل الفجر والتقدم",
+  "fajrTabChallenge": "التحدي",
+  "fajrTabSound": "الصوت",
+  "fajrTabRering": "إعادة التنبيه",
   "nsAlarmSound": "صوت المنبه",
   "nsSoundAdhan": "الأذان",
   "nsSoundAdhanSub": "المرفق مع التطبيق",
@@ -252,18 +277,21 @@
   "nsBedtimeRelative": "نسبي إلى الفجر",
   "@nsBedtimeRelativeSub": {
     "placeholders": {
-      "h": { "type": "int" }
+      "h": {
+        "type": "int"
+      }
     }
   },
   "nsBedtimeRelativeSub": "الفجر − {h, plural, one {{h} ساعة} two {{h} ساعتان} other {{h} ساعات}}",
+  "nsBedtimeFixed": "وقت ثابت",
   "nsSkipTonight": "تخطي الليلة فقط",
   "nsSkippedTonight": "تم تخطي تذكير الليلة فقط",
   "nsPrePrayer": "تذكير قبل الصلاة",
   "nsPrePrayerSub": "تنبيه هادئ قبل كل صلاة مختارة",
   "nsBeforePrayerBy": "قبل الصلاة بـ:",
   "nsPostPrayer": "تذكير بعد الصلاة",
-  "nsPostPrayerSub": "تذكير بالأذكار بعد كل صلاة مختارة",
-  "nsAfterPrayerBy": "بعد الصلاة بـ:",
+  "nsPostPrayerSub": "تذكير بالأذكار بعد الإقامة لكل صلاة مختارة",
+  "nsAfterPrayerBy": "بعد الإقامة بـ:",
   "nsAdhkarSection": "تنبيهات أذكار الصباح والمساء",
   "nsMorning": "تنبيه أذكار الصباح",
   "nsMorningSub": "تذكير مبارك بعد صلاة الفجر بساعة واحدة",
@@ -285,7 +313,9 @@
   "ptLoadingShort": "يتم التحميل...",
   "@ptCorresponding": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
   "ptCorresponding": " الموافق ل {date} م",
@@ -297,35 +327,47 @@
   "ptNearbyMosques": "المساجد القريبة منك",
   "@ptAllMosques": {
     "placeholders": {
-      "country": { "type": "String" },
-      "count": { "type": "int" }
+      "country": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
     }
   },
   "ptAllMosques": "جميع المساجد — {country} ({count})",
   "ptNoResults": "لا توجد نتائج حالياً",
   "@ptMosqueAdopted": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "ptMosqueAdopted": "تم اعتماد ({name}) كمسجدك الرئيسي للمواقيت",
   "ptMosqueFailed": "تعذر تحميل مواقيت هذا المسجد، حاول مجدداً",
   "@ptMeters": {
     "placeholders": {
-      "m": { "type": "String" }
+      "m": {
+        "type": "String"
+      }
     }
   },
   "ptMeters": "{m} م",
   "@ptKm": {
     "placeholders": {
-      "km": { "type": "String" }
+      "km": {
+        "type": "String"
+      }
     }
   },
   "ptKm": "{km} كم",
   "ptIqamaAfter": "الإقامة بعد",
   "@ptPrayerAfter": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "ptPrayerAfter": "{name} بعد",
@@ -360,14 +402,18 @@
   "duSunnahBadge": "سنة نبوية",
   "@duShareSubject": {
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "duShareSubject": "دعاء رقم {n}",
   "rqLoadFailed": "تعذر تحميل بيانات الرقية الشرعية",
   "@rqItems": {
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "rqItems": "{n, plural, other {# فقرة / رقية}}",
@@ -379,20 +425,28 @@
   "azReset": "تصفير",
   "@azTimes": {
     "placeholders": {
-      "m": { "type": "int" }
+      "m": {
+        "type": "int"
+      }
     }
   },
   "azTimes": "{m, plural, one {مرة واحدة} two {{m} مرتان} other {{m} مرات}}",
   "@azTimesHundred": {
     "placeholders": {
-      "m": { "type": "int" }
+      "m": {
+        "type": "int"
+      }
     }
   },
   "azTimesHundred": "{m} مرة",
   "@azOfTotal": {
     "placeholders": {
-      "i": { "type": "int" },
-      "n": { "type": "int" }
+      "i": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
     }
   },
   "azOfTotal": "الذكر {i} من {n}",
@@ -403,20 +457,26 @@
   "msSaveFolder": "اختر مجلد الحفظ",
   "@msBackupSaved": {
     "placeholders": {
-      "f": { "type": "String" }
+      "f": {
+        "type": "String"
+      }
     }
   },
   "msBackupSaved": "تم حفظ النسخة الاحتياطية: {f}",
   "@msExportFailed": {
     "placeholders": {
-      "e": { "type": "String" }
+      "e": {
+        "type": "String"
+      }
     }
   },
   "msExportFailed": "فشل التصدير: {e}",
   "msImported": "تم استيراد البيانات بنجاح",
   "@msImportFailed": {
     "placeholders": {
-      "e": { "type": "String" }
+      "e": {
+        "type": "String"
+      }
     }
   },
   "msImportFailed": "فشل الاستيراد: {e}",
@@ -446,13 +506,17 @@
   "msCounterTitle": "عداد الذكر",
   "@msVirtue": {
     "placeholders": {
-      "t": { "type": "String" }
+      "t": {
+        "type": "String"
+      }
     }
   },
   "msVirtue": "الفضل: {t}",
   "@msSource": {
     "placeholders": {
-      "t": { "type": "String" }
+      "t": {
+        "type": "String"
+      }
     }
   },
   "msSource": "المصدر: {t}",
@@ -473,7 +537,6 @@
   "stHomeNamesSub": "أسماء الله الحسنى",
   "stHomeRuqyahSub": "الرقية الشرعية",
   "stHomeMosqueMapSub": "مواقيت المساجد القريبة",
-  "stHomeTrackingSub": "تتبع الصلوات والتحدي",
   "stHomeSet": "تم تعيين الصفحة الرئيسية (تُطبق عند إعادة الفتح)",
   "stLanguageTitle": "اللغة / Language",
   "stLanguagePicker": "اللغة / Language / Langue",
@@ -494,7 +557,9 @@
   "stEveryHour": "كل ساعة",
   "@stEveryMinutes": {
     "placeholders": {
-      "m": { "type": "int" }
+      "m": {
+        "type": "int"
+      }
     }
   },
   "stEveryMinutes": "كل {m, plural, one {{m} دقيقة} two {{m} دقيقتان} other {{m} دقائق}}",
@@ -560,7 +625,9 @@
   "stZeroMin": "0 دقيقة",
   "@stMinDelta": {
     "placeholders": {
-      "signed": { "type": "String" }
+      "signed": {
+        "type": "String"
+      }
     }
   },
   "stMinDelta": "{signed} د",
@@ -575,7 +642,9 @@
   "stNoIqama": "بدون إقامة",
   "@stIqamaMinutes": {
     "placeholders": {
-      "m": { "type": "int" }
+      "m": {
+        "type": "int"
+      }
     }
   },
   "stIqamaMinutes": "+{m} دقيقة",
@@ -585,13 +654,17 @@
   "stHijriExact": "التاريخ مطابق للحساب الفلكي",
   "@stHijriAdjusted": {
     "placeholders": {
-      "text": { "type": "String" }
+      "text": {
+        "type": "String"
+      }
     }
   },
   "stHijriAdjusted": "معدّل بـ ({text})",
   "@stHijriDays": {
     "placeholders": {
-      "d": { "type": "int" }
+      "d": {
+        "type": "int"
+      }
     }
   },
   "stHijriDays": "{d} يوم",
@@ -603,8 +676,12 @@
   "stRefresh": "تحديث",
   "@stCoords": {
     "placeholders": {
-      "lat": { "type": "String" },
-      "lon": { "type": "String" }
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      }
     }
   },
   "stCoords": "الإحداثيات: {lat}, {lon}",
@@ -612,7 +689,9 @@
   "stOpenMapChoose": "انقر لفتح الخريطة واختيار مسجدك",
   "@stCityChange": {
     "placeholders": {
-      "city": { "type": "String" }
+      "city": {
+        "type": "String"
+      }
     }
   },
   "stCityChange": "المدينة: {city} • انقر للتغيير",
@@ -634,7 +713,9 @@
   "stAboutApp": "عن حصن المسلم والإصدار",
   "@stAboutAppSub": {
     "placeholders": {
-      "v": { "type": "String" }
+      "v": {
+        "type": "String"
+      }
     }
   },
   "stAboutAppSub": "الإصدار {v} • مفتوح المصدر",
@@ -645,7 +726,9 @@
   "stGithubSheetSub": "المستودع البرمجي للتطبيق على GitHub",
   "@stAboutSheetLine": {
     "placeholders": {
-      "v": { "type": "String" }
+      "v": {
+        "type": "String"
+      }
     }
   },
   "stAboutSheetLine": "الإصدار {v} • تطبيق إسلامي مفتوح المصدر",
@@ -658,7 +741,9 @@
   "mmChangeCountry": "تغيير الدولة",
   "@mmMosqueCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "mmMosqueCount": "{count, plural, one {{count} مسجد} two {{count} مسجداً} other {{count} مسجد}}",
@@ -714,196 +799,106 @@
   "nsDndPermGrant": "منح إذن عدم الإزعاج",
   "@nsDndMinutes": {
     "placeholders": {
-      "m": { "type": "int" }
+      "m": {
+        "type": "int"
+      }
     }
   },
   "nsDndMinutes": "{m, plural, one {{m} دقيقة} two {{m} دقيقتان} other {{m} دقائق}}",
   "diagDndTitle": "سياسة عدم الإزعاج (DND)",
   "diagDndOk": "ممنوح — الكتم التلقائي أثناء الصلاة متاح",
   "diagDndDenied": "غير ممنوح — التطبيق لا يستطيع كتم الهاتف تلقائياً",
-"ptTrackerTitle": "تتبع الصلوات",
-  "@ptLevelTitle": {
+  "navTodo": "المهام",
+  "todoTitle": "المهام",
+  "stHomeTodoSub": "تنظيم المهام اليومية والعبادات والمواعيد",
+  "todoQuickAddHint": "إضافة مهمة جديدة...",
+  "todoFilterAll": "الكل",
+  "todoFilterToday": "اليوم",
+  "todoFilterUpcoming": "القادمة",
+  "todoFilterImportant": "المهمة",
+  "todoFilterOverdue": "المتأخرة",
+  "todoCompletedSection": "المكتملة",
+  "todoEmptyAll": "لا توجد أي مهام بعد",
+  "todoEmptyAllSub": "أضف مهمتك الأولى من الأسفل وابدأ يومك بإنجاز",
+  "todoEmptyToday": "لا توجد مهام مستحقة اليوم",
+  "todoEmptyTodaySub": "ما شاء الله! يومك هادئ وخالٍ من الالتزامات",
+  "todoEmptyUpcoming": "لا توجد مهام قادمة",
+  "todoEmptyUpcomingSub": "يمكنك جدولة المهام للأيام القادمة بسهولة",
+  "todoEmptyImportant": "لا توجد مهام مميزة بنجمة",
+  "todoEmptyImportantSub": "اضغط على النجمة لتمييز المهام ذات الأولوية",
+  "todoTaskCreated": "تمت إضافة المهمة",
+  "todoTaskUpdated": "تم تحديث المهمة",
+  "todoTaskDeleted": "تم حذف المهمة",
+  "todoTaskRestored": "تمت استعادة المهمة",
+  "todoUndo": "تراجع",
+  "todoDeleteConfirm": "هل تريد حذف هذه المهمة؟",
+  "todoDelete": "حذف",
+  "todoCancel": "إلغاء",
+  "todoSave": "حفظ",
+  "todoEdit": "تعديل",
+  "todoDetails": "تفاصيل المهمة",
+  "todoTaskTitle": "عنوان المهمة",
+  "todoTaskNotes": "ملاحظات أو تفاصيل إضافية...",
+  "todoDueDate": "تاريخ الاستحقاق",
+  "todoDueTime": "وقت الاستحقاق",
+  "todoTomorrow": "غداً",
+  "todoNextWeek": "الأسبوع القادم",
+  "todoPickDate": "اختيار تاريخ...",
+  "todoPickTime": "مخصص",
+  "todoNoDueDate": "بدون تاريخ",
+  "todoClearDate": "إزالة التاريخ",
+  "todoReminder": "تذكير",
+  "todoReminderSet": "تم ضبط التذكير",
+  "todoNoReminder": "بدون تذكير",
+  "todoReminderAtDue": "في نفس الوقت",
+  "todoReminder15m": "قبل 15 دقيقة",
+  "todoReminder1h": "قبل ساعة",
+  "todoReminder1d": "قبل يوم",
+  "todoRepeat": "تكرار",
+  "todoRepeatNone": "لا يتكرر",
+  "todoRepeatDaily": "يومياً",
+  "todoRepeatWeekdays": "أيام العمل (الأحد - الخميس)",
+  "todoRepeatWeekly": "أسبوعياً",
+  "todoRepeatMonthly": "شهرياً",
+  "todoRepeatYearly": "سنوياً",
+  "todoRepeatCustom": "مخصص",
+  "todoPreMorning": "أذكار الصباح",
+  "todoPreEvening": "أذكار المساء",
+  "todoPreSleep": "أذكار النوم",
+  "todoPreKahf": "سورة الكهف",
+  "todoPreWird": "الورد اليومي من القرآن",
+  "todoPriority": "الأولوية",
+  "todoPriorityNone": "عادية",
+  "todoPriorityLow": "منخفضة",
+  "todoPriorityMedium": "متوسطة",
+  "todoPriorityHigh": "عالية",
+  "todoSubtasks": "المهام الفرعية",
+  "todoAddSubtask": "إضافة خطوة فرعية...",
+  "todoCategory": "القائمة",
+  "todoCategoryWorship": "عبادات",
+  "todoCategoryPersonal": "شخصي",
+  "todoCategoryWork": "عمل",
+  "todoCategoryGeneral": "عام",
+  "todoNewCategory": "قائمة جديدة",
+  "todoCategoryName": "اسم القائمة",
+  "todoSortBy": "ترتيب حسب",
+  "todoSortManual": "الترتيب اليدوي",
+  "todoSortDueDate": "تاريخ الاستحقاق",
+  "todoSortPriority": "الأولوية",
+  "todoSortTitle": "أبجدياً",
+  "todoSortCreatedAt": "تاريخ الإنشاء",
+  "todoShowCompleted": "إظهار المكتملة",
+  "todoHideCompleted": "إخفاء المكتملة",
+  "todoClearCompleted": "حذف المهام المكتملة",
+  "todoSearchTasks": "بحث في المهام...",
+  "todoOverdue": "متأخرة",
+  "todoRescheduleToday": "نقل إلى اليوم",
+  "@todoCompletedCount": {
     "placeholders": {
-      "level": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
-  "ptLevelTitle": "المستوى {level}",
-  "ptDailyGoal": "الهدف اليومي",
-  "ptEdit": "تعديل",
-  "ptGoalToday": "هدف اليوم",
-  "ptOverview": "نظرة عامة على الصلاة",
-  "ptLast30Days": "آخر ٣٠ يوماً",
-  "ptEmptyTitle": "لا توجد بيانات صلاة مسجلة بعد",
-  "ptEmptyHint": "ابدأ بتسجيل صلواتك لرؤية النظرة العامة هنا",
-  "ptGoalDialogTitle": "هدفك اليومي",
-  "ptGoalDialogHint": "عدد الصلوات المطلوبة يومياً",
-  "ptSave": "حفظ",
-  "ptTotalPrayers": "مجموع الصلوات",
-  "ptOnTimeRate": "نسبة الالتزام",
-  "ptTotalPoints": "مجموع النقاط",
-  "ptHowPrayed": "كيف صليت؟",
-  "ptOptTakbeer": "تكبيرة الإحرام",
-  "ptOptMosque": "في المسجد",
-  "ptOptJamaa": "جماعة",
-  "ptOptOnTime": "في الوقت منفرداً",
-  "ptOptLate": "بعد الوقت",
-  "ptOptMissed": "فائتة",
-  "ptClearEntry": "مسح التسجيل",
-  "@ptPointsNum": {
-    "placeholders": {
-      "points": { "type": "int" }
-    }
-  },
-  "ptPointsNum": "+{points} نقطة",
-  "ptDetails": "التفاصيل",
-  "ptBasedOn30": "بناءً على آخر ٣٠ يومًا",
-  "ptHowItWorks": "كيف يعمل",
-  "ptStages": "المراحل",
-  "ptStagesHint": "النقاط المطلوبة لفتح كل مستوى",
-  "ptContext": "السياق",
-  "ptContextHint": "تختلف أحكام الصلاة وتؤثر على الحساب",
-  "ptMan": "رجل",
-  "ptWoman": "امرأة",
-  "ptPointsInApp": "النقاط في التطبيق",
-  "ptOptionMeanings": "معاني الخيارات",
-  "ptMultipliers": "مضاعف النقاط",
-  "ptMultipliersHint": "جهد أكبر، نقاط أكثر",
-  "@ptPointsCount": {
-    "placeholders": {
-      "points": { "type": "int" }
-    }
-  },
-  "ptPointsCount": "{points} نقطة",
-  "ptMeanTakbeer": "أدركت تكبيرة الإحرام مع الإمام",
-  "ptMeanMosque": "صليت في المسجد",
-  "ptMeanJamaa": "صليت جماعة خارج المسجد",
-  "ptMeanOnTime": "صليت في وقتها منفردًا",
-  "ptMeanLate": "صليتها بعد خروج الوقت",
-  "ptMeanMissed": "فاتت الصلاة ولم تُصلَّ",
-  "ptOnboardTitle": "تتبع صلواتك",
-  "ptOnboardHint": "حافظ على استمراريتك، وابنِ عادات ذات معنى، واقترب أكثر في عبادتك اليومية",
-  "ptOnboardF1T": "سجل كل صلاة بضغطة",
-  "ptOnboardF1D": "بنقرة بسيطة، سجل صلاتك وابقَ على اطلاع دائم",
-  "ptOnboardF2T": "اختر كيف صليت",
-  "ptOnboardF2D": "حدد كيف صليت — تكبيرة الإحرام، جماعة، أو في الوقت",
-  "ptOnboardF3T": "إشعارات ذكية",
-  "ptOnboardF3D": "لا تفوت صلاة — سنرسل لك تذكيرات حتى لا تنسى تسجيلها",
-  "ptOnboardAccept": "نعم، أنا موافق!",
-  "ptOnboardLater": "ليس الآن",
-  "ptMenuSettings": "إعدادات التتبع",
-  "ptMenuReplay": "الإعداد الأولي",
-  "ptMenuWidget": "إضافة تطبيق مصغر",
-  "ptMenuDisable": "تعطيل التتبع",
-  "ptMenuEnable": "تفعيل التتبع",
-  "ptMenuClear": "مسح بيانات التتبع",
-  "ptClearTitle": "مسح بيانات التتبع؟",
-  "ptClearHint": "سيتم حذف جميع الصلوات المسجلة وسلاسلك. لا يمكن التراجع.",
-  "ptDelete": "حذف",
-  "ptWidgetTitle": "إضافة التطبيق المصغر",
-  "ptWidgetHint": "من الشاشة الرئيسية: اضغط مطولًا على مساحة فارغة، ثم التطبيقات المصغرة، ثم اختر حصن المسلم",
-  "ptPausedTitle": "التتبع متوقف مؤقتًا",
-  "ptPausedHint": "لن تُحتسب الصلوات حتى تُفعّل التتبع مجددًا",
-  "ptResume": "تفعيل",
-  "ptRemindTitle": "تذكير بتسجيل الصلاة",
-  "@ptRemindBody": {
-    "placeholders": {
-      "prayer": { "type": "String" }
-    }
-  },
-  "ptRemindBody": "لم تسجل صلاة {prayer} بعد — سجلها الآن",
-  "ptRemindToggle": "تذكيرات التسجيل",
-  "ptRemindHint": "تذكير عند نسيان تسجيل صلاة",
-  "diagFivePrayer": "تتبع الصلوات الخمس",
-  "navSunnah": "تتبع السنن",
-  "snTitle": "تتبع السنن",
-  "snSubtitle": "الرواتب • الضحى • الوتر • قيام الليل",
-  "snRawatibSection": "السنن الرواتب (12 ركعة)",
-  "snExtraSection": "الضحى والوتر وقيام الليل",
-  "snDailyGoal": "الهدف اليومي",
-  "snWeekOverview": "آخر 7 أيام",
-  "snTotal30": "نقاط آخر 30 يومًا",
-  "snEmptyTitle": "لا توجد سنن مسجلة اليوم",
-  "snEmptyHint": "ابدأ بسنة الفجر ركعتين — اضغط على أي سنة لتسجيلها",
-  "snRawatibBonus": "مكافأة إتمام الرواتب الخمس: +10",
-  "snOpenSunnah": "تتبع السنن: رواتب • ضحى • وتر",
-  "snClear": "مسح بيانات السنن",
-  "snClearTitle": "مسح بيانات السنن؟",
-  "snClearHint": "سيتم حذف جميع السنن المسجلة وسلاسلها. لا يمكن التراجع.",
-  "snFajrSunnah": "سنة الفجر",
-  "snFajrSunnahSub": "ركعتان قبل الفجر",
-  "snDhuhrBefore": "السنة القبلية للظهر",
-  "snDhuhrBeforeSub": "4 ركعات قبل الظهر",
-  "snDhuhrAfter": "السنة البعدية للظهر",
-  "snDhuhrAfterSub": "ركعتان بعد الظهر",
-  "snMaghribAfter": "سنة المغرب",
-  "snMaghribAfterSub": "ركعتان بعد المغرب",
-  "snIshaAfter": "سنة العشاء",
-  "snIshaAfterSub": "ركعتان بعد العشاء",
-  "snDuha": "صلاة الضحى",
-  "snDuhaSub": "ركعتان فأكثر بعد الشروق",
-  "snWitr": "الوتر",
-  "snWitrSub": "ركعة أو ثلاث بعد العشاء",
-  "snQiyam": "قيام الليل",
-  "snQiyamSub": "ركعات الليل المباركة",
-  "@snProgress": {
-    "placeholders": {
-      "done": { "type": "int" },
-      "goal": { "type": "int" }
-    }
-  },
-  "snProgress": "{done} من {goal}",
-  "diagSunnah": "تتبع السنن",
-  "navWorship": "تتبع الصيام والورد",
-  "wtTitle": "تتبع الصيام والورد",
-  "wtSubtitle": "الصيام • الورد • أعمال صالحة",
-  "wtFastingSection": "صيام التطوع",
-  "wtWeekHint": "الاثنين والخميس من الأسبوع المعروض",
-  "wtMonday": "الاثنين",
-  "wtThursday": "الخميس",
-  "wtLogOtherFast": "تسجيل صوم آخر",
-  "wtFastSheetTitle": "ما نوع الصوم؟",
-  "wtKindMonday": "صيام الاثنين",
-  "wtKindThursday": "صيام الخميس",
-  "wtKindWhite": "الأيام البيض (13-15)",
-  "wtKindArafah": "يوم عرفة",
-  "wtKindAshura": "عاشوراء / تاسوعاء",
-  "wtKindShawwal": "الست من شوال",
-  "wtKindQadaa": "قضاء",
-  "wtKindNafl": "نفل مطلق",
-  "wtWeeksStreak": "أسابيع الصيام",
-  "wtTotalFasts": "أيام الصيام (30 يومًا)",
-  "wtWeeksOverview": "آخر 8 أسابيع",
-  "wtWhiteHint": "اليوم من الأيام البيض — يستحب صيامه",
-  "wtArafahHint": "اليوم يوم عرفة — صيامه يكفّر سنتين",
-  "wtAshuraHint": "اليوم عاشوراء — يستحب صيامه",
-  "wtMondayHint": "اليوم الاثنين — ترفع فيه الأعمال",
-  "wtThursdayHint": "اليوم الخميس — ترفع فيه الأعمال",
-  "wtWirdSection": "الورد اليومي",
-  "wtDeedsSection": "أعمال صالحة",
-  "wtQuran": "ورد القرآن",
-  "wtQuranSub": "قراءة الورد اليومي",
-  "wtMorning": "أذكار الصباح",
-  "wtMorningSub": "بعد الفجر",
-  "wtEvening": "أذكار المساء",
-  "wtEveningSub": "بعد العصر",
-  "wtIstighfar": "الاستغفار (100 مرة)",
-  "wtIstighfarSub": "أستغفر الله",
-  "wtSalawat": "الصلاة على النبي (100 مرة)",
-  "wtSalawatSub": "صلى الله عليه وسلم",
-  "wtSadaqah": "صدقة",
-  "wtSadaqahSub": "ولو بالقليل",
-  "wtSilah": "صلة رحم",
-  "wtSilahSub": "اتصال أو زيارة",
-  "wtBirr": "بر الوالدين",
-  "wtBirrSub": "قول أو فعل حسن",
-  "wtDailyGoal": "الهدف اليومي",
-  "wtTotal30": "نقاط آخر 30 يومًا",
-  "wtClear": "مسح بيانات العبادات",
-  "wtClearTitle": "مسح بيانات العبادات؟",
-  "wtClearHint": "سيتم حذف الورد والصيام المسجل وسلاسلهما. لا يمكن التراجع.",
-  "wtOpenWorship": "الصيام والورد: اثنين وخميس • ورد • صدقة",
-  "diagWorship": "تتبع الصيام والورد"
+  "todoCompletedCount": "{count, plural, one {{count} مهمة مكتملة} two {{count} مهمتان مكتملتان} other {{count} مهام مكتملة}}"
 }
-
-
-

@@ -89,13 +89,28 @@ class MushafPageView extends StatelessWidget {
     }).join();
   }
 
+  // Batch 2 (perf-only): the kem map is a pure function of [tajMap], but
+  // the widget is Stateless so an instance field would not survive parent
+  // rebuilds. Identity-keyed static cache (taj data is loaded once and never
+  // mutated), capped so page swipes never grow memory. Same map content.
+  static final Map<Map<int, List<TajAya>>,
+      Map<String, ({String text, List<KemSlice> slices})>> _kemCache =
+      Map.identity();
+  static const int _kemCacheMax = 8;
+
   Map<String, ({String text, List<KemSlice> slices})> _kemLookup() {
+    final cached = _kemCache[tajMap];
+    if (cached != null) return cached;
     final m = <String, ({String text, List<KemSlice> slices})>{};
     tajMap.forEach((sid, list) {
       for (final a in list) {
         m['$sid:${a.a}'] = (text: a.text, slices: a.slices);
       }
     });
+    if (_kemCache.length >= _kemCacheMax) {
+      _kemCache.remove(_kemCache.keys.first);
+    }
+    _kemCache[tajMap] = m;
     return m;
   }
 

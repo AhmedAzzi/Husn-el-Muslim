@@ -130,46 +130,80 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
               ),
             );
           }
-          return ListView.builder(
-            itemCount: ctl.hits.length,
-            itemBuilder: (context, i) {
-              final h = ctl.hits[i];
-              final surahName =
-                  QuranIndex.instance.surahMeta(h.surah)?.nameAr ?? '';
-              return Column(
-                children: [
-                  ListTile(
-                    title: _highlightedText(h.text, ctl.query.value),
-                    subtitle: Text(
-                      '$surahName · آية ${h.ayah}${h.page > 0 ? ' · صفحة ${h.page}' : ''}',
-                      style: const TextStyle(
-                        fontFamily: HusnTheme.fontFamily,
-                      ),
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: HusnTheme.gold.withValues(alpha: 0.12),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: HusnTheme.gold.withValues(alpha: 0.3),
                     ),
-                    trailing: Icon(
-                      Icons.chevron_left,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[400]
-                          : Colors.grey,
-                    ),
-                    onTap: h.page <= 0
-                        ? null
-                        : () {
-                            final pick = widget.onPick;
-                            if (pick != null) {
-                              pick(h.page);
-                              Get.back();
-                            } else {
-                              Get.to(
-                                () => MushafScreen(initialPage: h.page),
-                              );
-                            }
-                          },
                   ),
-                  const Divider(height: 1, thickness: 0.3),
-                ],
-              );
-            },
+                ),
+                child: Text(
+                  ctl.totalCount.value >
+                          AyahSearchController.resultLimit
+                      ? 'عدد النتائج: ${ctl.totalCount.value} · عرض أول ${AyahSearchController.resultLimit}'
+                      : 'عدد النتائج: ${ctl.totalCount.value}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: HusnTheme.fontFamily,
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: ctl.hits.length,
+                  itemBuilder: (context, i) {
+                    final h = ctl.hits[i];
+                    final surahName =
+                        QuranIndex.instance.surahMeta(h.surah)?.nameAr ?? '';
+                    return Column(
+                      children: [
+                        ListTile(
+                          title: _highlightedText(h.text, ctl.query.value),
+                          subtitle: Text(
+                            '$surahName · آية ${h.ayah}${h.page > 0 ? ' · صفحة ${h.page}' : ''}',
+                            style: const TextStyle(
+                              fontFamily: HusnTheme.fontFamily,
+                            ),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_left,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[400]
+                                : Colors.grey,
+                          ),
+                          onTap: h.page <= 0
+                              ? null
+                              : () {
+                                  final pick = widget.onPick;
+                                  if (pick != null) {
+                                    pick(h.page);
+                                    Get.back();
+                                  } else {
+                                    Get.to(
+                                      () => MushafScreen(initialPage: h.page),
+                                    );
+                                  }
+                                },
+                        ),
+                        const Divider(height: 1, thickness: 0.3),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         }),
       ),
@@ -179,12 +213,15 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
   }
 
   /// Ayah text with every query word highlighted (word-level, so tashkeel
-  /// never breaks the match positions).
+  /// never breaks the match positions). A word lights up when it matches on
+  /// any search tier: exact normalized, alef-insensitive skeleton, or
+  /// weak-letter skeleton (so الصلوة highlights for a الصلاة query).
   Widget _highlightedText(String text, String query) {
-    final tokens = AyahSearchController.normAr(query)
-        .split(RegExp(r'\s+'))
-        .where((t) => t.isNotEmpty)
-        .toSet();
+    final tokens = AyahSearchController.queryTokens(query).toSet();
+    final skelTokens =
+        AyahSearchController.skeletonTokens(query).toSet();
+    final consTokens =
+        AyahSearchController.consonantTokens(query).toSet();
     final words = text.split(' ');
     return RichText(
       textDirection: TextDirection.rtl,
@@ -200,11 +237,12 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
             TextSpan(
               text: words[i],
               style: TextStyle(
-                backgroundColor: tokens.isNotEmpty &&
-                        tokens.any(
-                          (t) => AyahSearchController.normAr(words[i])
-                              .contains(t),
-                        )
+                backgroundColor: _wordMatches(
+                      words[i],
+                      tokens,
+                      skelTokens,
+                      consTokens,
+                    )
                     ? HusnTheme.gold.withValues(alpha: 0.35)
                     : null,
               ),
@@ -213,5 +251,23 @@ class _AyahSearchScreenState extends State<AyahSearchScreen> {
         ],
       ),
     );
+  }
+
+  /// True when [word] matches any query token on any search tier.
+  bool _wordMatches(
+    String word,
+    Set<String> tokens,
+    Set<String> skelTokens,
+    Set<String> consTokens,
+  ) {
+    if (tokens.isEmpty && skelTokens.isEmpty && consTokens.isEmpty) {
+      return false;
+    }
+    final norm = AyahSearchController.normAr(word);
+    if (tokens.any(norm.contains)) return true;
+    final skel = AyahSearchController.skeletonAr(word);
+    if (skelTokens.any(skel.contains)) return true;
+    final cons = AyahSearchController.consonantAr(word);
+    return consTokens.any(cons.contains);
   }
 }

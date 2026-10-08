@@ -370,6 +370,10 @@ class MainActivity : FlutterActivity() {
                     PrayerWidgetData.updateAll(this)
                     result.success(true)
                 }
+                "updateTodoWidget" -> {
+                    TodoWidgetData.updateAll(this)
+                    result.success(true)
+                }
                 "hideNotification" -> {
                     hideNotification()
                     val stopIntent = Intent(this, PrayerTimeService::class.java).apply {

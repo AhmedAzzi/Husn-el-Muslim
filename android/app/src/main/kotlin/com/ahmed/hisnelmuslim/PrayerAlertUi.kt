@@ -153,7 +153,7 @@ object PrayerAlertUi {
         }
     }
 
-    /** Gentle infinite pulse for the mosque marker; caller cancels on dismiss. */
+    /** Gentle infinite pulse for the top badge; caller cancels on dismiss. */
     fun startIconPulse(icon: View): ObjectAnimator =
         ObjectAnimator.ofPropertyValuesHolder(
             icon,

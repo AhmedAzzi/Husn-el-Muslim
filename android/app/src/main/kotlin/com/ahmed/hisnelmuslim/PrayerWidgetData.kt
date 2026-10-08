@@ -23,10 +23,6 @@ import org.json.JSONArray
  * - widget_next_time  : next prayer "HH:MM"
  * - widget_target_ts  : next prayer epoch millis (countdown anchor)
  * - widget_day_json   : [{"n":"Fajr","t":"05:00","ts":…}, …] six main prayers
- * - widget_streak_current : 5-prayer streak days (written by Dart tracking sync)
- * - widget_fajr_done  : today's Fajr performed (legacy; kept for compat)
- * - widget_day_done   : prayers performed today, 0..5 (written by Dart)
- * - widget_day_goal   : daily goal, 1..5 (written by Dart)
  *
  * The countdown is computed natively at render time, so the widgets stay
  * live through the service's periodic refresh without waking Dart.
@@ -174,13 +170,19 @@ object PrayerWidgetData {
             views.setChronometer(viewId, base, "%s", true)
             views.setChronometerCountDown(viewId, true)
         } else {
-            // Static fallback: at/past time, or old platform.
-            try {
-                views.setBoolean(viewId, "setStarted", false)
-            } catch (e: Exception) {
-                Log.w("PrayerWidget", "chronometer stop failed: ${e.message}")
-            }
-            views.setTextViewText(viewId, countdownText(remaining))
+            // Static fallback: at/past time, or old platform. A stopped
+            // chronometer showing pre-formatted text. setChronometer with
+            // started=false is the supported way to freeze it — there is
+            // no setStarted setter, so enqueueing one crashes the launcher
+            // with "can't load widget" on every stale-data render (and the
+            // try/catch can't help: RemoteViews actions only execute when
+            // the launcher inflates them).
+            views.setChronometer(
+                viewId,
+                SystemClock.elapsedRealtime(),
+                countdownText(remaining),
+                false
+            )
         }
     }
 
@@ -379,64 +381,6 @@ object PrayerWidgetData {
 
     // ------------------------------ updates ------------------------------
 
-    /**
-     * Tracking snapshot: streak days + today's 5-prayer progress.
-     * Same SharedPreferences contract as the prayer snapshot above.
-     * Missing keys (pre-upgrade installs) fall back to 0 done / goal 5.
-     */
-    data class TrackingSnapshot(
-        val streak: Long,
-        val dayDone: Int,
-        val dayGoal: Int
-    )
-
-    fun readTracking(context: Context): TrackingSnapshot {
-        return try {
-            val p = context.getSharedPreferences(
-                "FlutterSharedPreferences", Context.MODE_PRIVATE
-            )
-            val goal = (p.all["flutter.widget_day_goal"] as? Number)?.toInt() ?: 5
-            val done = (p.all["flutter.widget_day_done"] as? Number)?.toInt() ?: 0
-            TrackingSnapshot(
-                streak = flutterLong(p.all["flutter.widget_streak_current"]),
-                dayDone = done.coerceIn(0, goal.coerceAtLeast(1)),
-                dayGoal = goal.coerceIn(1, 5),
-            )
-        } catch (e: Exception) {
-            Log.w("TrackingWidget", "readTracking failed: ${e.message}")
-            TrackingSnapshot(0L, 0, 5)
-        }
-    }
-
-    /** Five-dot day progress, e.g. "●●●○○ 3/5". Count-based (glanceable). */
-    fun dotsLine(done: Int, goal: Int): String {
-        val filled = "●".repeat(done)
-        val empty = "○".repeat((goal - done).coerceAtLeast(0))
-        return "$filled$empty $done/$goal"
-    }
-
-    fun buildTracking(context: Context): RemoteViews {
-        val night = isNight(context)
-        val t = readTracking(context)
-        val title = if (night) DARK_TITLE else LIGHT_TITLE
-        val hijriC = if (night) DARK_HIJRI else LIGHT_HIJRI
-        return RemoteViews(context.packageName, R.layout.widget_tracking).apply {
-            setTextViewText(R.id.widget_tracking_title, "تتبع الصلوات")
-            setTextColor(R.id.widget_tracking_title, hijriC)
-            setTextViewText(R.id.widget_tracking_streak, "🔥 ${t.streak}")
-            setTextColor(R.id.widget_tracking_streak, title)
-            setTextViewText(
-                R.id.widget_tracking_today,
-                dotsLine(t.dayDone, t.dayGoal)
-            )
-            setTextColor(R.id.widget_tracking_today, title)
-            setOnClickPendingIntent(
-                R.id.widget_tracking_root,
-                openAppIntent(context, 10003, "tracking")
-            )
-        }
-    }
-
     /** Refresh every pinned widget of both sizes. Safe no-op when none. */
     fun updateAll(context: Context) {
         try {
@@ -464,19 +408,6 @@ object PrayerWidgetData {
                         mgr.updateAppWidget(id, views)
                     } catch (t: Throwable) {
                         Log.w("PrayerWidget", "update large failed: ${t.message}")
-                    }
-                }
-            }
-            val trackingIds = mgr.getAppWidgetIds(
-                ComponentName(context, TrackingWidgetProvider::class.java)
-            )
-            if (trackingIds.isNotEmpty()) {
-                val views = buildTracking(context)
-                for (id in trackingIds) {
-                    try {
-                        mgr.updateAppWidget(id, views)
-                    } catch (t: Throwable) {
-                        Log.w("TrackingWidget", "update failed: ${t.message}")
                     }
                 }
             }

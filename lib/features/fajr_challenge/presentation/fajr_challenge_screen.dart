@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
@@ -12,7 +13,7 @@ import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/features/prayer_times/services/prayer_notification_helper.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/domain/challenge_models.dart'
     as engine;
-import 'package:small_husn_muslim/features/tracking/data/fajr_tracking_repository.dart';
+import 'package:small_husn_muslim/features/fajr_challenge/data/fajr_tracking_repository.dart';
 import 'package:small_husn_muslim/core/utils/asset_loader.dart';
 import 'package:small_husn_muslim/l10n/app_localizations.dart';
 
@@ -20,9 +21,32 @@ import 'package:small_husn_muslim/l10n/app_localizations.dart';
 /// "أنا مستيقظ" — opening the screen or finishing questions is not enough.
 enum _WakePhase { challenge, confirm, done }
 
+/// Batch 3 (perf-only): pure decode + length-filter of `hisnmuslim.json`.
+/// Runs in a `compute()` isolate; order and content identical to the old
+/// inline loop (shuffle happens on main afterwards, as before).
+({List<Map<String, String>> dhikrs, List<String> categories})
+    extractFajrDhikrs(String jsonData) {
+  final List<dynamic> categories = json.decode(jsonData);
+  final allDhikrs = <Map<String, String>>[];
+  final allCategoryNames = <String>[];
+  for (final cat in categories) {
+    final catName = cat['category'] as String;
+    if (!allCategoryNames.contains(catName)) allCategoryNames.add(catName);
+    final List<dynamic> dhikrs = cat['array'];
+    for (final dhikr in dhikrs) {
+      final text = dhikr['text'] as String;
+      // Filter out very short or very long texts
+      if (text.length > 30 && text.length < 300) {
+        allDhikrs.add({'text': text, 'category': catName});
+      }
+    }
+  }
+  return (dhikrs: allDhikrs, categories: allCategoryNames);
+}
+
 class FajrChallengeScreen extends StatefulWidget {
   /// When true, the screen runs as a try-out: no volume lock, no alarm audio
-  /// loop, nothing is recorded to tracking/streak, exiting just pops.
+  /// loop, nothing is recorded to the Fajr streak, exiting just pops.
   final bool preview;
   const FajrChallengeScreen({super.key, this.preview = false});
 
@@ -111,26 +135,12 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
   Future<void> _loadQuestionsFromJSON() async {
     try {
       String jsonData = await loadAzkarJson();
-      List<dynamic> categories = json.decode(jsonData);
-
-      List<Map<String, String>> allDhikrs = [];
-      Set<String> allCategoryNames = {};
-
-      for (var cat in categories) {
-        String catName = cat['category'] as String;
-        allCategoryNames.add(catName);
-        List<dynamic> dhikrs = cat['array'];
-        for (var dhikr in dhikrs) {
-          String text = dhikr['text'] as String;
-          // Filter out very short or very long texts
-          if (text.length > 30 && text.length < 300) {
-            allDhikrs.add({
-              'text': text,
-              'category': catName,
-            });
-          }
-        }
-      }
+      // Batch 3 (perf-only): decode + extract off the UI thread — this runs
+      // at alarm-ring time, so every millisecond of main-thread block delays
+      // the wake-up UI. Shuffle + question assembly stay on main, untouched.
+      final parsed = await compute(extractFajrDhikrs, jsonData);
+      List<Map<String, String>> allDhikrs = parsed.dhikrs;
+      Set<String> allCategoryNames = parsed.categories.toSet();
 
       if (allDhikrs.isEmpty) {
         // Fallback or handle error
@@ -448,7 +458,7 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
       _streakDays =
           await FajrTrackingRepository.instance.currentStreak();
     } catch (e) {
-      debugPrint('Tracking record failed: $e');
+      debugPrint('Fajr streak record failed: $e');
     }
     if (!mounted) return;
     setState(() => _phase = _WakePhase.done);

@@ -7,11 +7,15 @@ import 'package:sqflite/sqflite.dart';
 /// assets imported through [QuranRepository]. This DB holds only user data,
 /// so it can be cleared/migrated without touching the Quran.
 class AppDatabase {
-  AppDatabase._(this._db);
+  AppDatabase._(this._db, this.dbPath);
 
   final Database _db;
 
-  static const _version = 1;
+  /// Absolute SQLite file path (published to the home-screen widget
+  /// so native code opens the exact same database file).
+  final String dbPath;
+
+  static const _version = 3;
 
   static Future<AppDatabase> open({String? overridePath}) async {
     final path = overridePath ??
@@ -22,9 +26,23 @@ class AppDatabase {
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
-      onCreate: _onCreate,
+      onCreate: (db, version) async {
+        await _onCreate(db, version);
+        await _createTodoTables(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await _createTodoTables(db);
+        }
+        if (oldVersion < 3) {
+          // Custom repeat weekdays (CSV of DateTime weekday numbers).
+          await db.execute(
+            'ALTER TABLE todo_tasks ADD COLUMN repeat_weekdays TEXT',
+          );
+        }
+      },
     );
-    return AppDatabase._(db);
+    return AppDatabase._(db, path);
   }
 
   static Future<void> _onCreate(Database db, int version) async {
@@ -77,6 +95,49 @@ class AppDatabase {
       CREATE TABLE app_kv (
         key TEXT PRIMARY KEY,
         value TEXT
+      )
+    ''');
+  }
+
+  static Future<void> _createTodoTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS todo_tasks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        notes TEXT,
+        is_completed INTEGER NOT NULL DEFAULT 0,
+        completed_at TEXT,
+        due_date TEXT,
+        due_time TEXT,
+        reminder_date_time TEXT,
+        repeat_rule TEXT,
+        repeat_weekdays TEXT,
+        priority INTEGER NOT NULL DEFAULT 0,
+        category_id TEXT NOT NULL DEFAULT 'all',
+        tags TEXT,
+        subtasks TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_todo_tasks_due ON todo_tasks (due_date)
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_todo_tasks_completed ON todo_tasks (is_completed)
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_todo_tasks_category ON todo_tasks (category_id)
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS todo_categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        icon_code INTEGER NOT NULL,
+        color_value INTEGER NOT NULL,
+        is_default INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }

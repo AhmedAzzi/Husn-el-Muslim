@@ -34,13 +34,6 @@ class NotificationIds {
   /// Payload identifying the Friday Surah Al-Kahf notification tap.
   static const String fridayKahfPayload = 'Friday_Kahf';
 
-  /// Base ID for the 5-prayer logging reminders (Fajr..Isha → 200..204).
-  /// One-shot schedules owned by PrayerReminderService; never daily-repeat.
-  static const int trackerLogBase = 200;
-
-  /// Payload identifying a tracker logging-reminder tap (opens the tracker).
-  static const String trackerLogPayload = 'PrayerTrack_Log';
-
   /// Internal marker index used by the controller to deduplicate the Fajr
   /// Challenge trigger within a single day (never leaves the app).
   static const int fajrChallengeIndex = 9999;

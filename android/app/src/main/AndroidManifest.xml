@@ -64,14 +64,19 @@
             <meta-data android:name="android.appwidget.provider"
                        android:resource="@xml/prayer_widget_large_info" />
         </receiver>
-        <receiver android:name=".TrackingWidgetProvider"
+        <receiver android:name=".TodoWidgetProvider"
                   android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
-                       android:resource="@xml/tracking_widget_info" />
+                       android:resource="@xml/todo_widget_info" />
         </receiver>
+        <receiver android:name=".TodoWidgetToggleReceiver"
+                  android:exported="false" />
+        <service android:name=".TodoWidgetService"
+                  android:exported="false"
+                  android:permission="android.permission.BIND_REMOTEVIEWS" />
         <receiver android:name=".RefreshGpsReceiver"
                   android:exported="true">
             <intent-filter>

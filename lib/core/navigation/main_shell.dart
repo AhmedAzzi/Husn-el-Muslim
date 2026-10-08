@@ -14,7 +14,8 @@ import 'package:small_husn_muslim/features/quran/presentation/screens/home_scree
     as quran_home;
 import 'package:small_husn_muslim/features/ruqyah/presentation/ruqyah_screen.dart';
 import 'package:small_husn_muslim/features/settings/presentation/settings_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/tracking_home_screen.dart';
+
+import 'package:small_husn_muslim/features/todo/presentation/todo_screen.dart';
 
 /// Root of the app's main UI: a single route hosting every top-level section
 /// in an [IndexedStack].
@@ -55,7 +56,7 @@ class _MainShellState extends State<MainShell> {
     AsmaaAllahScreen(),
     RuqyahScreen(),
     MosqueMapScreen(),
-    TrackingHomeScreen(),
+    TodoScreen(),
   ];
 
   @override

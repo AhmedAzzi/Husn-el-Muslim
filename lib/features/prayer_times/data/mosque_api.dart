@@ -296,6 +296,22 @@ class MosqueSchedule {
   }
 }
 
+/// Batch 5 memo entries: the exact prefs bytes plus what they parsed to.
+/// Equality on [raw] is the invalidation signal (see [OfflineCache]).
+class _MemoList {
+  _MemoList(this.raw, this.list, this.cachedAt);
+  final String raw;
+  final List<MosquePoint> list;
+  final DateTime? cachedAt;
+}
+
+class _MemoSchedule {
+  _MemoSchedule(this.raw, this.schedule, this.cachedAt);
+  final String raw;
+  final MosqueSchedule schedule;
+  final DateTime? cachedAt;
+}
+
 /// Simple offline cache backed by shared_preferences, keyed by mosque slug /
 /// country code. Holds the (JSON-encoded) mosque list and per-mosque schedules.
 class OfflineCache {
@@ -308,22 +324,53 @@ class OfflineCache {
   static const Duration _scheduleTtl = Duration(days: 1);
   static const int _maxCountries = 10; // Limit number of cached countries
 
+  // Batch 5 (perf-only): raw-string-keyed memos for the two big prefs blobs
+  // (a full country list, a full schedule calendar). The raw comparison IS
+  // the invalidation — prefs resets, saves, TTL removals and evictions all
+  // change the stored string, so a hit always means "same bytes", and the
+  // same parsed objects are returned. Keyed on bytes, never on time alone,
+  // so TTL expiry can never be served stale (see below).
+  static final Map<String, _MemoList> _listMemo = {};
+  static final Map<String, _MemoSchedule> _scheduleMemo = {};
+
+  /// Test-only hook to reset the in-memory memos.
+  static void clearMemoryCache() {
+    _listMemo.clear();
+    _scheduleMemo.clear();
+  }
+
   /// Returns cached mosque list for [countryCode], or null if none or expired.
   static Future<List<MosquePoint>?> getMosques(String countryCode) async {
     final p = await SharedPreferences.getInstance();
-    final raw = p.getString(_mosquesKey + countryCode.toUpperCase());
-    if (raw == null) return null;
+    final key = _mosquesKey + countryCode.toUpperCase();
+    final raw = p.getString(key);
+    if (raw == null) {
+      _listMemo.remove(key);
+      return null;
+    }
+    final memo = _listMemo[key];
+    if (memo != null && memo.raw == raw) {
+      if (memo.cachedAt != null &&
+          DateTime.now().difference(memo.cachedAt!) > _mosqueListTtl) {
+        _listMemo.remove(key);
+        await p.remove(key);
+        return null;
+      }
+      return memo.list;
+    }
     try {
       final Map<String, dynamic> data = jsonDecode(raw) as Map<String, dynamic>;
       final cachedAt = DateTime.tryParse(data['cachedAt'] as String? ?? '');
       if (cachedAt != null && DateTime.now().difference(cachedAt) > _mosqueListTtl) {
-        await p.remove(_mosquesKey + countryCode.toUpperCase());
+        await p.remove(key);
         return null;
       }
-      return (data['mosques'] as List? ?? [])
+      final list = (data['mosques'] as List? ?? [])
           .whereType<Map>()
           .map((m) => MosquePoint.fromJson(m.cast<String, dynamic>()))
           .toList();
+      _listMemo[key] = _MemoList(raw, list, cachedAt);
+      return list;
     } catch (_) {
       return null;
     }
@@ -371,13 +418,27 @@ class OfflineCache {
     if (p.containsKey('cache_schedule_$slug')) {
       await p.remove('cache_schedule_$slug');
     }
-    final raw = p.getString(_scheduleKey + slug);
-    if (raw == null) return null;
+    final key = _scheduleKey + slug;
+    final raw = p.getString(key);
+    if (raw == null) {
+      _scheduleMemo.remove(key);
+      return null;
+    }
+    final memo = _scheduleMemo[key];
+    if (memo != null && memo.raw == raw) {
+      if (memo.cachedAt != null &&
+          DateTime.now().difference(memo.cachedAt!) > _scheduleTtl) {
+        _scheduleMemo.remove(key);
+        await p.remove(key);
+        return null;
+      }
+      return memo.schedule;
+    }
     try {
       final Map<String, dynamic> data = jsonDecode(raw) as Map<String, dynamic>;
       final cachedAt = DateTime.tryParse(data['cachedAt'] as String? ?? '');
       if (cachedAt != null && DateTime.now().difference(cachedAt) > _scheduleTtl) {
-        await p.remove(_scheduleKey + slug);
+        await p.remove(key);
         return null;
       }
       final s = MosqueSchedule.fromJson(
@@ -387,9 +448,10 @@ class OfflineCache {
           s.dhuhr.isEmpty ||
           s.maghrib.isEmpty ||
           s.isha.isEmpty) {
-        await p.remove(_scheduleKey + slug);
+        await p.remove(key);
         return null;
       }
+      _scheduleMemo[key] = _MemoSchedule(raw, s, cachedAt);
       return s;
     } catch (_) {
       return null;

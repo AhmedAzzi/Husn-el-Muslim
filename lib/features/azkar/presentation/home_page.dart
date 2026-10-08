@@ -10,7 +10,6 @@ import 'package:small_husn_muslim/core/constants/notification_ids.dart';
 import 'package:small_husn_muslim/core/utils/audio_utils.dart';
 import 'package:small_husn_muslim/features/azkar/presentation/azkar_details_screen.dart';
 import 'package:small_husn_muslim/features/fajr_challenge/presentation/fajr_challenge_screen.dart';
-import 'package:small_husn_muslim/features/tracking/presentation/prayer_tracking_screen.dart';
 import 'package:small_husn_muslim/core/widgets/app_drawer.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
 import 'package:small_husn_muslim/features/azkar/controllers/azkar_controller.dart';
@@ -131,7 +130,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                                   azkar.category,
                                   style: TextStyle(
                                     fontFamily: fontFamily,
-                                    fontSize: double.parse(fontSize24),
+                                    fontSize: fontSize24d,
                                   ),
                                 ),
                                 content: Row(
@@ -159,7 +158,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                                     child: Text(
                                       leave,
                                       style: TextStyle(
-                                        fontSize: double.parse(fontSize18),
+                                        fontSize: fontSize18d,
                                       ),
                                     ),
                                   ),
@@ -173,7 +172,7 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
                       title: Text(
                         azkar.category,
                         style: TextStyle(
-                          fontSize: double.parse(fontSize18),
+                          fontSize: fontSize18d,
                           fontFamily: fontFamily,
                         ),
                       ),
@@ -210,8 +209,6 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
         } else if (pendingPayload == NotificationIds.morningAdhkarPayload ||
             pendingPayload == NotificationIds.eveningAdhkarPayload) {
           NotificationService().handleAdhkarNotification(pendingPayload);
-        } else if (pendingPayload == NotificationIds.trackerLogPayload) {
-          Get.to(() => const PrayerTrackingScreen());
         }
         NotificationService().pendingPayload = null;
       }
@@ -220,8 +217,6 @@ class MyHomePageScreenState extends State<MyHomePageScreen> {
       if (pendingScreen != null) {
         if (pendingScreen == 'prayer_times') {
           MainNavHelper.goToMawaqit();
-        } else if (pendingScreen == 'tracking') {
-          Get.to(() => const PrayerTrackingScreen());
         }
       }
     });

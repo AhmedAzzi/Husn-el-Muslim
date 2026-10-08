@@ -43,6 +43,24 @@ class MushafAudioController extends GetxController {
   /// plays. Always 0 outside single-file mode.
   final trackedAyah = 0.obs;
 
+  /// Live position / duration of the current source, driving the
+  /// mini-player progress bar and verse sync. Duration lands once the
+  /// stream metadata is parsed (null = unknown, bar indeterminate).
+  final position = Duration.zero.obs;
+  final duration = Rxn<Duration>();
+
+  /// Playback-speed multiplier (0.5–2.0), applied to every new stream.
+  final speed = 1.0.obs;
+
+  /// Speed presets offered by the mini-player speed control.
+  static const speedPresets = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+  /// Playback generation: every public play entry bumps it, so a stale
+  /// async load (overlapping taps, slow mirrors) can never clear the
+  /// loading flag or set an error belonging to a newer recitation — the
+  /// root cause of the stuck loading spinner.
+  int _gen = 0;
+
   /// True while the engine plays a gapless playlist (vs sequential mode).
   bool _gapless = false;
 
@@ -62,6 +80,7 @@ class MushafAudioController extends GetxController {
   StreamSubscription<Duration?>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<bool>? _playingSub;
+  StreamSubscription<double>? _speedSub;
 
   AudioService get _audio => Get.find<AudioService>();
   NakhtemSettingsController get _settings =>
@@ -77,6 +96,53 @@ class MushafAudioController extends GetxController {
   /// `current / total` progress text for the mini-player, or null.
   String? get queueProgress =>
       hasQueue ? '${queueIndex.value + 1} / ${queue.length}' : null;
+
+  /// 0..1 progress of the current source, or null while the duration is
+  /// still unknown (bar renders indeterminate instead of jumping).
+  double? get progressFraction {
+    final total = duration.value?.inMilliseconds ?? 0;
+    if (total <= 0) return null;
+    return (position.value.inMilliseconds / total).clamp(0.0, 1.0);
+  }
+
+  /// `mm:ss` formatting for the mini-player time labels.
+  static String formatDuration(Duration d) {
+    final m = d.inMinutes;
+    final s = d.inSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _hookStreams();
+  }
+
+  /// Attaches the engine streams once, up front, so no transition is
+  /// missed between `play()` and the first lazy hook. Best-effort: audio
+  /// may be unavailable (e.g. unit tests without a registered service).
+  void _hookStreams() {
+    try {
+      _ensureCompletionHook();
+      _ensureIndexHook();
+      _ensurePlayingHook();
+      _ensurePositionHook();
+      _ensureDurationHook();
+      _ensureSpeedHook();
+    } catch (_) {}
+  }
+
+  /// Clears the loading flag only when [gen] is still the latest play
+  /// generation — a superseded load must never touch the newer's state.
+  void _finishLoad(int gen) {
+    if (gen == _gen) isLoading.value = false;
+  }
+
+  /// Resets the per-source progress observables for a fresh recitation.
+  void _resetProgress() {
+    position.value = Duration.zero;
+    duration.value = null;
+  }
 
   /// Key driving the mushaf highlighter: `'s:v'` for the exact ayah.
   /// In single-file playback the live [trackedAyah] is used when known,
@@ -121,8 +187,15 @@ class MushafAudioController extends GetxController {
     });
   }
 
+  void _ensureSpeedHook() {
+    _speedSub ??= _audio.speedStream.listen((s) {
+      if (s > 0 && (s - speed.value).abs() > 0.001) speed.value = s;
+    });
+  }
+
   void _ensurePositionHook() {
     _positionSub ??= _audio.positionStream.listen((pos) {
+      if (pos != null) position.value = pos;
       // Sound is out — never show a loading spinner from here on.
       if ((pos?.inMilliseconds ?? 0) > 0 && isLoading.value) {
         isLoading.value = false;
@@ -206,7 +279,8 @@ class MushafAudioController extends GetxController {
   }
 
   void _ensureDurationHook() {
-    _durationSub ??= _audio.durationStream.listen((_) {
+    _durationSub ??= _audio.durationStream.listen((d) {
+      duration.value = d;
       if (_singleFile && _schedOffsets == null) _tryBuildSchedule();
     });
   }
@@ -222,7 +296,9 @@ class MushafAudioController extends GetxController {
   }
 
   Future<void> _playOne(Reciter r, int surah, int ayah) async {
+    final gen = ++_gen;
     error.value = null;
+    _resetProgress();
     // Already reciting (sequential queue advance): keep the pause button up
     // instead of flashing the loading circle between ayahs.
     if (!isPlaying.value) isLoading.value = true;
@@ -230,6 +306,8 @@ class MushafAudioController extends GetxController {
     playingAyah.value = ayah;
     try {
       await _audio.playAyah(reciter: r, surah: surah, ayah: ayah);
+      if (gen != _gen) return; // superseded — leave the newer state alone
+      await _audio.setSpeed(speed.value);
       if (_audio.error != null) {
         error.value = _audio.error;
         isPlaying.value = false;
@@ -239,10 +317,11 @@ class MushafAudioController extends GetxController {
         _ensurePositionHook();
       }
     } catch (e) {
+      if (gen != _gen) return;
       error.value = e.toString();
       isPlaying.value = false;
     } finally {
-      isLoading.value = false;
+      _finishLoad(gen);
     }
   }
 
@@ -303,6 +382,7 @@ class MushafAudioController extends GetxController {
     List<QueueAya> ayahs,
     String label,
   ) async {
+    final gen = ++_gen;
     _ensureCompletionHook();
     _ensureIndexHook();
     _schedOffsets = null;
@@ -310,11 +390,13 @@ class MushafAudioController extends GetxController {
     _pendingSurah = 0;
     trackedAyah.value = 0;
     error.value = null;
+    _resetProgress();
     isLoading.value = true;
     final pairs = await _resolvePairs(r, ayahs);
+    if (gen != _gen) return; // superseded during URL resolution
     if (pairs.isEmpty) {
-      isLoading.value = false;
       error.value = 'audio_unavailable';
+      _finishLoad(gen);
       return;
     }
     queue.value = [for (final p in pairs) p.$1];
@@ -324,19 +406,23 @@ class MushafAudioController extends GetxController {
     playingAyah.value = queue.first.ayah;
     try {
       await _audio.loadPlaylist([for (final p in pairs) p.$2]);
+      if (gen != _gen) return;
       _gapless = true;
       _singleFile = false;
+      await _audio.setSpeed(speed.value);
       await _audio.playPlaylist();
+      if (gen != _gen) return;
       isPlaying.value = true;
       _ensurePlayingHook();
       _ensurePositionHook();
     } catch (_) {
+      if (gen != _gen) return;
       // Playlist preparation failed — sequential mode with mirror retries.
       _gapless = false;
       await _playOne(r, queue.first.surah, queue.first.ayah);
       return;
     } finally {
-      isLoading.value = false;
+      _finishLoad(gen);
     }
   }
 
@@ -375,6 +461,7 @@ class MushafAudioController extends GetxController {
     }
     final meta = QuranIndex.instance.surahMeta(surah);
     if (meta == null || meta.ayahCount <= 0) return;
+    final gen = ++_gen;
     _ensureCompletionHook();
     _ensureIndexHook();
     error.value = null;
@@ -387,7 +474,8 @@ class MushafAudioController extends GetxController {
           final candidates = await Get.find<ReciterApiService>()
               .surahCandidates(identifier: apiId, surah: surah);
           for (final url in candidates) {
-            if (await _playSingleFile(url, surah, meta.nameAr)) return;
+            if (gen != _gen) return;
+            if (await _playSingleFile(url, surah, meta.nameAr, gen)) return;
           }
         } catch (_) {
           // fall through to the next source
@@ -402,7 +490,9 @@ class MushafAudioController extends GetxController {
             surah: surah,
             edition: _settings.settings.value.edition,
           );
-          if (url != null && await _playSingleFile(url, surah, meta.nameAr)) {
+          if (gen != _gen) return;
+          if (url != null &&
+              await _playSingleFile(url, surah, meta.nameAr, gen)) {
             return;
           }
         }
@@ -410,8 +500,9 @@ class MushafAudioController extends GetxController {
         // fall through to the playlist fallback
       }
     } finally {
-      isLoading.value = false;
+      _finishLoad(gen);
     }
+    if (gen != _gen) return;
     await _playContinuous(
       r,
       [for (var a = 1; a <= meta.ayahCount; a++) (surah: surah, ayah: a)],
@@ -423,12 +514,18 @@ class MushafAudioController extends GetxController {
   /// false when the URL fails to load (caller tries the next candidate).
   /// Kicks off ayah tracking in the background so the highlight follows
   /// ayah-per-ayah while the single file plays.
-  Future<bool> _playSingleFile(String url, int surah, String label) async {
+  Future<bool> _playSingleFile(
+    String url,
+    int surah,
+    String label,
+    int gen,
+  ) async {
     try {
       await _audio.loadSingle(url);
     } catch (_) {
       return false;
     }
+    if (gen != _gen) return false; // superseded while loading
     final r = reciter;
     final ayahCount = QuranIndex.instance.surahMeta(surah)?.ayahCount ?? 0;
     _gapless = false;
@@ -437,12 +534,16 @@ class MushafAudioController extends GetxController {
     _pendingWeights = null;
     _pendingSurah = 0;
     trackedAyah.value = 0;
+    error.value = null;
+    _resetProgress();
     queue.clear();
     queueIndex.value = 0;
     queueLabel.value = label;
     playingSurah.value = surah;
     playingAyah.value = 0;
+    await _audio.setSpeed(speed.value);
     await _audio.playPlaylist();
+    if (gen != _gen) return false;
     isPlaying.value = true;
     _ensurePlayingHook();
     _ensurePositionHook();
@@ -498,7 +599,30 @@ class MushafAudioController extends GetxController {
     if (active) isPlaying.value = true;
   }
 
+  /// Seeks within the current source (single file or current playlist
+  /// ayah). No-op when nothing is playing.
+  Future<void> seek(Duration pos) async {
+    if (!active) return;
+    try {
+      await _audio.seek(pos);
+    } catch (_) {}
+  }
+
+  /// Sets the playback-speed multiplier (clamped to 0.5–2.0) and applies
+  /// it to the live stream immediately when one is playing, so speed
+  /// changes take effect without restarting the recitation.
+  Future<void> setSpeed(double value) async {
+    final v = value.clamp(0.5, 2.0);
+    speed.value = v;
+    if (active) {
+      try {
+        await _audio.setSpeed(v);
+      } catch (_) {}
+    }
+  }
+
   Future<void> stop() async {
+    _gen++; // invalidate any in-flight load so it cannot resurrect state
     await _audio.stop();
     _gapless = false;
     _singleFile = false;
@@ -508,6 +632,8 @@ class MushafAudioController extends GetxController {
     trackedAyah.value = 0;
     isPlaying.value = false;
     isLoading.value = false;
+    error.value = null;
+    _resetProgress();
     playingSurah.value = 0;
     playingAyah.value = 0;
     queue.clear();
@@ -522,6 +648,7 @@ class MushafAudioController extends GetxController {
     _positionSub?.cancel();
     _durationSub?.cancel();
     _playingSub?.cancel();
+    _speedSub?.cancel();
     super.onClose();
   }
 }

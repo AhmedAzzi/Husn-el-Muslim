@@ -36,6 +36,11 @@ class BootReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.d("BootReceiver", "Widget refresh failed: ${e.message}")
             }
+            try {
+                TodoWidgetData.updateAll(context)
+            } catch (e: Exception) {
+                Log.d("BootReceiver", "Todo widget refresh failed: ${e.message}")
+            }
 
             // Direct-boot: the service needs user-unlocked storage; skip the
             // restart there (alarms are already re-armed above).

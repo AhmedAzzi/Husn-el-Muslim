@@ -14,6 +14,13 @@ class CacheManager {
   SharedPreferences? _prefs;
   bool _isInitialized = false;
 
+  // Batch 2 (perf-only): memoize the week-prayer decode. The blob is read
+  // 1-5x per calculation/summary pass; re-parsing the same string is pure
+  // waste. Keyed on the exact prefs string, so any write (here or elsewhere)
+  // is picked up automatically. Same map content as a fresh decode.
+  String? _memoWeekRaw;
+  Map<String, dynamic>? _memoWeekDecoded;
+
   Future<void> init() async {
     if (_isInitialized) return;
     try {
@@ -71,17 +78,35 @@ class CacheManager {
     if (!_isInitialized) await init();
     if (_prefs == null) return;
 
-    await _prefs!.setString(_prayerTimesKey, jsonEncode(weekData));
+    // Encode once and write-through the memo (callers mutate the map they
+    // got from the getter before writing it back, so storing the reference
+    // keeps the memo consistent with prefs by construction).
+    final raw = jsonEncode(weekData);
+    await _prefs!.setString(_prayerTimesKey, raw);
+    _memoWeekRaw = raw;
+    _memoWeekDecoded = weekData;
   }
 
   Map<String, dynamic>? getCachedWeekPrayerTimes() {
     if (!_isInitialized || _prefs == null) return null;
 
     final data = _prefs!.getString(_prayerTimesKey);
-    if (data == null) return null;
+    if (data == null) {
+      _memoWeekRaw = null;
+      _memoWeekDecoded = null;
+      return null;
+    }
+    if (data == _memoWeekRaw && _memoWeekDecoded != null) {
+      return _memoWeekDecoded;
+    }
     try {
-      return jsonDecode(data) as Map<String, dynamic>;
+      final decoded = jsonDecode(data) as Map<String, dynamic>;
+      _memoWeekRaw = data;
+      _memoWeekDecoded = decoded;
+      return decoded;
     } catch (e) {
+      _memoWeekRaw = null;
+      _memoWeekDecoded = null;
       return null;
     }
   }
@@ -92,5 +117,7 @@ class CacheManager {
 
     await _prefs!.remove(_prayerTimesKey);
     await _prefs!.remove(_locationTimestampKey);
+    _memoWeekRaw = null;
+    _memoWeekDecoded = null;
   }
 }

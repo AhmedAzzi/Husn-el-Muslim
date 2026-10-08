@@ -20,15 +20,21 @@ class BookService {
     return _cachedBookData!;
   }
 
+  // Batch 2 (perf-only): identical patterns compiled once. matchesQuery
+  // runs per list item per keystroke, so per-call RegExp compilation was
+  // pure overhead. Output unchanged.
+  static final RegExp _tashkeel = RegExp(r'[\u064B-\u065F\u0670]');
+  static final RegExp _alefVariants = RegExp(r'[إأآٱ]');
+
   /// Normalize Arabic text for search by removing tashkeel (diacritics)
   /// and standardizing alef / yaa / taa marbouta letters.
   static String normalizeArabic(String text) {
     if (text.isEmpty) return '';
     var normalized = text;
     // Remove diacritics / tashkeel (fatha, damma, kasra, sukun, shadda, tanween, dagger alif, etc.)
-    normalized = normalized.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+    normalized = normalized.replaceAll(_tashkeel, '');
     // Normalize Alef variants
-    normalized = normalized.replaceAll(RegExp(r'[إأآٱ]'), 'ا');
+    normalized = normalized.replaceAll(_alefVariants, 'ا');
     // Normalize Yaa / Alef Maksura
     normalized = normalized.replaceAll('ى', 'ي');
     // Normalize Taa Marbuta

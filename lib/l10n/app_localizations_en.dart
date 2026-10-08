@@ -36,12 +36,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navQibla => 'Qibla';
 
   @override
-  String get navFajrLog => 'Prayer Tracker';
-
-  @override
-  String get navTracking => 'Tracking';
-
-  @override
   String get navMushaf => 'Mushaf';
 
   @override
@@ -55,15 +49,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navSettings => 'Settings';
-
-  @override
-  String get trackCurrent => 'Current streak';
-
-  @override
-  String get trackLongest => 'Longest streak';
-
-  @override
-  String get trackToday => 'Today';
 
   @override
   String trackDays(int count) {
@@ -523,7 +508,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsTryNow => 'Try the challenge now';
 
   @override
-  String get nsOpenLog => 'Fajr log & progress';
+  String get fajrTabChallenge => 'Challenge';
+
+  @override
+  String get fajrTabSound => 'Sound';
+
+  @override
+  String get fajrTabRering => 'Re-alert';
 
   @override
   String get nsAlarmSound => 'Alarm sound';
@@ -640,6 +631,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nsBedtimeFixed => 'Fixed time';
+
+  @override
   String get nsSkipTonight => 'Skip tonight only';
 
   @override
@@ -658,10 +652,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nsPostPrayer => 'Post-prayer reminder';
 
   @override
-  String get nsPostPrayerSub => 'Adhkar reminder after each selected prayer';
+  String get nsPostPrayerSub =>
+      'Adhkar reminder after iqamah for each selected prayer';
 
   @override
-  String get nsAfterPrayerBy => 'After prayer by:';
+  String get nsAfterPrayerBy => 'After iqamah by:';
 
   @override
   String get nsAdhkarSection => 'Morning & evening adhkar alerts';
@@ -1090,9 +1085,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stHomeMosqueMapSub => 'Nearby mosque times';
-
-  @override
-  String get stHomeTrackingSub => 'Prayer tracking & challenge';
 
   @override
   String get stHomeSet => 'Home screen set (applies on restart)';
@@ -1757,489 +1749,271 @@ class AppLocalizationsEn extends AppLocalizations {
       'Denied — cannot automatically silence phone during prayer';
 
   @override
-  String get ptTrackerTitle => 'Prayer Tracker';
+  String get navTodo => 'Tasks';
 
   @override
-  String ptLevelTitle(int level) {
-    return 'Level $level';
+  String get todoTitle => 'Tasks';
+
+  @override
+  String get stHomeTodoSub => 'Organize daily tasks, worship, and reminders';
+
+  @override
+  String get todoQuickAddHint => 'Add a task...';
+
+  @override
+  String get todoFilterAll => 'All';
+
+  @override
+  String get todoFilterToday => 'Today';
+
+  @override
+  String get todoFilterUpcoming => 'Upcoming';
+
+  @override
+  String get todoFilterImportant => 'Important';
+
+  @override
+  String get todoFilterOverdue => 'Overdue';
+
+  @override
+  String get todoCompletedSection => 'Completed';
+
+  @override
+  String get todoEmptyAll => 'No tasks yet';
+
+  @override
+  String get todoEmptyAllSub =>
+      'Add your first task below and achieve your goals';
+
+  @override
+  String get todoEmptyToday => 'No tasks due today';
+
+  @override
+  String get todoEmptyTodaySub => 'Great! Your day is clear and calm';
+
+  @override
+  String get todoEmptyUpcoming => 'No upcoming tasks';
+
+  @override
+  String get todoEmptyUpcomingSub =>
+      'Schedule tasks for the upcoming days easily';
+
+  @override
+  String get todoEmptyImportant => 'No starred tasks';
+
+  @override
+  String get todoEmptyImportantSub =>
+      'Star any task to prioritize what matters most';
+
+  @override
+  String get todoTaskCreated => 'Task added';
+
+  @override
+  String get todoTaskUpdated => 'Task updated';
+
+  @override
+  String get todoTaskDeleted => 'Task deleted';
+
+  @override
+  String get todoTaskRestored => 'Task restored';
+
+  @override
+  String get todoUndo => 'Undo';
+
+  @override
+  String get todoDeleteConfirm => 'Delete this task?';
+
+  @override
+  String get todoDelete => 'Delete';
+
+  @override
+  String get todoCancel => 'Cancel';
+
+  @override
+  String get todoSave => 'Save';
+
+  @override
+  String get todoEdit => 'Edit';
+
+  @override
+  String get todoDetails => 'Task Details';
+
+  @override
+  String get todoTaskTitle => 'Task title';
+
+  @override
+  String get todoTaskNotes => 'Notes or extra details...';
+
+  @override
+  String get todoDueDate => 'Due date';
+
+  @override
+  String get todoDueTime => 'Due time';
+
+  @override
+  String get todoTomorrow => 'Tomorrow';
+
+  @override
+  String get todoNextWeek => 'Next week';
+
+  @override
+  String get todoPickDate => 'Pick date...';
+
+  @override
+  String get todoPickTime => 'Pick time...';
+
+  @override
+  String get todoNoDueDate => 'No due date';
+
+  @override
+  String get todoClearDate => 'Clear date';
+
+  @override
+  String get todoReminder => 'Reminder';
+
+  @override
+  String get todoReminderSet => 'Reminder set';
+
+  @override
+  String get todoNoReminder => 'No reminder';
+
+  @override
+  String get todoReminderAtDue => 'At due time';
+
+  @override
+  String get todoReminder15m => '15 min before';
+
+  @override
+  String get todoReminder1h => '1 hour before';
+
+  @override
+  String get todoReminder1d => '1 day before';
+
+  @override
+  String get todoRepeat => 'Repeat';
+
+  @override
+  String get todoRepeatNone => 'Never';
+
+  @override
+  String get todoRepeatDaily => 'Daily';
+
+  @override
+  String get todoRepeatWeekdays => 'Weekdays (Sun - Thu)';
+
+  @override
+  String get todoRepeatWeekly => 'Weekly';
+
+  @override
+  String get todoRepeatMonthly => 'Monthly';
+
+  @override
+  String get todoRepeatYearly => 'Yearly';
+
+  @override
+  String get todoRepeatCustom => 'Custom';
+
+  @override
+  String get todoPreMorning => 'Morning adhkar';
+
+  @override
+  String get todoPreEvening => 'Evening adhkar';
+
+  @override
+  String get todoPreSleep => 'Sleep adhkar';
+
+  @override
+  String get todoPreKahf => 'Surah Al-Kahf';
+
+  @override
+  String get todoPreWird => 'Daily Quran wird';
+
+  @override
+  String get todoPriority => 'Priority';
+
+  @override
+  String get todoPriorityNone => 'None';
+
+  @override
+  String get todoPriorityLow => 'Low';
+
+  @override
+  String get todoPriorityMedium => 'Medium';
+
+  @override
+  String get todoPriorityHigh => 'High';
+
+  @override
+  String get todoSubtasks => 'Subtasks';
+
+  @override
+  String get todoAddSubtask => 'Add a step...';
+
+  @override
+  String get todoCategory => 'List';
+
+  @override
+  String get todoCategoryWorship => 'Worship';
+
+  @override
+  String get todoCategoryPersonal => 'Personal';
+
+  @override
+  String get todoCategoryWork => 'Work';
+
+  @override
+  String get todoCategoryGeneral => 'General';
+
+  @override
+  String get todoNewCategory => 'New List';
+
+  @override
+  String get todoCategoryName => 'List Name';
+
+  @override
+  String get todoSortBy => 'Sort by';
+
+  @override
+  String get todoSortManual => 'Manual';
+
+  @override
+  String get todoSortDueDate => 'Due date';
+
+  @override
+  String get todoSortPriority => 'Priority';
+
+  @override
+  String get todoSortTitle => 'Alphabetical';
+
+  @override
+  String get todoSortCreatedAt => 'Creation date';
+
+  @override
+  String get todoShowCompleted => 'Show completed';
+
+  @override
+  String get todoHideCompleted => 'Hide completed';
+
+  @override
+  String get todoClearCompleted => 'Clear completed';
+
+  @override
+  String get todoSearchTasks => 'Search tasks...';
+
+  @override
+  String get todoOverdue => 'Overdue';
+
+  @override
+  String get todoRescheduleToday => 'Move to today';
+
+  @override
+  String todoCompletedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks completed',
+      one: '$count task completed',
+    );
+    return '$_temp0';
   }
-
-  @override
-  String get ptDailyGoal => 'Daily goal';
-
-  @override
-  String get ptEdit => 'Edit';
-
-  @override
-  String get ptGoalToday => 'Today\'s goal';
-
-  @override
-  String get ptOverview => 'Prayer overview';
-
-  @override
-  String get ptLast30Days => 'Last 30 days';
-
-  @override
-  String get ptEmptyTitle => 'No prayers logged yet';
-
-  @override
-  String get ptEmptyHint => 'Log your prayers to see your overview here';
-
-  @override
-  String get ptGoalDialogTitle => 'Your daily goal';
-
-  @override
-  String get ptGoalDialogHint => 'Prayers required per day';
-
-  @override
-  String get ptSave => 'Save';
-
-  @override
-  String get ptTotalPrayers => 'Total prayers';
-
-  @override
-  String get ptOnTimeRate => 'Consistency';
-
-  @override
-  String get ptTotalPoints => 'Total points';
-
-  @override
-  String get ptHowPrayed => 'How did you pray?';
-
-  @override
-  String get ptOptTakbeer => 'Opening takbeer';
-
-  @override
-  String get ptOptMosque => 'In the mosque';
-
-  @override
-  String get ptOptJamaa => 'In congregation';
-
-  @override
-  String get ptOptOnTime => 'On time, alone';
-
-  @override
-  String get ptOptLate => 'After its time';
-
-  @override
-  String get ptOptMissed => 'Missed';
-
-  @override
-  String get ptClearEntry => 'Clear entry';
-
-  @override
-  String ptPointsNum(int points) {
-    return '+$points pts';
-  }
-
-  @override
-  String get ptDetails => 'Details';
-
-  @override
-  String get ptBasedOn30 => 'Based on the last 30 days';
-
-  @override
-  String get ptHowItWorks => 'How it works';
-
-  @override
-  String get ptStages => 'Levels';
-
-  @override
-  String get ptStagesHint => 'Points needed to unlock each level';
-
-  @override
-  String get ptContext => 'Context';
-
-  @override
-  String get ptContextHint => 'Prayer rulings differ and affect scoring';
-
-  @override
-  String get ptMan => 'Man';
-
-  @override
-  String get ptWoman => 'Woman';
-
-  @override
-  String get ptPointsInApp => 'App points';
-
-  @override
-  String get ptOptionMeanings => 'What the options mean';
-
-  @override
-  String get ptMultipliers => 'Points multipliers';
-
-  @override
-  String get ptMultipliersHint => 'More effort, more points';
-
-  @override
-  String ptPointsCount(int points) {
-    return '$points pts';
-  }
-
-  @override
-  String get ptMeanTakbeer => 'Caught the opening takbeer with the imam';
-
-  @override
-  String get ptMeanMosque => 'Prayed in the mosque';
-
-  @override
-  String get ptMeanJamaa => 'Prayed in congregation outside the mosque';
-
-  @override
-  String get ptMeanOnTime => 'Prayed on time, alone';
-
-  @override
-  String get ptMeanLate => 'Made up after its time';
-
-  @override
-  String get ptMeanMissed => 'Missed entirely';
-
-  @override
-  String get ptOnboardTitle => 'Track your prayers';
-
-  @override
-  String get ptOnboardHint =>
-      'Keep your streak, build meaningful habits, and grow closer in your daily worship';
-
-  @override
-  String get ptOnboardF1T => 'Log every prayer in one tap';
-
-  @override
-  String get ptOnboardF1D =>
-      'With a simple tap, log your prayer and stay on track';
-
-  @override
-  String get ptOnboardF2T => 'Choose how you prayed';
-
-  @override
-  String get ptOnboardF2D =>
-      'Say how you prayed — opening takbeer, congregation, or on time';
-
-  @override
-  String get ptOnboardF3T => 'Smart reminders';
-
-  @override
-  String get ptOnboardF3D =>
-      'Never miss a prayer — we remind you so you remember to log it';
-
-  @override
-  String get ptOnboardAccept => 'Yes, I\'m in!';
-
-  @override
-  String get ptOnboardLater => 'Not now';
-
-  @override
-  String get ptMenuSettings => 'Tracking settings';
-
-  @override
-  String get ptMenuReplay => 'Initial setup';
-
-  @override
-  String get ptMenuWidget => 'Add widget';
-
-  @override
-  String get ptMenuDisable => 'Pause tracking';
-
-  @override
-  String get ptMenuEnable => 'Resume tracking';
-
-  @override
-  String get ptMenuClear => 'Clear tracking data';
-
-  @override
-  String get ptClearTitle => 'Clear tracking data?';
-
-  @override
-  String get ptClearHint =>
-      'All logged prayers and streaks will be deleted. This cannot be undone.';
-
-  @override
-  String get ptDelete => 'Delete';
-
-  @override
-  String get ptWidgetTitle => 'Add the widget';
-
-  @override
-  String get ptWidgetHint =>
-      'From your home screen: long-press an empty area, then Widgets, then choose Husn el-Muslim';
-
-  @override
-  String get ptPausedTitle => 'Tracking paused';
-
-  @override
-  String get ptPausedHint => 'Prayers won\'t count until you resume tracking';
-
-  @override
-  String get ptResume => 'Resume';
-
-  @override
-  String get ptRemindTitle => 'Prayer log reminder';
-
-  @override
-  String ptRemindBody(String prayer) {
-    return '$prayer is not logged yet — log it now';
-  }
-
-  @override
-  String get ptRemindToggle => 'Logging reminders';
-
-  @override
-  String get ptRemindHint => 'Remind me when I forget to log a prayer';
-
-  @override
-  String get diagFivePrayer => 'Five-prayer tracking';
-
-  @override
-  String get navSunnah => 'Sunnah Tracker';
-
-  @override
-  String get snTitle => 'Sunnah Tracker';
-
-  @override
-  String get snSubtitle => 'Rawatib • Duha • Witr • Night prayer';
-
-  @override
-  String get snRawatibSection => 'Rawatib Sunan (12 rak\'as)';
-
-  @override
-  String get snExtraSection => 'Duha, Witr & night prayer';
-
-  @override
-  String get snDailyGoal => 'Daily goal';
-
-  @override
-  String get snWeekOverview => 'Last 7 days';
-
-  @override
-  String get snTotal30 => 'Last 30 days\' points';
-
-  @override
-  String get snEmptyTitle => 'No sunan logged today';
-
-  @override
-  String get snEmptyHint =>
-      'Start with the 2 Fajr sunnah rak\'as — tap any sunnah to log it';
-
-  @override
-  String get snRawatibBonus => 'Full-Rawatib bonus: +10';
-
-  @override
-  String get snOpenSunnah => 'Sunnah tracker: Rawatib • Duha • Witr';
-
-  @override
-  String get snClear => 'Clear sunnah data';
-
-  @override
-  String get snClearTitle => 'Clear sunnah data?';
-
-  @override
-  String get snClearHint =>
-      'All logged sunan and streaks will be deleted. This cannot be undone.';
-
-  @override
-  String get snFajrSunnah => 'Fajr sunnah';
-
-  @override
-  String get snFajrSunnahSub => '2 rak\'as before Fajr';
-
-  @override
-  String get snDhuhrBefore => 'Pre-Dhuhr sunnah';
-
-  @override
-  String get snDhuhrBeforeSub => '4 rak\'as before Dhuhr';
-
-  @override
-  String get snDhuhrAfter => 'Post-Dhuhr sunnah';
-
-  @override
-  String get snDhuhrAfterSub => '2 rak\'as after Dhuhr';
-
-  @override
-  String get snMaghribAfter => 'Maghrib sunnah';
-
-  @override
-  String get snMaghribAfterSub => '2 rak\'as after Maghrib';
-
-  @override
-  String get snIshaAfter => 'Isha sunnah';
-
-  @override
-  String get snIshaAfterSub => '2 rak\'as after Isha';
-
-  @override
-  String get snDuha => 'Duha prayer';
-
-  @override
-  String get snDuhaSub => '2+ rak\'as after sunrise';
-
-  @override
-  String get snWitr => 'Witr';
-
-  @override
-  String get snWitrSub => '1 or 3 rak\'as after Isha';
-
-  @override
-  String get snQiyam => 'Night prayer';
-
-  @override
-  String get snQiyamSub => 'Blessed night rak\'as';
-
-  @override
-  String snProgress(int done, int goal) {
-    return '$done of $goal';
-  }
-
-  @override
-  String get diagSunnah => 'Sunnah tracking';
-
-  @override
-  String get navWorship => 'Fasting & Wird Tracker';
-
-  @override
-  String get wtTitle => 'Fasting & Wird Tracker';
-
-  @override
-  String get wtSubtitle => 'Fasting • Wird • Good deeds';
-
-  @override
-  String get wtFastingSection => 'Voluntary fasting';
-
-  @override
-  String get wtWeekHint => 'Monday & Thursday of the shown week';
-
-  @override
-  String get wtMonday => 'Monday';
-
-  @override
-  String get wtThursday => 'Thursday';
-
-  @override
-  String get wtLogOtherFast => 'Log another fast';
-
-  @override
-  String get wtFastSheetTitle => 'What kind of fast?';
-
-  @override
-  String get wtKindMonday => 'Monday fast';
-
-  @override
-  String get wtKindThursday => 'Thursday fast';
-
-  @override
-  String get wtKindWhite => 'White days (13th–15th)';
-
-  @override
-  String get wtKindArafah => 'Day of Arafah';
-
-  @override
-  String get wtKindAshura => 'Ashura / Tasua';
-
-  @override
-  String get wtKindShawwal => 'Six of Shawwal';
-
-  @override
-  String get wtKindQadaa => 'Make-up (qadaa)';
-
-  @override
-  String get wtKindNafl => 'General voluntary fast';
-
-  @override
-  String get wtWeeksStreak => 'Fasting weeks';
-
-  @override
-  String get wtTotalFasts => 'Fast days (30 days)';
-
-  @override
-  String get wtWeeksOverview => 'Last 8 weeks';
-
-  @override
-  String get wtWhiteHint => 'Today is a White day — fasting is recommended';
-
-  @override
-  String get wtArafahHint => 'Today is Arafah — its fast expiates two years';
-
-  @override
-  String get wtAshuraHint => 'Today is Ashura — fasting is recommended';
-
-  @override
-  String get wtMondayHint => 'Today is Monday — deeds are raised';
-
-  @override
-  String get wtThursdayHint => 'Today is Thursday — deeds are raised';
-
-  @override
-  String get wtWirdSection => 'Daily wird';
-
-  @override
-  String get wtDeedsSection => 'Good deeds';
-
-  @override
-  String get wtQuran => 'Quran portion';
-
-  @override
-  String get wtQuranSub => 'Daily recitation';
-
-  @override
-  String get wtMorning => 'Morning adhkar';
-
-  @override
-  String get wtMorningSub => 'After Fajr';
-
-  @override
-  String get wtEvening => 'Evening adhkar';
-
-  @override
-  String get wtEveningSub => 'After Asr';
-
-  @override
-  String get wtIstighfar => 'Istighfar (100 times)';
-
-  @override
-  String get wtIstighfarSub => 'Astaghfirullah';
-
-  @override
-  String get wtSalawat => 'Salawat (100 times)';
-
-  @override
-  String get wtSalawatSub => 'Upon the Prophet';
-
-  @override
-  String get wtSadaqah => 'Charity';
-
-  @override
-  String get wtSadaqahSub => 'Even a little';
-
-  @override
-  String get wtSilah => 'Family ties';
-
-  @override
-  String get wtSilahSub => 'A call or visit';
-
-  @override
-  String get wtBirr => 'Kindness to parents';
-
-  @override
-  String get wtBirrSub => 'A kind word or act';
-
-  @override
-  String get wtDailyGoal => 'Daily goal';
-
-  @override
-  String get wtTotal30 => 'Last 30 days\' points';
-
-  @override
-  String get wtClear => 'Clear worship data';
-
-  @override
-  String get wtClearTitle => 'Clear worship data?';
-
-  @override
-  String get wtClearHint =>
-      'All logged wird, fasts and streaks will be deleted. This cannot be undone.';
-
-  @override
-  String get wtOpenWorship => 'Fasting & wird: Mon & Thu • wird • charity';
-
-  @override
-  String get diagWorship => 'Fasting & wird tracking';
 }

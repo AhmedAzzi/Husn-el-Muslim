@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:small_husn_muslim/core/widgets/husn_feedback_widgets.dart';
 import 'package:get/get.dart';
 import 'package:small_husn_muslim/core/navigation/main_nav_helper.dart';
-import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 import 'package:small_husn_muslim/features/prayer_times/controllers/prayer_times_logic.dart';
 import 'package:small_husn_muslim/features/prayer_times/data/prayer_time.dart';
-import 'package:small_husn_muslim/features/settings/presentation/advanced_settings_screen.dart';
 import 'package:small_husn_muslim/core/widgets/app_feedback.dart';
 import 'package:small_husn_muslim/core/widgets/app_sheets.dart';
 import 'package:small_husn_muslim/core/widgets/husn_app_bar.dart';
@@ -22,7 +20,6 @@ class PrayerDataSettingsScreen extends StatefulWidget {
 class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
   final PrayerTimesLogic _prayerLogic = PrayerTimesLogic();
   bool _isRefreshingLocation = false;
-  bool _showAdvanced = false;
 
   @override
   void initState() {
@@ -32,11 +29,8 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
 
   Future<void> _loadSettings() async {
     await _prayerLogic.loadNotificationPreference();
-    final prefs = SharedPrefsCache.instance;
     if (!mounted) return;
-    setState(() {
-      _showAdvanced = prefs.getBool('show_advanced') ?? false;
-    });
+    setState(() {});
   }
 
   static Map<String, ({String title, String subtitle})> calculationMethods(
@@ -924,42 +918,37 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                     ),
                     SettingsWidgets.buildDivider(context),
 
-                    // Daylight Saving Time (DST) — advanced
-                    if (_showAdvanced) ...[
-                      SettingsWidgets.buildSwitchTile(
-                        context: context,
-                        title: loc.stDst,
-                        subtitle: loc.stDstSub,
-                        icon: Icons.wb_sunny_outlined,
-                        iconColor: const Color(0xFFD64463),
-                        value: _prayerLogic.dstEnabled,
-                        onChanged: (val) {
-                          setState(() => _prayerLogic.dstEnabled = val);
-                          _prayerLogic.saveCalculationSettings();
-                        },
-                      ),
-                      SettingsWidgets.buildDivider(context),
-                    ],
+                    // Daylight Saving Time (DST)
+                    SettingsWidgets.buildSwitchTile(
+                      context: context,
+                      title: loc.stDst,
+                      subtitle: loc.stDstSub,
+                      icon: Icons.wb_sunny_outlined,
+                      iconColor: const Color(0xFFD64463),
+                      value: _prayerLogic.dstEnabled,
+                      onChanged: (val) {
+                        setState(() => _prayerLogic.dstEnabled = val);
+                        _prayerLogic.saveCalculationSettings();
+                      },
+                    ),
+                    SettingsWidgets.buildDivider(context),
 
-                    // Manual Prayer Offsets — advanced
-                    if (_showAdvanced) ...[
-                      SettingsWidgets.buildActionTile(
-                        context: context,
-                        title: loc.stManualTitle,
-                        subtitle: loc.stManualTileSub,
-                        icon: Icons.tune_rounded,
-                        iconColor: const Color(0xFFD64463),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                            size: 16, color: Colors.grey),
-                        onTap: _showManualAdjustmentSheet,
-                      ),
-                      SettingsWidgets.buildDivider(context),
-                    ],
+                    // Manual Prayer Offsets
+                    SettingsWidgets.buildActionTile(
+                      context: context,
+                      title: loc.stManualTitle,
+                      subtitle: loc.stManualTileSub,
+                      icon: Icons.tune_rounded,
+                      iconColor: const Color(0xFFD64463),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                          size: 16, color: Colors.grey),
+                      onTap: _showManualAdjustmentSheet,
+                    ),
+                    SettingsWidgets.buildDivider(context),
 
-                    // Iqama Offsets (calculated mode only) — advanced
-                    if (_showAdvanced &&
-                        _prayerLogic.prayerTimeSource ==
-                            PrayerTimeSource.calculated)
+                    // Iqama Offsets (calculated mode only)
+                    if (_prayerLogic.prayerTimeSource ==
+                        PrayerTimeSource.calculated)
                       SettingsWidgets.buildActionTile(
                         context: context,
                         title: loc.stIqamaTile,
@@ -970,9 +959,8 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                             size: 16, color: Colors.grey),
                         onTap: _showIqamaOffsetsSheet,
                       ),
-                    if (_showAdvanced &&
-                        _prayerLogic.prayerTimeSource ==
-                            PrayerTimeSource.calculated)
+                    if (_prayerLogic.prayerTimeSource ==
+                        PrayerTimeSource.calculated)
                       SettingsWidgets.buildDivider(context),
 
                     // Hijri Date Adjustment
@@ -1012,21 +1000,6 @@ class _PrayerDataSettingsScreenState extends State<PrayerDataSettingsScreen> {
                     ),
                   ],
                 ),
-                if (!_showAdvanced) ...[
-                  const SizedBox(height: 4),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () => Get.to(
-                          () => const AdvancedSettingsScreen()),
-                      icon: const Icon(Icons.tune_rounded, size: 18),
-                      label: Text(
-                        loc.stHiddenAdvanced,
-                        style:
-                            HusnText.body,
-                      ),
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 32),
               ],
             ),

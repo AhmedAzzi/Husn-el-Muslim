@@ -34,11 +34,14 @@ data class OverlayData(
  * service and the unlock-time fallback so both navigate identically.
  */
 object OverlayNav {
+    @Volatile
     var chain: List<OverlayData> = emptyList()
         private set
+    @Volatile
     var pos: Int = 0
         private set
 
+    @Synchronized
     fun reset(center: OverlayData, prev: OverlayData?, next: OverlayData?) {
         val list = ArrayList<OverlayData>(3)
         if (prev != null) list.add(prev)
@@ -52,11 +55,13 @@ object OverlayNav {
     val hasPrev: Boolean get() = pos > 0
     val hasNext: Boolean get() = pos < chain.size - 1
 
+    @Synchronized
     fun goPrev(): OverlayData? {
         if (pos > 0) pos--
         return current
     }
 
+    @Synchronized
     fun goNext(): OverlayData? {
         if (pos < chain.size - 1) pos++
         return current
@@ -238,7 +243,12 @@ object AyahOverlayUi {
      * Fallback used only when the overlay service cannot be started from a
      * background unlock event: draws the same card directly through the
      * WindowManager (allowed by SYSTEM_ALERT_WINDOW, no service start needed).
+     *
+     * May run on [OverlayThread] (unlock path) or the main thread (manual
+     * "show now" path) — hence synchronized, like [renderFallback] and
+     * [removeFallback].
      */
+    @Synchronized
     fun showFallback(
         ctx: Context,
         center: OverlayData,
@@ -250,6 +260,7 @@ object AyahOverlayUi {
         return renderFallback(ctx)
     }
 
+    @Synchronized
     fun renderFallback(ctx: Context): Boolean {
         val appCtx = ctx.applicationContext
         val d = OverlayNav.current ?: return false
@@ -262,11 +273,14 @@ object AyahOverlayUi {
                 d,
                 onDone = {
                     OverlayPrefs.writePending(appCtx, d.globalAyah)
-                    AyahOverlayService.notifyCompletedRead()
+                    // The Flutter EventChannel sink lives on the engine's
+                    // platform thread: always notify from main, no matter
+                    // which thread drew this card.
+                    OverlayThread.main.post { AyahOverlayService.notifyCompletedRead() }
                     removeFallback()
                 },
                 onLater = {
-                    AyahOverlayService.notifyLater()
+                    OverlayThread.main.post { AyahOverlayService.notifyLater() }
                     removeFallback()
                 },
                 onPrev = if (OverlayNav.hasPrev) ({
@@ -290,6 +304,7 @@ object AyahOverlayUi {
         }
     }
 
+    @Synchronized
     fun removeFallback() {
         OverlayAudio.stop()
         val wm = fallbackWm

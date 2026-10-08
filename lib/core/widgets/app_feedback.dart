@@ -119,8 +119,8 @@ class AppFeedback {
   static List<Widget> _noActions(BuildContext _) => const [];
 
   /// Destructive confirm (clear logs, reset khatma, restore defaults).
-  /// Single red-FilledButton scaffold replacing the `_confirmClear` clones
-  /// (tracking ×3) and the khatma / custom-dikr restore variants.
+  /// Single red-FilledButton scaffold replacing the per-screen confirm
+  /// clones and the khatma / custom-dikr restore variants.
   static Future<bool> confirmDestructive(
     BuildContext context, {
     required String title,

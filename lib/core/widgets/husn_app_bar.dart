@@ -58,7 +58,6 @@ class HusnAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fg = theme.appBarTheme.foregroundColor ?? Colors.white;
-    final isDark = theme.brightness == Brightness.dark;
     return AppBar(
       backgroundColor: theme.appBarTheme.backgroundColor,
       foregroundColor: fg,
@@ -88,7 +87,6 @@ class HusnAppBar extends StatelessWidget implements PreferredSizeWidget {
           image: DecorationImage(
             image: AssetImage(appBarBG),
             fit: BoxFit.cover,
-            opacity: isDark ? 0.35 : 0.15,
           ),
         ),
       ),

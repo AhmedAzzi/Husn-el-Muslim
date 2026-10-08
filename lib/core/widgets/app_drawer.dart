@@ -23,6 +23,7 @@ class AppDrawer extends StatelessWidget {
   /// data settings, and stays a shell page so those jumps push no routes.
   static const List<MainDestination> mainEntries = [
     MainDestination.adhkar,
+    MainDestination.todo,
     MainDestination.quran,
     MainDestination.khatma,
     MainDestination.mawaqit,
@@ -30,7 +31,6 @@ class AppDrawer extends StatelessWidget {
     MainDestination.dua,
     MainDestination.names,
     MainDestination.ruqyah,
-    MainDestination.tracking,
     MainDestination.qibla,
     MainDestination.settings,
   ];
