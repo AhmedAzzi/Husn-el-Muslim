@@ -361,6 +361,13 @@ class PrayerTimesLogic extends GetxController {
     if (_fajrChallengeOpen) return;
     _fajrChallengeOpen = true;
     try {
+      // Arm the Recents guard before the screen opens: even if the app is
+      // killed in the next millisecond, relaunch resumes the challenge.
+      try {
+        await PrayerNotificationHelper.setChallengeActive(true);
+      } catch (e) {
+        if (kDebugMode) print("Error arming challenge guard - $e");
+      }
       try {
         const platform = PlatformChannels.prayerNotification;
         await platform.invokeMethod('bringAppToForeground');
@@ -473,6 +480,18 @@ class PrayerTimesLogic extends GetxController {
     final pendingAlarm = await PrayerNotificationHelper.getPendingAlarm();
     if (pendingAlarm != null) {
       _handleTriggeredAlarm(pendingAlarm);
+    }
+
+    // Resume an unfinished challenge after a Recents swipe / process death:
+    // the persisted guard survives both, so reopening here makes dismissal
+    // resume the challenge instead of skipping it. Guarded against
+    // double-push by [_fajrChallengeOpen]; preview mode never arms the flag.
+    try {
+      if (await PrayerNotificationHelper.isChallengeActive()) {
+        await _openFajrChallenge();
+      }
+    } catch (e) {
+      if (kDebugMode) print('challenge resume check failed: $e');
     }
 
     // 4. Check onboarding status for UI silence

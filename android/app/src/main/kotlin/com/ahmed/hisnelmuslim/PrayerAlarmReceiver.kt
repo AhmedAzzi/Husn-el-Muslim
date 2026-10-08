@@ -44,6 +44,140 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         private const val BEDTIME_NOTIFICATION_ID = 9996
         private const val PREPRAYER_NOTIFICATION_ID = 9995
         private const val POSTPRAYER_NOTIFICATION_ID = 9994
+        private const val SERVICE_PREFS = "prayer_service_prefs"
+        private const val KEY_CHALLENGE_ACTIVE = "challenge_active"
+
+        /** True while a Fajr challenge is unfinished. Survives Recents-swipe,
+         * task removal and process death; cleared ONLY on legitimate exit
+         * (challenge answered -> Done -> Continue). */
+        fun isChallengeActive(context: Context): Boolean {
+            return try {
+                context.getSharedPreferences(SERVICE_PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(KEY_CHALLENGE_ACTIVE, false)
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        fun setChallengeActive(context: Context, active: Boolean) {
+            try {
+                context.getSharedPreferences(SERVICE_PREFS, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_CHALLENGE_ACTIVE, active).apply()
+            } catch (_: Exception) {
+            }
+        }
+
+        /** Re-arm sound + notification + activity for an unfinished challenge
+         * (Recents swipe / task removal / process death). Never silences:
+         * an active challenge always continues, even if the user flipped the
+         * notification mode to silent mid-ring. */
+        fun retriggerChallenge(context: Context) {
+            if (!isChallengeActive(context)) return
+            triggerFajrChallenge(context, ignoreMode = true)
+        }
+
+        private fun notificationMode(context: Context): Int {
+            val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            // Flutter's shared_preferences stores Dart ints as Java Long, so read the
+            // raw value and coerce to Int instead of calling getInt (which would throw
+            // a ClassCastException when the value was written from Dart).
+            val value = flutterPrefs.all["flutter.notificationMode"]
+            return when (value) {
+                is Int -> value
+                is Long -> value.toInt()
+                is Number -> value.toInt()
+                else -> 0
+            }
+        }
+
+        private fun canUseFullScreen(context: Context): Boolean {
+            return try {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    nm.canUseFullScreenIntent()
+                } else {
+                    true
+                }
+            } catch (_: Exception) {
+                true
+            }
+        }
+
+        private fun createAlarmChannel(context: Context) {
+            createChannel(context, ALARM_CHANNEL_ID, "Fajr Challenge Alarm", NotificationManager.IMPORTANCE_HIGH)
+        }
+
+        private fun createChannel(context: Context, id: String, name: String, importance: Int) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val channel = NotificationChannel(id, name, importance).apply {
+                    description = name
+                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                }
+                nm.createNotificationChannel(channel)
+            }
+        }
+
+        private fun triggerFajrChallenge(context: Context, ignoreMode: Boolean = false) {
+            // 3 = "No alert"
+            if (!ignoreMode && notificationMode(context) == 3) return
+            // Persist BEFORE notifying: any kill from this point on resumes.
+            setChallengeActive(context, true)
+            createAlarmChannel(context)
+
+            // Audible even when the Dart engine is dead (app killed / cold).
+            // The challenge screen stops this on open and starts its own loop.
+            // The notification itself stays silent to avoid double playback.
+            AlarmSound.play(context)
+
+            val intent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("triggered_prayer", "Fajr_Challenge")
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                context, 0, intent,
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val builder = NotificationCompat.Builder(context, ALARM_CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("تحدي الفجر")
+                .setContentText("حان وقت الاستيقاظ لتحدي الفجر!")
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                // Ongoing + tap-to-return: swiping the notification away while
+                // the challenge is unfinished must not be possible. Cancelled
+                // when the challenge screen opens / completes.
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .setContentIntent(pendingIntent)
+                .setSound(null) // AlarmSound owns playback (audible when engine is dead)
+            // Android 14+: full-screen intent requires user grant; otherwise fall
+            // back to a heads-up notification instead of pretending it worked.
+            if (canUseFullScreen(context)) {
+                builder.setFullScreenIntent(pendingIntent, true)
+            }
+            val notification = builder.build()
+
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.notify(ALARM_NOTIFICATION_ID, notification)
+
+            // The full-screen intent may not auto-launch while the app is running
+            // (device unlocked / app in foreground). Bring the activity to the front
+            // directly so the challenge always opens immediately. If the system
+            // blocks background activity starts, the notification above is the backup.
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                // Blocked (background launch restriction) - rely on the notification.
+            }
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -110,74 +244,6 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 pending.finish()
             } catch (_: Exception) {
             }
-        }
-    }
-
-private fun notificationMode(context: Context): Int {
-    val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-    // Flutter's shared_preferences stores Dart ints as Java Long, so read the
-    // raw value and coerce to Int instead of calling getInt (which would throw
-    // a ClassCastException when the value was written from Dart).
-    val value = flutterPrefs.all["flutter.notificationMode"]
-    return when (value) {
-        is Int -> value
-        is Long -> value.toInt()
-        is Number -> value.toInt()
-        else -> 0
-    }
-}
-
-    private fun triggerFajrChallenge(context: Context) {
-        // 3 = "No alert"
-        if (notificationMode(context) == 3) return
-        createAlarmChannel(context)
-
-        // Audible even when the Dart engine is dead (app killed / cold).
-        // The challenge screen stops this on open and starts its own loop.
-        // The notification itself stays silent to avoid double playback.
-        AlarmSound.play(context)
-
-        val intent = Intent(context, MainActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("triggered_prayer", "Fajr_Challenge")
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val builder = NotificationCompat.Builder(context, ALARM_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("تحدي الفجر")
-            .setContentText("حان وقت الاستيقاظ لتحدي الفجر!")
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(true)
-            .setSound(null) // AlarmSound owns playback (audible when engine is dead)
-        // Android 14+: full-screen intent requires user grant; otherwise fall
-        // back to a heads-up notification instead of pretending it worked.
-        if (canUseFullScreen(context)) {
-            builder.setFullScreenIntent(pendingIntent, true)
-        }
-        val notification = builder.build()
-
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(ALARM_NOTIFICATION_ID, notification)
-
-        // The full-screen intent may not auto-launch while the app is running
-        // (device unlocked / app in foreground). Bring the activity to the front
-        // directly so the challenge always opens immediately. If the system
-        // blocks background activity starts, the notification above is the backup.
-        try {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            // Blocked (background launch restriction) - rely on the notification.
         }
     }
 
@@ -313,19 +379,6 @@ private fun notificationMode(context: Context): Int {
         else -> en
     }
 
-    private fun canUseFullScreen(context: Context): Boolean {
-        return try {
-            if (Build.VERSION.SDK_INT >= 34) {
-                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                nm.canUseFullScreenIntent()
-            } else {
-                true
-            }
-        } catch (_: Exception) {
-            true
-        }
-    }
-
     private fun triggerPrayer(context: Context, prayerName: String) {
         if (notificationMode(context) == 3) return // No alert
 
@@ -377,21 +430,6 @@ private fun notificationMode(context: Context): Int {
                 } catch (_: Exception) {}
             }, durationMin * 60_000L)
         } catch (_: Exception) {
-        }
-    }
-
-    private fun createAlarmChannel(context: Context) {
-        createChannel(context, ALARM_CHANNEL_ID, "Fajr Challenge Alarm", NotificationManager.IMPORTANCE_HIGH)
-    }
-
-    private fun createChannel(context: Context, id: String, name: String, importance: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel = NotificationChannel(id, name, importance).apply {
-                description = name
-                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-            }
-            nm.createNotificationChannel(channel)
         }
     }
 }

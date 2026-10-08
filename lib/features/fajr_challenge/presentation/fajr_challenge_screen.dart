@@ -126,6 +126,11 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
       PrayerNotificationHelper.cancelAlarmNotification();
       _initAudio();
       _lockVolumeAtMax();
+      // Arm the Recents guard: hide the task from the Overview screen and
+      // persist the unfinished state, so swiping the app can never skip the
+      // challenge. Cleared ONLY in [_stopAlarmAndExit].
+      PrayerNotificationHelper.setLockScreenMode(true);
+      _setChallengeActive(true);
     } else {
       // Keep the player initialized so dispose() stays safe, but play nothing.
       _audioPlayer = AudioPlayer();
@@ -212,6 +217,30 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
     }
   }
 
+  /// Best-effort arm/clear of the Recents guard (native task hiding +
+  /// persisted unfinished state). Never awaited from lifecycle paths.
+  Future<void> _setChallengeActive(bool active) async {
+    try {
+      await PrayerNotificationHelper.setChallengeActive(active);
+    } catch (e) {
+      debugPrint('Error setting challenge-active: $e');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (widget.preview) return;
+    // Returning from Recents/Home with an unfinished challenge: re-assert
+    // max volume + the native Recents guard so the challenge continues
+    // normally. No forced navigation — the screen is simply still here.
+    if (state == AppLifecycleState.resumed &&
+        _phase != _WakePhase.done &&
+        mounted) {
+      _lockVolumeAtMax();
+      _setChallengeActive(true);
+    }
+  }
+
   Future<void> _initAudio() async {
     _audioPlayer = AudioPlayer();
     final logic = PrayerTimesLogic();
@@ -241,7 +270,17 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopShakeListening();
-    _unlockVolume();
+    if (_volumeLocked && !widget.preview && _phase != _WakePhase.done) {
+      // Destroyed mid-challenge (e.g. swiped from Recents): do NOT restore
+      // the volume and do NOT clear the guard — the native layer keeps
+      // ringing and re-posts the return path. Best-effort: the engine may
+      // be tearing down, so never await here.
+      try {
+        PrayerNotificationHelper.setChallengeActive(true);
+      } catch (_) {}
+    } else {
+      _unlockVolume();
+    }
     _textController.dispose();
     _mathController.dispose();
     _audioPlayer.dispose();
@@ -497,6 +536,9 @@ class _FajrChallengeScreenState extends State<FajrChallengeScreen>
       PrayerTimesLogic().resetFajrChallengeFired();
       await PrayerNotificationHelper.cancelAlarmNotification();
       await PrayerNotificationHelper.setLockScreenMode(false);
+      // Legitimate exit ONLY (answered -> Done -> Continue, or load-error
+      // fallback): clear the guard so the task returns to Recents.
+      await _setChallengeActive(false);
     }
 
     if (mounted) {

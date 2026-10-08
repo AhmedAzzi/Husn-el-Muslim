@@ -38,7 +38,10 @@ class MainActivity : FlutterActivity() {
     private val VOLUME_CHANNEL = "com.ahmed.hisnelmuslim/volume_lock"
     private var audioManager: android.media.AudioManager? = null
     private var originalVolume: Int = 0
+    private var originalAlarmVolume: Int = 0
     private var isVolumeLocked = false
+    private val CHALLENGE_ACTIVE_NOTIFICATION_ID = 9990
+    private val CHALLENGE_ACTIVE_CHANNEL_ID = "fajr_challenge_alarm_channel"
     private var backgroundLocationResult: io.flutter.plugin.common.MethodChannel.Result? = null
 
     // Khatma (mushaf) floating-ayah overlay bridge. Ported from the
@@ -65,6 +68,14 @@ class MainActivity : FlutterActivity() {
         // while lock-screen mode was enabled). handleIntent() re-enables it
         // below for genuine alarm triggers.
         setLockScreenMode(false)
+        setExcludeFromRecentsCompat(false)
+
+        // A killed-but-unfinished challenge re-arms instantly, before Flutter
+        // is ready: the task stays out of Recents and the keyguard rendering
+        // + tap-to-return notification are restored. Cleared on legit exit.
+        if (PrayerAlarmReceiver.isChallengeActive(this)) {
+            setChallengeActive(true)
+        }
 
         handleIntent(intent)
 
@@ -85,6 +96,12 @@ class MainActivity : FlutterActivity() {
             // This is an alarm / Fajr challenge trigger: allow the challenge
             // to render above the lock screen and wake the screen.
             setLockScreenMode(true)
+            if (triggeredPrayer == "Fajr_Challenge") {
+                // Persist + hide from Recents + post tap-to-return BEFORE
+                // Flutter is ready, so killing the app from this point on
+                // resumes the challenge instead of bypassing it.
+                setChallengeActive(true)
+            }
             // Remember the trigger so it survives a cold start (Flutter may not
             // be ready to receive the method call yet).
             pendingTriggeredPrayer = triggeredPrayer
@@ -393,6 +410,14 @@ class MainActivity : FlutterActivity() {
                 "disableLockScreenMode" -> {
                     setLockScreenMode(false)
                     result.success(true)
+                }
+                "setChallengeActive" -> {
+                    val active = call.argument<Boolean>("active") ?: false
+                    setChallengeActive(active)
+                    result.success(true)
+                }
+                "isChallengeActive" -> {
+                    result.success(PrayerAlarmReceiver.isChallengeActive(this))
                 }
                 "testAyatOverlay" -> {
                     val intent = Intent(this, PrayerTimeService::class.java).apply {
@@ -716,6 +741,98 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /**
+     * Hides/shows this task in the Recents (Overview □) screen.
+     * Enabled ONLY while a Fajr challenge is unfinished so the challenge
+     * cannot be swiped away; restored immediately afterwards, so normal
+     * navigation and the Recents list are otherwise untouched.
+     * Supported API 21+ via [android.app.ActivityManager.AppTask], no
+     * permission required.
+     */
+    private fun setExcludeFromRecentsCompat(exclude: Boolean) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                for (task in am.appTasks) {
+                    try {
+                        task.setExcludeFromRecents(exclude)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    /**
+     * Challenge guard: persists the unfinished state, hides the task from
+     * Recents, keeps keyguard rendering on, and posts an ongoing
+     * tap-to-return notification. All four are cleared together when the
+     * challenge completes. Idempotent.
+     */
+    private fun setChallengeActive(active: Boolean) {
+        PrayerAlarmReceiver.setChallengeActive(this, active)
+        setExcludeFromRecentsCompat(active)
+        setLockScreenMode(active)
+        try {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (active) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val channel = NotificationChannel(
+                        CHALLENGE_ACTIVE_CHANNEL_ID,
+                        "Fajr Challenge Alarm",
+                        NotificationManager.IMPORTANCE_HIGH
+                    ).apply {
+                        description = "Fajr Challenge Alarm"
+                        lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                    }
+                    nm.createNotificationChannel(channel)
+                }
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    action = Intent.ACTION_MAIN
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("triggered_prayer", "Fajr_Challenge")
+                }
+                val pi = PendingIntent.getActivity(
+                    this, CHALLENGE_ACTIVE_NOTIFICATION_ID, intent,
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                val notification = NotificationCompat.Builder(this, CHALLENGE_ACTIVE_CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("تحدي الفجر نشط")
+                    .setContentText("التنبيه مستمر — انقر للعودة إلى التحدي")
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setOngoing(true)
+                    .setAutoCancel(false)
+                    .setContentIntent(pi)
+                    .build()
+                nm.notify(CHALLENGE_ACTIVE_NOTIFICATION_ID, notification)
+            } else {
+                nm.cancel(CHALLENGE_ACTIVE_NOTIFICATION_ID)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Returning from Recents/Home while a challenge is unfinished:
+        // re-assert task hiding + keyguard rendering so the challenge
+        // continues normally. No forced navigation here.
+        try {
+            if (PrayerAlarmReceiver.isChallengeActive(this)) {
+                setExcludeFromRecentsCompat(true)
+                setLockScreenMode(true)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     private fun requestBackgroundLocationPermission(result: io.flutter.plugin.common.MethodChannel.Result) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // Android 10+ requires separate background location permission
@@ -753,6 +870,14 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        try {
+            // Activity destroyed before completion (a Recents swipe destroys
+            // the activity, as does a process kill): re-arm sound +
+            // notification + return path. No-op once the challenge completed
+            // (the flag is cleared on the legitimate exit path).
+            PrayerAlarmReceiver.retriggerChallenge(this)
+        } catch (_: Exception) {
+        }
         khatmahNotificationResult?.error("destroyed", "activity destroyed", null)
         khatmahNotificationResult = null
         super.onDestroy()
@@ -861,12 +986,16 @@ class MainActivity : FlutterActivity() {
     private fun lockVolumeAtMax() {
         audioManager?.let { am ->
             try {
-                // Save original volume
+                // Save original volumes
                 originalVolume = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
+                originalAlarmVolume = am.getStreamVolume(android.media.AudioManager.STREAM_ALARM)
 
-                // Set to max volume
-                val maxVolume = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
-                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVolume, 0)
+                // Set to max volume (both the Dart player stream and the
+                // native USAGE_ALARM stream owned by AlarmSound).
+                val maxMusic = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxMusic, 0)
+                val maxAlarm = am.getStreamMaxVolume(android.media.AudioManager.STREAM_ALARM)
+                am.setStreamVolume(android.media.AudioManager.STREAM_ALARM, maxAlarm, 0)
 
                 isVolumeLocked = true
             } catch (e: Exception) {
@@ -878,8 +1007,9 @@ class MainActivity : FlutterActivity() {
     private fun unlockVolume() {
         audioManager?.let { am ->
             try {
-                // Restore original volume
+                // Restore original volumes
                 am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, originalVolume, 0)
+                am.setStreamVolume(android.media.AudioManager.STREAM_ALARM, originalAlarmVolume, 0)
                 isVolumeLocked = false
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -893,10 +1023,12 @@ class MainActivity : FlutterActivity() {
             when (keyCode) {
                 android.view.KeyEvent.KEYCODE_VOLUME_DOWN,
                 android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
-                    // Keep volume at max
+                    // Keep both alarm-relevant streams at max
                     audioManager?.let { am ->
-                        val maxVolume = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
-                        am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVolume, 0)
+                        val maxMusic = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                        am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxMusic, 0)
+                        val maxAlarm = am.getStreamMaxVolume(android.media.AudioManager.STREAM_ALARM)
+                        am.setStreamVolume(android.media.AudioManager.STREAM_ALARM, maxAlarm, 0)
                     }
                     return true // Consume the event
                 }

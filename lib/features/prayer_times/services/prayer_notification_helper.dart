@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:small_husn_muslim/core/platform/platform_channels.dart';
+import 'package:small_husn_muslim/core/services/shared_prefs_cache.dart';
 
 /// Helper class to communicate with native Android notification
 class PrayerNotificationHelper {
@@ -258,6 +259,49 @@ class PrayerNotificationHelper {
       return result ?? false;
     } catch (e) {
       debugPrint('Error setting lock screen mode: $e');
+      return false;
+    }
+  }
+
+  /// Persisted while a Fajr challenge is unfinished (defaults OFF).
+  /// Mirror of the native `challenge_active` flag: either side being true
+  /// means "the challenge must be resumed, never skipped".
+  static const String challengeActiveKey = 'fajrChallengeActive';
+
+  /// Marks the challenge active (alarm fired / screen opened) or clears it
+  /// (ONLY on the legitimate exit path: answered -> Done -> Continue).
+  /// Persists locally AND arms the native Recents guard (task hidden from
+  /// the Overview screen, ongoing tap-to-return notification).
+  static Future<bool> setChallengeActive(bool active) async {
+    try {
+      await SharedPrefsCache.instance.setBool(challengeActiveKey, active);
+    } catch (e) {
+      debugPrint('Error persisting challenge-active flag: $e');
+    }
+    try {
+      final result =
+          await _channel.invokeMethod('setChallengeActive', {'active': active});
+      return result ?? true;
+    } catch (e) {
+      debugPrint('Error setting native challenge-active: $e');
+      return false;
+    }
+  }
+
+  /// True when an unfinished challenge must be resumed (e.g. after the app
+  /// was swiped from Recents or the process died). Either the native flag
+  /// (written even when Dart was dead) or the local mirror counts.
+  static Future<bool> isChallengeActive() async {
+    try {
+      final bool? native = await _channel.invokeMethod('isChallengeActive');
+      if (native == true) return true;
+    } catch (e) {
+      debugPrint('Error reading native challenge-active: $e');
+    }
+    try {
+      return SharedPrefsCache.instance.getBool(challengeActiveKey) ?? false;
+    } catch (e) {
+      debugPrint('Error reading local challenge-active flag: $e');
       return false;
     }
   }
